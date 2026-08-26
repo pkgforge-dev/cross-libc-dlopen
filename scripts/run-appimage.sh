@@ -38,8 +38,8 @@ while [ $# -gt 0 ]; do
 	esac
 done
 case "$ONLY" in
-	alpine|debian|ubuntu1404|ubuntu1604|gtk4|both|all) ;;
-	*) die "--only must be alpine, debian, ubuntu1404, ubuntu1604, gtk4, both or all" ;;
+	alpine|debian|ubuntu1404|ubuntu1604|gtk4|gtk4hd|both|all) ;;
+	*) die "--only must be alpine, debian, ubuntu1404, ubuntu1604, gtk4, gtk4hd, both or all" ;;
 esac
 
 # ---------------------------------------------------- the pinned downloads --
@@ -69,16 +69,22 @@ FORK_REPO=Samueru-sama/Anylinux-AppImages
 TAG=demo
 DEMO_ASSET="vkcube+glxgears-host-drivers-demo-$ARCH.AppImage"
 GTK4_ASSET="gtk4-demo-$ARCH.AppImage"
+GTK4HD_ASSET="gtk4-demo-host-drivers-$ARCH.AppImage"
 case "$ARCH" in
 	x86_64)
 		DEMO_SHA=d77a01ebacb739392ca8c39f879dc5bc626283b0c01bd9dc12eecbea92dd34c1
-		GTK4_SHA=413243c9ecbaaafe40636afd06e0c3d558b8cc928ed20b9ec55a6e0f09b5d8b4 ;;
+		GTK4_SHA=413243c9ecbaaafe40636afd06e0c3d558b8cc928ed20b9ec55a6e0f09b5d8b4
+		GTK4HD_SHA=b8ab47805c8fe9c7378a9d0b5b11e19c796a09c3f2a7b6c993968530bd5c10cd ;;
 	aarch64)
 		DEMO_SHA=9aeb38f7f2834c0cfc85117b032b51b08108f074304711edaa54a5c04e3caedb
-		GTK4_SHA=e03ef26456fc0f3cd5c056e8bbaeab1cfcb0ba208e6f7c9ac88770775b1e3689 ;;
+		GTK4_SHA=e03ef26456fc0f3cd5c056e8bbaeab1cfcb0ba208e6f7c9ac88770775b1e3689
+		GTK4HD_SHA=a5f17eca51e1c3b516191ac44a765308ddd9cba2ae5c3b9f4fadee2cfc114d9a ;;
 esac
 DEMO_URL="https://github.com/$FORK_REPO/releases/download/$TAG/$DEMO_ASSET"
 GTK4_URL="https://github.com/$UPSTREAM_REPO/releases/download/$TAG/$GTK4_ASSET"
+# The host-drivers gtk4 demo lives on the fork, where every "host-drivers"
+# asset does; upstream's gtk4-demo is the self-contained build.
+GTK4HD_URL="https://github.com/$FORK_REPO/releases/download/$TAG/$GTK4HD_ASSET"
 
 engine=$(resolve_engine)
 say "engine: $engine"
@@ -147,6 +153,22 @@ case "$ONLY" in all|gtk4)
 	# Mounted as its own root, not as a subdirectory of the shared work tree,
 	# so nothing can write one AppDir's files into the other's.
 	in_container alpine:3.22 47-gtk4.sh -v "$WORK/gtk4x:/g" || fail=$((fail + 1))
+	;;
+esac
+
+# The same application in the OTHER shape: a host-drivers gtk4 demo, bundling
+# the glvnd dispatchers and no Mesa. On a classic host gles-fwd has no
+# libGLESv2.so.2 to forward to and must resolve GLES through the host EGL's
+# eglGetProcAddress; this is the case report/10 said was measured-but-not-repaired.
+case "$ONLY" in all|gtk4hd)
+	fetch_verified "$GTK4HD_URL" "$WORK/gtk4-demo-host-drivers.AppImage" "$GTK4HD_SHA" "gtk4-demo-host-drivers.AppImage ($ARCH)" "$FORK_REPO" "$TAG" "$GTK4HD_ASSET"
+	if [ ! -d "$WORK/gtk4hd/AppDir" ]; then
+		in_container debian:trixie-slim 49-extract-gtk4-host-drivers.sh --privileged ||
+			die "gtk4 host-drivers extraction failed"
+	fi
+	say ""
+	warn "######## a real application, host-drivers shape: gtk4-demo on musl Alpine ########"
+	in_container alpine:3.22 50-gtk4-host-drivers.sh -v "$WORK/gtk4hd:/g" || fail=$((fail + 1))
 	;;
 esac
 
