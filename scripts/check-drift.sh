@@ -208,6 +208,34 @@ while IFS= read -r t; do
 done < /tmp/cd_targets.txt
 [ "$badt" = 0 ] && say "every documented make target exists"
 
+# ------------------------------- 3b. the two orchestrators pin one thing ----
+head_ "the AppImage pins, both orchestrators"
+
+# ⛔ THIS CHECK EXISTS BECAUSE THEY DIVERGED. scripts/run-appimage.sh and
+# experiments/appimage.ps1 run the same stage scripts against the same two
+# downloads, and each carries its own copy of the sha256 pair. A change that
+# re-pinned the shell side left the PowerShell side refusing on the old hash,
+# and docs/reproducing.md sends a reader on a machine without a POSIX shell to
+# exactly that file. A pin in two files is one pin and two chances to be wrong.
+#
+# ⚠ The PowerShell orchestrator is x86_64 only, so it is compared against the
+# x86_64 branch of the shell one and nothing is inferred about aarch64.
+sh_pins=$(sed -n '/x86_64)/,/aarch64)/p' scripts/run-appimage.sh |
+          grep -oE '[0-9a-f]{64}' | sort | tr '\n' ' ')
+ps_pins=$(grep -oE '[0-9a-f]{64}' experiments/appimage.ps1 | sort | tr '\n' ' ')
+if [ -z "$sh_pins" ] || [ -z "$ps_pins" ]; then
+	bad "could not read a sha256 pin out of one of the orchestrators."
+	say "       shell: [$sh_pins]"
+	say "       pwsh : [$ps_pins]"
+elif [ "$sh_pins" != "$ps_pins" ]; then
+	bad "the two orchestrators pin different bytes."
+	say "       scripts/run-appimage.sh   x86_64: $sh_pins"
+	say "       experiments/appimage.ps1        : $ps_pins"
+	say "       Both drive the same stages. docs/REPORT.md 9.15 has the policy."
+else
+	say "both orchestrators pin the same two assets"
+fi
+
 # ------------------------------------------------- 4. the dash ratchet ------
 head_ "dashes used as punctuation"
 

@@ -20,7 +20,7 @@ deliberate.
 | suite | command | state |
 |---|---|---|
 | evidence table, x86-64 | `sh scripts/run-evidence.sh` | exit 0, 53 matched, 0 mismatched |
-| evidence table, aarch64 | the same, on `ubuntu-24.04-arm` | green in CI. ⚠ Last measured at 46/49; the 53-case version has not been re-measured there |
+| evidence table, aarch64 | the same, on `ubuntu-24.04-arm` | green in CI, re-measured, three cases SKIP by name. ⛔ The total lives in [`../docs/REPORT.md`](../docs/REPORT.md) section 8 and nowhere else |
 | AppImage suite | `sh scripts/run-appimage.sh` | ⛔ **RED on both architectures.** Two findings, below |
 | build, all four | `sh scripts/build.sh --arch both` and again `--portable` | exit 0 |
 
@@ -104,20 +104,19 @@ which reads as a finding rather than as a probe that cannot run. Either teach
 on a non-x86-64 host. ⚠ A skip must name the missing capability and must not
 add a verdict about the design space.
 
-### 3. Re-measure the aarch64 evidence total and put it in REPORT
+### 3. Re-measure the aarch64 evidence total. DONE
 
-`docs/REPORT.md` §8 still says the old figure and names `experiments/run.ps1`,
-which is not the harness any more. x86-64 is 53/53, measured. aarch64 was
-46/49 before eight cases were added. Run the aarch64 job, take the number, and
-update §8 and §10 together.
+Both totals measured in CI on one commit and recorded in `docs/REPORT.md`
+section 8, with sections 1, 9.7 and 10 updated to agree and the harness named
+correctly. The two differ by exactly the three cases aarch64 skips, and each
+skip names the capability it lacks.
 
-⛔ **Do not write the old aarch64 total into this file to remind yourself of
-it.** It is on the one-home list that `.github/workflows/gates.yml` and
-`scripts/verify-gates.sh` both carry, so a second copy anywhere in `*.md`
-outside `HISTORY/` turns the gate red. That is exactly how commit `f6d126e`
-broke the branch: the sentence warning about the number contained the number.
-Those two lists must also stay identical to each other, so changing the total
-means editing both.
+⛔ **Do not copy either total into this file.** Both are on the one-home list
+that `.github/workflows/gates.yml` and `scripts/verify-gates.sh` carry, so a
+second copy anywhere in `*.md` outside `HISTORY/` turns the gate red. That is
+exactly how commit `f6d126e` broke the branch: the sentence warning about the
+number contained the number. Those two lists must also stay identical to each
+other, so changing a total means editing both.
 
 ### 4. T-10, T-11, T-12, T-16 are still open
 

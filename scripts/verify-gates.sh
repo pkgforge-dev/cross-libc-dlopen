@@ -71,7 +71,7 @@ g_attrib() {
 }
 g_onehome() {
 	f=0
-	for n in 3470 358 46/46 45/45 40/40 26/26; do
+	for n in 3470 358 53/53 50/50 45/45 40/40 26/26; do
 		c=$(git grep -lF "$n" -- '*.md' ':(exclude)HISTORY/*' | wc -l)
 		[ "$c" -gt 1 ] && f=1
 	done
@@ -118,7 +118,7 @@ check "no tool is credited (tree)" g_attrib docs/_gate_probe.md \
 check "  the same, as a generated-with line" g_attrib docs/_gate_probe.md \
 	"Generated with [$TOOLNAME Code](https://example.invalid)"
 check "every headline number has one home" g_onehome docs/_gate_probe.md \
-	'the suite reports 46/46 predictions held'
+	'the suite reports 53/53 predictions held'
 
 # ⛔ THIS CHECK EXISTS BECAUSE THE RATCHET DID NOT REFUSE. It was written as a
 # budget with a hardcoded number and a printed suggestion that the next reader

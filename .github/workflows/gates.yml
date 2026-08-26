@@ -146,7 +146,7 @@ jobs:
       - name: every headline number has exactly one home
         run: |
           fail=0
-          for n in 3470 358 46/46 45/45 40/40 26/26; do
+          for n in 3470 358 53/53 50/50 45/45 40/40 26/26; do
             homes=$(git grep -lF "$n" -- '*.md' ':(exclude)HISTORY/*' | tr '\n' ' ')
             count=$(printf '%s' "$homes" | wc -w)
             if [ "$count" -gt 1 ]; then

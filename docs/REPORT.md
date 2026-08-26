@@ -20,7 +20,7 @@ Every claim is either backed by a command whose output is quoted, or labelled
 | Completion criterion | Status |
 |---|---|
 | Both goals demonstrated by a test that fails before and passes after | **Yes.** Goal 1: E5, E12. Goal 2: E22/E23 for the mechanism, E30/E32 and E37a/E37 for the end-to-end |
-| The evidence harness still reports all predictions held | **Yes, 46/46**, up from 22/22. The AppImage suite adds 45 on a glvnd glibc host, 40 on musl, 26 on each of two pre-glvnd glibc hosts and 7 on a real-application stage, with every unrunnable case SKIPPED by the capability it lacks |
+| The evidence harness still reports all predictions held | **Yes, 53/53** on x86-64 and **50/50** on aarch64, up from 22/22. The AppImage suite adds 45 on a glvnd glibc host, 40 on musl, 26 on each of two pre-glvnd glibc hosts and 7 on a real-application stage, with every unrunnable case SKIPPED by the capability it lacks |
 | No host file modified, verified by checksum | **Yes.** T4.3, identical sha256 before and after |
 | Bundled libraries still win, verified via `dladdr` | **Yes.** T4.2, all resolved under `$APPDIR` |
 | A forward-compatibility story that does not depend on foresight | **Yes.** Host-runtime selection for the unenumerable gap, a generated shim for the enumerable one, and a build-time audit (E26) for the version traps |
@@ -1145,8 +1145,26 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`experiments/run.ps1` reports **46/46 predictions held**. E1 through E13
-measure the problem. E14 through E21 are one per fix from the first pass: the
+`sh scripts/run-evidence.sh` reports **53/53 predictions held on x86-64** and
+**50/50 on aarch64**, both measured in CI on the same commit, run
+[32952579071](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32952579071).
+`experiments/run.ps1` drives the same three stage scripts for a machine with
+PowerShell and no POSIX shell.
+
+⚠ **The two totals differ by exactly the three cases aarch64 SKIPS**, each
+naming the capability it lacks rather than the difference being unexplained:
+
+| case | why it skips on aarch64 |
+|---|---|
+| E22 | that libc exports `pthread_cond_init` at one symbol version. The trap needs an obsolete definition beside the current one |
+| E23 | skipped WITH E22 deliberately. With no trap present the stripped object already returns 0, so E23 would pass whether or not `version-compat.c` does anything |
+| E58 | section M's trampoline is hand-written x86-64 machine code. What the real aarch64 trampolines do is measured by E69 through E73 and E76/E76b, natively on the ARM runner |
+
+⭐ **E23's skip is the one worth reading.** It was reporting MATCH on the ARM
+runner while asserting nothing, and skipping it with E22 is what stopped that.
+53 minus 3 is 50, and no case is missing for a reason nobody wrote down.
+
+E1 through E13 measure the problem. E14 through E21 are one per fix from the first pass: the
 ELF self-test, the generated-shim compile and behaviour, and five selector
 decisions including the mixed-set guard and its control. E22 through E29 are
 the version-binding trap and the reporting defects; E54 through E58 and E69
@@ -1753,7 +1771,8 @@ AppDir, `vkcube` included, and the Vulkan path is unaffected.
 Totals with this section in: **40/40 on the musl host** with five named skips,
 **45/45 on the glvnd glibc host** with none, **26/26** on each of ubuntu:14.04
 and ubuntu:16.04 with nineteen named skips, **7/7** on the gtk4 stage, and
-**46/46** in the container suite.
+**53/53** in the container suite on x86-64, and **50/50** on aarch64 with the
+three skips named in section 8.
 
 ### 9.8 What the shim does not do, stated as a number
 
@@ -2555,8 +2574,8 @@ run is the evidence, and a changed verdict there is a finding.
 
 ## 10. Measured versus assumed
 
-**Measured:** every table and quoted output above, plus `experiments/run.ps1`
-(46/46), `experiments/appimage.ps1` (45/45 glvnd glibc, 40/40 musl with five
+**Measured:** every table and quoted output above, plus `sh scripts/run-evidence.sh`
+(53/53 on x86-64, 50/50 on aarch64), `sh scripts/run-appimage.sh` (45/45 glvnd glibc, 40/40 musl with five
 named skips, 26/26 on each pre-glvnd glibc host, 7/7 on the gtk4 stage), `tools/gap.py --fetch`, the eight-distro inventory, the AppImage inventory,
 the corpus test, and the five-distro `ld.so.cache` survey in
 `ground-truth.md`.
