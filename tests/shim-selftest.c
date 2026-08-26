@@ -26,6 +26,23 @@ extern _Bool stdc_has_single_bit_ui(unsigned);
 extern char __libc_single_threaded;
 extern const char *sigabbrev_np(int);
 
+/* The version argument __xstat takes belongs to the ABI, and glibc 2.31
+   exports no usable macro for it: <sys/stat.h> defines no _STAT_VER at all on
+   x86-64, and defines it as _STAT_VER_KERNEL on aarch64, which is itself
+   undefined, so a program naming it does not compile on either. Measured with
+   gcc -E -dM for both targets on debian:bullseye-slim.
+
+   The value is 1 on x86-64, which every passing run of E16 has used, and 0
+   where the kernel's stat layout is the only one there has ever been.
+   Measured under qemu-user on aarch64: __xstat(0) returns 0 and fills the
+   struct, __xstat(1) returns -1 with EINVAL. A hardcoded 1 is what made E16
+   report FAIL on the ARM runner while every other check in this file passed. */
+#if defined(__x86_64__) || defined(__i386__)
+#  define CLD_STAT_VER 1
+#else
+#  define CLD_STAT_VER 0
+#endif
+
 static int fails = 0;
 #define CK(what, cond) do { if (cond) printf("  ok   %s\n", what); \
         else { printf("  FAIL %s\n", what); fails++; } } while (0)
@@ -73,7 +90,7 @@ int main(void) {
     struct stat s1, s2;
     CK("stat /etc/hostname",  stat("/etc/hostname", &s1) == 0);
     CK("stat matches __xstat",
-       (__xstat(1, "/etc/hostname", &s2) == 0) && s1.st_ino == s2.st_ino
+       (__xstat(CLD_STAT_VER, "/etc/hostname", &s2) == 0) && s1.st_ino == s2.st_ino
         && s1.st_size == s2.st_size && s1.st_mode == s2.st_mode);
     CK("stat ENOENT",   stat("/nonexistent-abcdef", &s1) == -1);
     CK("fstat stdin",   fstat(0, &s1) == 0);

@@ -330,12 +330,34 @@ else
     gcc -shared -fPIC -O2 /repo/tests/verprobe.c -o verprobe.so -lpthread
     python3 strip_ver.py verprobe.so verprobe_stripped.so
 
+    # ⚠ The trap E22 measures belongs to THIS libc, not to this project. It
+    # needs pthread_cond_init exported at TWO symbol versions, an obsolete one
+    # beside the current one. Measured on debian:bullseye-slim: x86-64's
+    # libc.so.6 and libpthread.so.0 each carry pthread_cond_init@GLIBC_2.2.5
+    # and @@GLIBC_2.3.2, and the aarch64 libc of the same release carries only
+    # @@GLIBC_2.17. So on aarch64 there is no obsolete definition to bind to,
+    # the stripped object returns 0, and E22 reported MISMATCH.
+    condvar_versions=0
+    for _l in "/lib/$TRIPLET/libpthread.so.0" "/lib/$TRIPLET/libc.so.6"; do
+        [ -e "$_l" ] || continue
+        _n=$(readelf -sW "$_l" 2>/dev/null |
+             grep -oE 'pthread_cond_init@+GLIBC_[0-9.]+' | sort -u | wc -l)
+        [ "$_n" -gt "$condvar_versions" ] && condvar_versions=$_n
+    done
+
     # E22: THE BUG. Same file, same libc, only the version tags removed, and
     #      pthread_cond_init now returns EINVAL(22) instead of 0. Everything
     #      users have reported as "the driver loads but nothing works" is this
     #      number. If this ever reports 0 the trap is gone from this glibc and
     #      E23 is measuring nothing -- which is why both sides are asserted.
-    run E22 OK "probe_cond_init()=22" ./loader /work/verprobe_stripped.so probe_cond_init
+    if [ "$condvar_versions" -ge 2 ]; then
+        run E22 OK "probe_cond_init()=22" ./loader /work/verprobe_stripped.so probe_cond_init
+    else
+        echo "  E22    SKIPPED - this libc exports pthread_cond_init at"
+        echo "         $condvar_versions symbol version(s). The trap needs an obsolete"
+        echo "         definition beside the current one, which x86-64 glibc"
+        echo "         carries and this one does not."
+    fi
 
     # E22b: the control. The very same object, unstripped, is fine -- so E22
     #       cannot be blamed on the probe, the compiler or this container.
@@ -348,8 +370,20 @@ else
     gcc -shared -fPIC -O2 -Wall -Wextra -Wno-format-truncation -I/repo/src \
         /repo/src/cross-libc-dlopen.c /repo/src/forward-shim.c /repo/src/version-compat.c \
         -o cross-libc-dlopen.so -ldl 2>/dev/null
-    run E23 OK "probe_cond_init()=0" \
-        env LD_PRELOAD=/work/cross-libc-dlopen.so ./loader /work/verprobe_stripped.so probe_cond_init
+    # ⛔ E23 is skipped WITH E22, not left running. E22's comment above says
+    # why: with no trap in this libc the stripped object already returns 0, so
+    # E23 passes whether or not version-compat.c does anything at all. It was
+    # reporting MATCH on the ARM runner while asserting nothing, which is the
+    # shape this repository calls a silent pass.
+    # ⚠ The build stays unconditional: cross-libc-dlopen.so is used by the
+    # host-dependency cases further down, which do not need the trap.
+    if [ "$condvar_versions" -ge 2 ]; then
+        run E23 OK "probe_cond_init()=0" \
+            env LD_PRELOAD=/work/cross-libc-dlopen.so ./loader /work/verprobe_stripped.so probe_cond_init
+    else
+        echo "  E23    SKIPPED - it can only measure the fix where E22's trap"
+        echo "         exists; without it the unstripped answer is already 0."
+    fi
 
     # E24: the trap stated in terms of libc alone -- the obsolete definition
     #      really does reject the attribute Mesa passes.
