@@ -138,6 +138,16 @@ run() {                       # run <id> <expect: OK|FAIL> <expect-substring> <c
         FAIL=$((FAIL+1))
     fi
     printf '  %-6s %-4s predicted=%-4s  %s\n' "$id" "$verdict" "$want" "$(printf '%s' "$out" | head -1)"
+    # ⛔ On a MISMATCH, the WHOLE captured output, not the first line of it.
+    # A one-line summary of a failure names the symptom and hides the cause:
+    # E16 reported "ok strlcpy short" for a probe that failed forty checks
+    # later, and the cause was not in the line that was printed.
+    # ⚠ This runs only after the case has already been scored, so it changes
+    # no assertion. T-13 is the same shape applied to the helper builds.
+    if [ "$verdict" = "MISMATCH" ]; then
+        printf '%s\n' "$out" | sed 's/^/           | /'
+        printf '           | (exit %s, wanted %s, needle: %s)\n' "$rc" "$want" "$needle"
+    fi
 }
 
 echo "================================================================"
@@ -540,11 +550,29 @@ int main(void) {
 }
 CEOF
 gcc -shared -fPIC -O2 tgt.c -o libtgt.so -Wl,-soname,libtgt.so
-gcc -O2 $CET tramp.c -o tramp -ldl
 # E58: eight integer registers, nine float registers, a varargs call whose %al
 #      carries the float count, and a struct returned through hidden memory --
 #      all through a jump that knows none of their shapes.
-run E58 OK "OK: ints=204" ./tramp
+#
+# ⚠ This section's STUB macro is x86-64 machine code written by hand: an
+# endbr64 as four literal bytes, then `jmp *glfwd_tab+8*i(%rip)`. It is a
+# miniature of src/gl-fwd.c's trampoline, not that trampoline, and it cannot
+# assemble anywhere else. On aarch64 gas rejects it with "unknown mnemonic
+# `jmp'", the binary is never produced, and E58 reported "./tramp: No such
+# file or directory" -- which names the wrong thing entirely.
+#
+# The capability this stage lacks on aarch64 is a hand-written x86-64
+# trampoline. What the REAL aarch64 trampolines do is measured, on this same
+# host, by E69 through E73 in section N and by E76/E76b in section P: those
+# build src/gl-fwd.c itself rather than a copy of it.
+if [ "$(uname -m)" = x86_64 ]; then
+    gcc -O2 $CET tramp.c -o tramp -ldl
+    run E58 OK "OK: ints=204" ./tramp
+else
+    echo "  E58    SKIPPED - section M's trampoline is hand-written x86-64 asm"
+    echo "         and this host is $(uname -m). src/gl-fwd.c's own aarch64"
+    echo "         trampolines are measured by E69-E73 and E76/E76b."
+fi
 
 echo
 echo "-- N. the resolver: a table slot that can run code -------------"
