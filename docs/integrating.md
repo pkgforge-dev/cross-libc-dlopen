@@ -26,23 +26,43 @@ ordering question from every integration.
 
 ## Turning it on
 
-Either of these is sufficient. **A consumer with no marker file does not have to
-create one.**
+⭐ **Nothing.** It is on whenever the object is preloaded, because preloading
+it is already the deliberate act. There is no marker file to create and no
+variable to remember.
 
 ```bash
-CROSS_LIBC_DLOPEN=1
+CROSS_LIBC_DLOPEN=0
 ```
 
-or drop a `.cross-libc-dlopen-enabled` marker in the root. The old spelling
-`.foreign-dlopen-enabled` is still honoured, because that is the name
-`quick-sharun` writes and bundles built before the rename carry it.
+turns it off, and that is the only thing the variable is for now. `=1` still
+works and still forces it on.
+
+⚠ **This changed.** It used to need `CROSS_LIBC_DLOPEN=1` or a
+`.cross-libc-dlopen-enabled` marker at the root, and a consumer that preloaded
+the object and set neither got a run that did nothing and gave no hint why. The
+markers are gone. E89 and E90 in `experiments/30-run-tests.sh` measure both
+sides: on by default, and still switchable off.
 
 ## Telling it where the bundle is
 
 ```bash
-CROSS_LIBC_DLOPEN_ROOT=/path/to/bundle     # neutral
-APPDIR=/path/to/bundle                     # one consumer's spelling, still accepted
+CROSS_LIBC_DLOPEN_ROOT=/path/to/bundle     # this project's name
+APPDIR=/path/to/bundle                     # the AppImage runtime sets this itself
 CROSS_LIBC_DLOPEN_LIBDIR=lib               # default; the directory under the root
+```
+
+⛔ **`APPDIR` is not a deprecated alias.** It is a convention this project does
+not own: an AppImage runtime exports it into every process it starts, before
+anything here runs. `CROSS_LIBC_DLOPEN_ROOT` wins when both are set.
+
+⭐ **If you want one spelling and no interop, take the `strictenv` build.**
+Every release ships it beside the default, as
+`cross-libc-dlopen-strictenv-<arch>.tar` and `.zip`. Those objects read
+`CROSS_LIBC_DLOPEN_ROOT` and never look at `APPDIR`; the string is not even in
+the binary. To build it yourself:
+
+```bash
+sh scripts/build.sh --strict-env
 ```
 
 ⛔ **Every control has exactly one name.** The `ANYLINUX_*` spellings this

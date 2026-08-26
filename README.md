@@ -41,8 +41,11 @@ before building anything, and writes every artefact plus a manifest under
 `build/`. Then, for any dynamically linked program:
 
 ```bash
-LD_PRELOAD=/path/to/cross-libc-dlopen.so CROSS_LIBC_DLOPEN=1 ./your-program
+LD_PRELOAD=/path/to/cross-libc-dlopen.so ./your-program
 ```
+
+⭐ There is nothing to switch on. Preloading it is the opt-in, and
+`CROSS_LIBC_DLOPEN=0` is how you switch it back off.
 
 For a bundle, put `cross-libc-dlopen.so`, `gl-fwd.so`, `egl-fwd.so` and
 `gles-fwd.so` in the bundle's `lib/` and name them in `.preload`.
@@ -112,6 +115,7 @@ list rather than a silence.
 | [`docs/ground-truth.md`](docs/ground-truth.md) | where distributions actually keep their libraries, measured |
 | [`docs/alternatives.md`](docs/alternatives.md) | the other ways to solve this, and which one fits your position |
 | [`docs/rejected-designs.md`](docs/rejected-designs.md) | three designs evaluated and refused, with evidence |
+| [`docs/security.md`](docs/security.md) | what a pull request can and cannot do here, and the settings that decide it |
 | [`docs/AGENTS.md`](docs/AGENTS.md) | ⭐ the single entry point for an agent working here |
 | [`docs/HUMANS.md`](docs/HUMANS.md) | ⭐ what a **person** pastes to get useful work out of a session |
 | [`docs/conventions/`](docs/conventions/README.md) | ⛔ how this repository is written. Binding, and half of it is checked by CI |
@@ -127,8 +131,8 @@ is open, and the work order is in
 
 | variable | effect |
 |---|---|
-| `CROSS_LIBC_DLOPEN=1` or `=0` | force the feature on or off. `=0` is the A/B control |
-| `CROSS_LIBC_DLOPEN_ROOT` | the bundle root. `APPDIR` is also accepted |
+| `CROSS_LIBC_DLOPEN=0` | turn the feature off. ⭐ It is **on by default** whenever the object is preloaded, so `=1` is only ever a restatement |
+| `CROSS_LIBC_DLOPEN_ROOT` | the bundle root. `APPDIR` is read too, because an AppImage runtime exports it on its own |
 | `CROSS_LIBC_DLOPEN_LIBDIR` | the bundled library directory under it. Default `lib` |
 | `CROSS_LIBC_DLOPEN_DEBUG=1` | trace to stderr |
 | `CROSS_LIBC_DLOPEN_RUNTIME` | `host`, `bundled` or `auto`. Forces or auto-selects the libc runtime |

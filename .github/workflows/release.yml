@@ -85,10 +85,16 @@ jobs:
     # x86-64 job with "Exec format error". docs/building.md says what it cost.
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # ⭐ Two variants, so nobody has to build one by hand. `default` reads
+    # APPDIR as well as CROSS_LIBC_DLOPEN_ROOT, because an AppImage runtime
+    # exports APPDIR on its own. `strictenv` reads only this project's name,
+    # which is what a consumer who wants one spelling asked for.
+    # src/cld-env.h has the argument; E87 and E88 measure both arms.
     strategy:
       fail-fast: false
       matrix:
         arch: [x86_64, aarch64]
+        variant: [default, strictenv]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -100,23 +106,33 @@ jobs:
       # default, and an override at release time would be how that silently
       # stops being true.
       - name: build on the floor
-        run: sh scripts/build.sh --engine docker --arch ${{ matrix.arch }}
+        run: |
+          set -eu
+          if [ "${{ matrix.variant }}" = strictenv ]; then
+            sh scripts/build.sh --engine docker --arch ${{ matrix.arch }} --strict-env
+            echo "BUILD_DIR=${{ matrix.arch }}-strictenv" >> "$GITHUB_ENV"
+          else
+            sh scripts/build.sh --engine docker --arch ${{ matrix.arch }}
+            echo "BUILD_DIR=${{ matrix.arch }}" >> "$GITHUB_ENV"
+          fi
 
       - name: the manifest
-        run: cat build/${{ matrix.arch }}/build-manifest.json
+        run: cat "build/$BUILD_DIR/build-manifest.json"
 
+      # ⚠ The variant is read out of the manifest by the packager, not passed
+      # in, so a mislabelled directory cannot produce a mislabelled asset.
       - name: package
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends zip
-          sh scripts/package-release.sh ${{ matrix.arch }}
+          sh scripts/package-release.sh ${{ matrix.arch }} "build/$BUILD_DIR"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: release-${{ matrix.arch }}
+          name: release-${{ matrix.arch }}-${{ matrix.variant }}
           path: |
             dist/
-            build/${{ matrix.arch }}/build-manifest.json
+            build/*/build-manifest.json
           if-no-files-found: error
           retention-days: 7
 
@@ -165,20 +181,23 @@ jobs:
       # staged/release-aarch64/.... Flatten them into the layout the two
       # scripts expect, and fail if either is missing rather than publishing
       # half a release.
-      - name: collect both architectures
+      - name: collect every architecture and variant
         run: |
           set -eu
           mkdir -p dist build
           for a in x86_64 aarch64; do
-            src=staged/release-$a
-            [ -d "$src/dist" ] || { echo "no dist/ for $a"; exit 1; }
-            cp -a "$src/dist/." dist/
-            mkdir -p "build/$a"
-            cp -a "$src/build/$a/build-manifest.json" "build/$a/"
+            for v in default strictenv; do
+              src=staged/release-$a-$v
+              [ -d "$src/dist" ] || { echo "no dist/ for $a/$v"; exit 1; }
+              cp -a "$src/dist/." dist/
+              cp -a "$src/build/." build/
+            done
           done
           ls -la dist
           echo "--- manifests ---"
-          for a in x86_64 aarch64; do echo "$a: $(sha256sum build/$a/build-manifest.json)"; done
+          for m in build/*/build-manifest.json; do
+            echo "$m: arch=$(jq -r .arch "$m") variant=$(jq -r '.variant // "default"' "$m")"
+          done
 
       # ⛔ The checksums in the body have to be the ones in the manifest, and
       # the files have to match them. package-release.sh asserted that at build
@@ -188,6 +207,9 @@ jobs:
         run: |
           set -eu
           fail=0
+          # ⚠ Only the DEFAULT variant ships loose files to check this way.
+          # The strictenv set ships as archives, and package-release.sh already
+          # checked every object in it against its manifest before archiving.
           for a in x86_64 aarch64; do
             man=build/$a/build-manifest.json
             for f in $(jq -r '.artifacts | keys[]' "$man"); do

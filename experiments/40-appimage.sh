@@ -31,6 +31,9 @@ export APPDIR
 export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/tmp/xdg}
 mkdir -p "$XDG_RUNTIME_DIR"
 PASS=0; FAIL=0; SKIP=0
+# Per-case wall time, for T-12. Written by run(), reported at the end.
+TIMINGS=/tmp/cld-timings.tsv
+: > "$TIMINGS"
 # Extra host library directories for the OpenGL cases. Empty unless E77's
 # pre-flight finds this host's driver cannot load without them; declared here
 # because `set -u` makes reading it before section J a fatal error rather
@@ -118,7 +121,19 @@ summarise() {                  # summarise <text>
 
 run() {                        # run <id> <expect: OK|FAIL> <needle> <cmd...>
     id="$1"; want="$2"; needle="$3"; shift 3
+    # ⚠ T-12. Every wall-clock timeout in this file was tuned on one developer
+    # machine, and a timeout is scored as a FAILURE rather than a skip, so a
+    # slow shared runner turns into a red build that looks like a regression.
+    # Until the real times are known, the first genuinely red run cannot be
+    # told apart from a slow runner.
+    #
+    # Recorded here, at whole-second resolution, which is enough for values
+    # between 25 and 90. This wraps the same command and changes no assertion:
+    # the case is scored below exactly as it was.
+    _t0=$(date +%s 2>/dev/null || echo 0)
     out=$("$@" 2>&1); rc=$?
+    _t1=$(date +%s 2>/dev/null || echo 0)
+    printf '%s\t%s\n' "$((_t1 - _t0))" "$id" >> "$TIMINGS" 2>/dev/null || true
     got=OK; [ $rc -ne 0 ] && got=FAIL
     verdict=MISMATCH
     if [ "$got" = "$want" ] && printf '%s' "$out" | grep -qF "$needle"; then

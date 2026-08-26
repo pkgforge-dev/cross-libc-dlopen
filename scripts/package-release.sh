@@ -45,11 +45,28 @@ sha_of() {
 man_arch=$(jq -r '.arch' "$MAN")
 [ "$man_arch" = "$ARCH" ] ||
 	die "the manifest in $BUILD says arch=$man_arch, and this was asked for $ARCH"
+
+# ⭐ The build variant, taken from the manifest rather than from the directory
+# name, so a directory somebody renamed cannot mislabel an asset.
+#
+#   default    reads APPDIR as well as CROSS_LIBC_DLOPEN_ROOT
+#   strictenv  reads only CROSS_LIBC_DLOPEN_ROOT
+#
+# ⚠ The variant ships as ARCHIVES ONLY, and the default ships loose as well.
+# All five objects differ between the two, so the whole set is the unit
+# somebody choosing the variant wants; five more loose files per architecture
+# would double the asset list to save them one extract.
+VARIANT=$(jq -r '.variant // "default"' "$MAN")
+case "$VARIANT" in
+	default)   BASE=cross-libc-dlopen-$ARCH;         LOOSE=1 ;;
+	strictenv) BASE=cross-libc-dlopen-strictenv-$ARCH; LOOSE=0 ;;
+	*) die "unknown build variant '$VARIANT' in $MAN" ;;
+esac
 floor=$(jq -r '.floor_glibc' "$MAN")
 [ "$floor" != unknown ] && [ -n "$floor" ] ||
 	die "the manifest records no glibc floor. A release states its floor or it is not made."
 
-printf '\n== packaging %s (floor glibc %s) ==\n' "$ARCH" "$floor"
+printf '\n== packaging %s, variant %s (floor glibc %s) ==\n' "$ARCH" "$VARIANT" "$floor"
 
 mkdir -p "$OUT"
 STAGE=$(mktemp -d) || die "cannot make a staging directory"
@@ -89,11 +106,11 @@ cp "$MAN" "$STAGE/build-manifest.json"
 [ -f "$ROOT/LICENSE" ] && cp "$ROOT/LICENSE" "$STAGE/LICENSE"
 
 # ------------------------------------------------ 2. loose, then tar, then zip --
-BASE=cross-libc-dlopen-$ARCH
-
-for f in $names; do
-	cp "$STAGE/$f" "$OUT/$ARCH-$f"
-done
+if [ "$LOOSE" = 1 ]; then
+	for f in $names; do
+		cp "$STAGE/$f" "$OUT/$ARCH-$f"
+	done
+fi
 
 # ⛔ -C "$STAGE" with bare names, so nothing in the archive has a leading
 # directory component. `tar tf` on the result lists plain filenames.
@@ -119,10 +136,17 @@ say "both archives are flat: $(tar -tf "$OUT/$BASE.tar" | tr '\n' ' ')"
 # --------------------------------------------------------- 4. the checksums --
 # Over every asset, including the archives, which are not in the manifest
 # because they did not exist when it was written.
-( cd "$OUT" && for a in "$ARCH"-* "$BASE.tar" "$BASE.zip"; do
-	[ -f "$a" ] || continue
-	printf '%s  %s\n' "$(sha_of "$a")" "$a"
-  done ) > "$OUT/$BASE.sha256"
+( cd "$OUT" && {
+	[ "$LOOSE" = 1 ] && for a in "$ARCH"-*; do
+		[ -f "$a" ] || continue
+		case "$a" in *.sha256|*.tar|*.zip) continue ;; esac
+		printf '%s  %s\n' "$(sha_of "$a")" "$a"
+	done
+	for a in "$BASE.tar" "$BASE.zip"; do
+		[ -f "$a" ] || continue
+		printf '%s  %s\n' "$(sha_of "$a")" "$a"
+	done
+  } ) > "$OUT/$BASE.sha256"
 
 say "$n artefact(s), 2 archive(s), checksums in $BASE.sha256"
 printf '  packaged into %s\n' "$OUT"

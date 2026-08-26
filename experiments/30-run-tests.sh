@@ -336,6 +336,34 @@ else
     run E21 OK "runtime      : host" \
         env APPDIR="$PWD/app_old" ./runtime-select --probe --host-dir "$PWD/goodhost"
 
+    # ---- the build-time strict-environment option -------------------------
+    #
+    # APPDIR is a convention this project does not own: an AppImage runtime
+    # exports it into every process it starts. It is kept by default for that
+    # reason, and src/cld-env.h has the argument in full.
+    #
+    # ⭐ A consumer who wants ONE spelling and no interop can have it, and gets
+    # it where the choice belongs: at build time, where whoever assembles the
+    # bundle knows whether an AppImage runtime is in the picture. A library
+    # cannot know that.
+    #
+    # ⛔ Two cases because one would not be a measurement. E87 alone would pass
+    # if the strict build were simply broken and found no root under any name.
+    gcc -O2 -DCLD_STRICT_ENV -Wall -Wextra -Wno-format-truncation -I/repo/src \
+        /repo/src/runtime-select.c -o runtime-select-strict -ldl \
+        2>"$BERR" || bfail runtime-select-strict
+
+    # E87: the strict build IGNORES APPDIR. The needle is the appdir line and
+    #      not the runtime line: "runtime : bundled" is also what a probe that
+    #      found nothing reports, so it cannot tell the two apart.
+    run E87 OK "appdir       : (unset)" \
+        env APPDIR="$PWD/app_old" ./runtime-select-strict --probe
+
+    # E88: and the same binary still works under this project's own name, so
+    #      E87 is APPDIR being ignored rather than the build being inert.
+    run E88 OK "appdir       : $PWD/app_old" \
+        env CROSS_LIBC_DLOPEN_ROOT="$PWD/app_old" ./runtime-select-strict --probe
+
     # ---- H. the version-binding trap, and the forwarders that close it ----
     #
     # T3.2 was blamed on glibc-vs-musl ABI differences for a long time. It is
@@ -394,9 +422,16 @@ else
     # shape this repository calls a silent pass.
     # ⚠ The build stays unconditional: cross-libc-dlopen.so is used by the
     # host-dependency cases further down, which do not need the trap.
+    # ⛔ CROSS_LIBC_DLOPEN=0 is stated rather than left unset. The feature is
+    # ON by default now, and this case measures version-compat.c's unversioned
+    # definitions sitting in the global lookup scope with NO dlopen
+    # interception in the process. Relying on unset to mean off would have
+    # turned this into a different measurement the day the default changed,
+    # silently, and it would still have printed 0.
     if [ "$condvar_versions" -ge 2 ]; then
         run E23 OK "probe_cond_init()=0" \
-            env LD_PRELOAD=/work/cross-libc-dlopen.so ./loader /work/verprobe_stripped.so probe_cond_init
+            env CROSS_LIBC_DLOPEN=0 LD_PRELOAD=/work/cross-libc-dlopen.so \
+                ./loader /work/verprobe_stripped.so probe_cond_init
     else
         echo "  E23    SKIPPED - it can only measure the fix where E22's trap"
         echo "         exists; without it the unstripped answer is already 0."
@@ -450,14 +485,33 @@ else
              *)                          echo "debug-alias-is-silent" ;;
          esac'
 
-    # E86: the ENABLE alias is gone, which is the one a consumer would feel.
-    #      Debug under its NEW name so the object still reports, the feature
-    #      asked for under the OLD name only, and the object says mode=0 in
-    #      its own words. ⚠ There is no marker file in this container, and
-    #      cross_libc_dlopen_mode() falls back to one, so the absent marker is
-    #      part of why this reads off rather than an accident of the alias.
-    run E86 OK "attempt bail: mode=0" \
-        env ANYLINUX_LIB_FOREIGN_DLOPEN=1 CROSS_LIBC_DLOPEN_DEBUG=1 \
+    # E86: the ENABLE alias is gone, and now that the feature is on by default
+    #      the way to show that is to try to TURN IT OFF with the old name.
+    #      A build that still read the alias would bail at mode=0 here.
+    run E86 OK "global-scope lib" \
+        env ANYLINUX_LIB_FOREIGN_DLOPEN=0 CROSS_LIBC_DLOPEN_DEBUG=1 \
+            LD_PRELOAD=/work/cross-libc-dlopen.so \
+            ./loader /work/verprobe.so probe_cond_init
+
+    # ---- on by default, and the off switch that makes the controls work ----
+    #
+    # ⭐ The point of the default. A consumer that preloads the object and asks
+    # for nothing else gets the feature. Before this, it got a run that did
+    # nothing and said nothing about why, unless it also shipped a marker file
+    # or set a variable.
+    #
+    # ⚠ CROSS_LIBC_DLOPEN_DEBUG is set only so the object reports what it did.
+    # It does not enable anything: E90 has it set too and reads mode=0.
+    run E89 OK "global-scope lib" \
+        env CROSS_LIBC_DLOPEN_DEBUG=1 LD_PRELOAD=/work/cross-libc-dlopen.so \
+            ./loader /work/verprobe.so probe_cond_init
+
+    # E90: and OFF is still reachable, which is what every A/B control in
+    #      experiments/40-appimage.sh depends on for its "feature off" arm.
+    #      ⛔ Without this, E89 would be a one-sided result: "it is on" means
+    #      nothing if it cannot be turned off.
+    run E90 OK "attempt bail: mode=0" \
+        env CROSS_LIBC_DLOPEN=0 CROSS_LIBC_DLOPEN_DEBUG=1 \
             LD_PRELOAD=/work/cross-libc-dlopen.so \
             ./loader /work/verprobe.so probe_cond_init
 

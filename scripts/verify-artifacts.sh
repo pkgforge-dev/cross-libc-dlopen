@@ -122,6 +122,10 @@ man=$DIR/build-manifest.json
 	printf '{\n'
 	printf '  "schema": "cross-libc-dlopen/build-manifest/1",\n'
 	printf '  "arch": "%s",\n' "$ARCH"
+	# Which build variant this is. "default" reads APPDIR as well as
+	# CROSS_LIBC_DLOPEN_ROOT; "strictenv" reads only the latter. A consumer
+	# holding an object has no other way to tell them apart.
+	printf '  "variant": "%s",\n' "${CLD_VARIANT:-default}"
 	printf '  "floor_glibc": "%s",\n' "$FLOOR"
 	printf '  "compiler": "%s",\n' "$(${CLD_CC:-cc} --version 2>/dev/null | head -1 | sed 's/"/\\"/g')"
 	printf '  "sources": {\n'

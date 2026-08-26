@@ -31,19 +31,22 @@ sha_of() {
 	fi
 }
 
-arches=""
+# ⚠ The build DIRECTORIES are not the architectures: build/x86_64-strictenv is
+# a variant of x86_64, not a third architecture. Every label below comes out of
+# the manifest, so a directory somebody renamed cannot mislabel a section.
+dirs=""
 for d in "$BUILDS"/*; do
 	[ -f "$d/build-manifest.json" ] || continue
-	arches="$arches $(basename "$d")"
+	dirs="$dirs $(basename "$d")"
 done
-[ -n "$arches" ] || { echo "release-notes: no build-manifest.json under $BUILDS" >&2; exit 2; }
+[ -n "$dirs" ] || { echo "release-notes: no build-manifest.json under $BUILDS" >&2; exit 2; }
 
-# The floor is a property of the build environment and every architecture is
-# built in the same one. If two manifests disagree, that is a finding and not
-# something to paper over with the first value.
+# The floor is a property of the build environment and every build here uses
+# the same one. If two manifests disagree, that is a finding and not something
+# to paper over with the first value.
 floor=""
-for a in $arches; do
-	f=$(jq -r '.floor_glibc' "$BUILDS/$a/build-manifest.json")
+for d in $dirs; do
+	f=$(jq -r '.floor_glibc' "$BUILDS/$d/build-manifest.json")
 	if [ -z "$floor" ]; then floor=$f
 	elif [ "$floor" != "$f" ]; then
 		echo "release-notes: manifests disagree about the floor: $floor and $f" >&2
@@ -96,9 +99,15 @@ printf '### What each artefact needs\n\n'
 printf 'Read from `build-manifest.json`, which is built from the objects\n'
 printf 'themselves and ships inside both archives.\n\n'
 
-for a in $arches; do
-	m=$BUILDS/$a/build-manifest.json
-	printf '#### %s\n\n' "$a"
+for d in $dirs; do
+	m=$BUILDS/$d/build-manifest.json
+	a=$(jq -r '.arch' "$m")
+	v=$(jq -r '.variant // "default"' "$m")
+	if [ "$v" = default ]; then
+		printf '#### %s\n\n' "$a"
+	else
+		printf '#### %s, `%s` variant\n\n' "$a" "$v"
+	fi
 	printf '| artefact | max `GLIBC_` | SONAME | entry points | sha256 |\n'
 	printf '|---|---|---|---|---|\n'
 	jq -r '.artifacts | to_entries[]
@@ -110,15 +119,18 @@ done
 # ----------------------------------------------------------------- the assets --
 printf '### Assets\n\n'
 printf 'Each artefact ships three ways: loose, in the `.tar`, and in the `.zip`.\n'
-printf '⛔ Neither archive contains a directory, so an extract drops the files\n'
-printf 'where you are standing.\n\n'
+printf '⛔ No archive contains a directory, so an extract drops the files where\n'
+printf 'you are standing.\n\n'
+printf '⭐ **Two variants.** The default reads `CROSS_LIBC_DLOPEN_ROOT` and also\n'
+printf '`APPDIR`, which an AppImage runtime exports on its own. The `strictenv`\n'
+printf 'assets read `CROSS_LIBC_DLOPEN_ROOT` and nothing else: take those if you\n'
+printf 'want one spelling and no interop. All five objects differ between the\n'
+printf 'two, so the variant ships as archives rather than loose files.\n\n'
 printf '| asset | sha256 |\n|---|---|\n'
-for a in $arches; do
-	for f in "$DIST/$a-"* "$DIST/cross-libc-dlopen-$a.tar" "$DIST/cross-libc-dlopen-$a.zip"; do
-		[ -f "$f" ] || continue
-		case "$f" in *.sha256) continue ;; esac
-		printf '| `%s` | `%s` |\n' "$(basename "$f")" "$(sha_of "$f")"
-	done
+for f in "$DIST"/*; do
+	[ -f "$f" ] || continue
+	case "$f" in *.sha256) continue ;; esac
+	printf '| `%s` | `%s` |\n' "$(basename "$f")" "$(sha_of "$f")"
 done
 printf '\n'
 printf '⚠ The artefact rows above come from the manifest. The archive rows are\n'

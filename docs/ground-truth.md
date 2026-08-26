@@ -49,7 +49,7 @@ is DwarFS, not squashfs.
 | Legacy split libs bundled? | **Yes**: `libpthread.so.0`, `libdl.so.2`, `librt.so.1`, `libutil.so.1`, `libresolv.so.2`. `libanl.so.1` is **absent** |
 | Are they real libraries? | **No, they are post-2.34 stubs.** Measured export counts: libpthread **13**, libdl **4**, librt **6**, libutil **2** |
 | `.preload` contents | `path-mapping.so`, `anylinux.so`, `cross-libc-dlopen.so`, in that order |
-| `.foreign-dlopen-enabled` | present, 0 bytes, so the feature is on by default |
+| `.foreign-dlopen-enabled` | present, 0 bytes. It was the opt-in marker quick-sharun writes; this project no longer reads it, and the feature is on by default whenever the object is preloaded |
 | Bundled `cross-libc-dlopen.c` | **byte-identical** to upstream `main`, 24 785 bytes |
 | Bundled libraries | 51 sonames, plus `gconv/`, `locale/` and `vkmark/` subdirectories |
 | gconv bundled? | **Yes**, so the Dolphin issue #63 lesson has been applied |
