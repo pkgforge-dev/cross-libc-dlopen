@@ -801,11 +801,11 @@ musl-built object, and to an object this project's own rewriter has stripped.
 one (section 7.5); it is shown here only because two independent vendor blobs
 being built this way is the point.
 
-[`tools/trap_users.py`](../tools/trap_users.py) intersects an object's imports with
+[`tools/manual/trap_users.py`](../tools/manual/trap_users.py) intersects an object's imports with
 the traps of the libc it will resolve against:
 
 ```
-$ python3 tools/trap_users.py $APPDIR/lib/libc.so.6 /usr/lib/wsl/lib/libdxcore.so
+$ python3 tools/manual/trap_users.py $APPDIR/lib/libc.so.6 /usr/lib/wsl/lib/libdxcore.so
 libc .../libc.so.6: 38 trap(s), 191 benign re-versioning(s)
 
 == libdxcore.so

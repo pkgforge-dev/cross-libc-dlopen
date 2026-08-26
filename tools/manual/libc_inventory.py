@@ -15,9 +15,9 @@ Used three ways:
 
 No third-party modules; ELF parsing comes from elfsym.py beside this file.
 
-    python3 tools/libc_inventory.py scan   <dir> [--name TAG]      -> JSON
-    python3 tools/libc_inventory.py diff   <old.json> <new.json>
-    python3 tools/libc_inventory.py matrix <dir-of-dirs>
+    python3 tools/manual/libc_inventory.py scan   <dir> [--name TAG]      -> JSON
+    python3 tools/manual/libc_inventory.py diff   <old.json> <new.json>
+    python3 tools/manual/libc_inventory.py matrix <dir-of-dirs>
 """
 import argparse
 import json

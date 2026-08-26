@@ -7,9 +7,40 @@ is a reading.
 
 ## The rule
 
-Short sentences. No em dashes. No marketing adjectives. No emoji beyond the
-three below. Present tense. Every claim backed by a command a reader can run or
-a path a reader can open.
+Short sentences. No dashes as punctuation, in either spelling. No marketing
+adjectives. No emoji beyond the three below. Present tense. Every claim backed
+by a command a reader can run or a path a reader can open.
+
+---
+
+## Dashes, and why `--` is not the fix
+
+⛔ **No em dash.** ⛔ **And `--` is not what replaces it.** Substituting one
+dash for another keeps the sentence that wanted a dash and makes it read worse:
+a reader meets what looks like a subtraction in the middle of a clause, and
+`--` is also how every command-line flag in this repository begins, so the page
+now has two meanings for one token.
+
+⭐ **Rewrite the sentence.** A dash is doing one of four jobs, and each has a
+mark that is not a dash:
+
+| what the dash was doing | what to use instead |
+|---|---|
+| joining two independent clauses | a full stop. Two sentences are almost always better |
+| introducing an explanation, a list or a consequence | a colon |
+| wrapping an aside | a pair of commas, or parentheses |
+| trailing an afterthought | delete it, or promote it to its own sentence |
+
+⚠ **`--` as itself is fine and is not what this is about.** A flag
+(`--library-path`), a literal inside a code block, a shell comment, and a
+horizontal rule are all `--` or `---` doing their own job. The rule is about
+prose.
+
+⚠ The ratchet is `sh scripts/check-prose-dashes.sh`, and it is a ratchet rather
+than a gate: the count may fall and may not rise. The tree it was written
+against still carries several hundred, `HISTORY/` is excluded because it
+records original wording, and a single change that rewrote them all would be a
+change nobody could review.
 
 Write for an agent with no memory of the session that wrote the file, and for a
 person looking for one fact.

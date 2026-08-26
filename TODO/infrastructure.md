@@ -83,17 +83,18 @@ Build, CI and orchestration.
 
 - **Source.** The port brief, task 0.1.
 - **Category** infrastructure · **Priority** low · **Effort** low ·
-  **Status** partially done
+  **Status** ⭐ **DONE**
 - **Problem.** ⭐ A test no runner runs is a test that has already stopped
   working and nobody has noticed.
 - **Premise.** Measured, by grep over the tree.
   - `tests/allocprobe.c` -- now compiled and smoke-run by the `orphans` job.
   - `tests/icd-harness.c` -- built by `42-build-floor.sh` and invoked by nothing.
-    Now compiled and smoke-run by the same job. ⚠ **Compiling is not running
-    it against an ICD**, which is what it is for.
-  - `tools/libc_inventory.py` -- what produced `inventories/*.json`. Not run by
+    Now compiled and smoke-run by the same job, against a real lavapipe ICD.
+    ⚠ **Compiling is not running it against an ICD**, and the `orphans` job
+    now fails rather than passing when no ICD is present.
+  - `tools/manual/libc_inventory.py` -- what produced `inventories/*.json`. Not run by
     anything. It is a regeneration tool, not a test.
-  - `tools/trap_users.py` -- not run by anything.
+  - `tools/manual/trap_users.py` -- not run by anything.
 - **Approach.** Give `icd-harness` a real case in the AppImage suite, or move it
   beside the probe it duplicates. Move the two Python tools to `tools/manual/`
   with one line each saying what they are for.
@@ -102,6 +103,28 @@ Build, CI and orchestration.
   document pointing at nothing.
 - **Prove.** `git grep -l` for each name resolves to either a CI job or a
   `tools/manual/README.md` line.
+
+### Closure
+
+The two probes were already covered by the `orphans` job. The two Python tools
+moved to [`../tools/manual/`](../tools/manual/README.md), which states what each
+is for and who cites it, and every citation moved with them in the same change.
+
+⭐ **The citations are now checked rather than remembered.**
+`sh scripts/check-drift.sh` fails when a document cites a repository path that
+does not exist, which is exactly the failure mode the "do not delete" rule
+above was guarding against by hand. It found both stale citations during this
+move, before anything was pushed.
+
+```
+$ sh scripts/check-drift.sh
+== cited paths ==
+  every cited path exists (75 checked)
+```
+
+⚠ **What is still not covered:** neither Python tool has been re-run since the
+move, so "it still works" is UNVERIFIED. The check proves the path resolves,
+not that the tool produces correct output.
 
 ---
 

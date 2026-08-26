@@ -25,7 +25,7 @@ and loaded by CUDA and by Mesa's d3d12 driver respectively -- have no
 
 Usage
 -----
-    python3 tools/trap_users.py <libc.so.6> <object>...
+    python3 tools/manual/trap_users.py <libc.so.6> <object>...
 
 Exit 0 always: this is a survey, not a gate.  `version_traps.py --check` is the
 gate, and it runs against the libc rather than against its callers.
