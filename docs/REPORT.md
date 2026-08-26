@@ -2563,13 +2563,49 @@ those numbers exist to support does hold: all four are single digits, so they
 are stubs. The soname total is the same shape of question, measured at 49
 distinct sonames over 55 regular files and 35 symlinks.
 
-⛔ **One thing is NOT resolved here, and it is a decision rather than a defect.**
-The A/B's "as shipped" arm used to be upstream's own shim. It is now a build of
-this project, older than the working tree, still carrying the `ANYLINUX_*`
-aliases this branch removed. E30, E37a and E43a predict that arm fails; whether
-it still does is a question about what those cases now measure, and the answer
-changes what the suite claims rather than whether it runs. The next completed
-run is the evidence, and a changed verdict there is a finding.
+⛔ **The A/B's control arm no longer contrasts, and that IS the finding.**
+
+The "as shipped" arm used to be upstream's own shim, which could not load a
+host driver. It is now a build of this project, older than the working tree,
+still carrying the `ANYLINUX_*` aliases this branch removed. E30 and E37a are
+the controls that predict that arm FAILS, and they are what make the patched
+arm a measurement rather than a coincidence. Run
+[32953461170](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32953461170),
+x86-64, the suite's first completed run:
+
+```
+E30    MISMATCH predicted=OK    DEVICES  (  device[0] : llvmpipe (LLVM 20.1.8, 256 bits))
+E37a   MISMATCH predicted=OK    Selected GPU 0: llvmpipe (LLVM 20.1.8, 256 bits), type: Cpu
+```
+
+Both arms now work, so neither case can distinguish them. ⭐ **The right
+response is not to flip the predictions.** A control that has stopped
+contrasting has stopped measuring, and rewriting it to expect success would
+convert two controls into two cases that pass whatever the shim does, which is
+the exact shape this repository calls a silent pass.
+
+⚠ The honest control for "the feature is absent" is an AppDir with NO
+dispatcher in `.preload`, not an AppDir carrying somebody else's. Choosing
+that, or something else, changes what the suite claims about upstream and is a
+decision rather than a repair. It is left open deliberately.
+
+**Two further MISMATCHes, and one of them could not say why.** E33 and E34
+reported `feature off: 3 / 0 load` and `feature on : 0 / 0 load` on the musl
+host and the same zero total on the glibc one. A total of 0 means the
+feature-ON corpus run produced no verdict line at all, so both cases were
+scored against nothing. ⛔ **Its stderr went to `/dev/null`**, which is T-13's
+shape for the third time in this tree, and the reason was in the stream that
+had been discarded. It is captured now and printed when, and only when, the
+run produces no verdict line.
+
+E49 went MISMATCH on aarch64 with one truncated line of preamble, for the same
+family of reason: `experiments/40-appimage.sh`'s `run` printed a 96-column
+summary of a failure where `30-run-tests.sh`'s has printed the whole captured
+output since T-13 closed. Both harnesses do now. ⛔ **E50's assertion is left
+alone until E49 can be read.** It requires exactly two live musl-against-glibc
+ABI hazards and aarch64 measured zero, which would be a genuine architectural
+difference worth recording, except that E49 failed in the same stage and a
+hazard count taken from a crossing that did not happen measures nothing.
 ---
 
 ## 10. Measured versus assumed

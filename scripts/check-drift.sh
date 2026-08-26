@@ -293,6 +293,54 @@ else
 	say "$have, at the pin. It may fall, and a fall lowers the pin with it."
 fi
 
+# ------------------------------- 5. INDEX agrees with the entries -----------
+head_ "TODO/INDEX.md against the entries"
+
+# ⛔ THIS CHECK EXISTS BECAUSE IT DRIFTED. docs/AGENTS.md scenario 10 says a
+# session reconciles INDEX.md's counts on the way out. Two entries closed in
+# place and declared themselves DONE, and INDEX went on listing one as open and
+# the other as partially done for the rest of the branch. A list that disagrees
+# with the things it lists is worse than no list, because it is the thing a
+# reader checks FIRST and the entry is the thing they check last.
+#
+# The entry is the authority: it is where the acceptance command was run and
+# the output recorded. INDEX is a view of it.
+#
+# ⚠ An entry's status may carry a trailing clause, "partially done -- see
+# somewhere". Everything from the first dash on is a pointer, not a status.
+badx=0
+entries=$(git ls-files 'TODO/*.md' |
+          grep -vE 'TODO/(INDEX|PROGRESS|RULES)\.md')
+# shellcheck disable=SC2086
+awk '
+	/^## T-[0-9]+/            { id = $2; next }
+	/\*\*Status\*\*/ && id != "" {
+		s = $0
+		sub(/.*\*\*Status\*\*[ ]*/, "", s)
+		gsub(/[⭐*]/, "", s)
+		sub(/ -- .*/, "", s)
+		gsub(/^[ ]+|[ ]+$/, "", s)
+		print id "\t" tolower(s)
+		id = ""
+	}' $entries > /tmp/cd_entry_status.txt
+
+while IFS="$(printf '\t')" read -r id st; do
+	[ -n "$id" ] || continue
+	row=$(grep -E "^\| $id \|" TODO/INDEX.md | head -1)
+	if [ -z "$row" ]; then
+		bad "$id has an entry and no row in TODO/INDEX.md"; badx=1; continue
+	fi
+	idx=$(printf '%s' "$row" | awk -F'|' '{print $6}' |
+	      sed 's/^ *//; s/ *$//' | tr 'A-Z' 'a-z')
+	if [ "$idx" != "$st" ]; then
+		bad "$id: the entry says '$st', TODO/INDEX.md says '$idx'"
+		say "       The entry is the authority. It is where the acceptance"
+		say "       command was run. Fix the row, not the entry."
+		badx=1
+	fi
+done < /tmp/cd_entry_status.txt
+[ "$badx" = 0 ] && say "every entry's status matches its row ($(wc -l < /tmp/cd_entry_status.txt | tr -d ' ') checked)"
+
 printf '\n'
 if [ "$fail" = 0 ]; then
 	printf '  the documents and the tree agree\n'

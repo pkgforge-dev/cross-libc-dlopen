@@ -167,6 +167,19 @@ run() {                        # run <id> <expect: OK|FAIL> <needle> <cmd...>
     fi
     printf '  %-6s %-8s predicted=%-4s  %s\n' "$id" "$verdict" "$want" \
         "$(summarise "$out" | cut -c1-96)"
+    # ⛔ On a MISMATCH, the WHOLE captured output, not a 96-column summary of
+    # it. This is T-13's shape, which experiments/30-run-tests.sh has carried
+    # since that entry closed. THIS harness did not, and the gap was found the
+    # way the original was: E49 went MISMATCH on the ARM runner and the log
+    # held one truncated line, "guest ... built by musl; host built by glibc",
+    # which is the preamble and not the failure. summarise() picks ONE line for
+    # the column, so on a case that fails loudly it can show a neutral one.
+    # ⚠ This runs only after the case has already been scored, so it changes no
+    # assertion.
+    if [ "$verdict" = MISMATCH ]; then
+        printf '%s\n' "$out" | sed 's/^/           | /'
+        printf '           | (exit %s, wanted %s, needle: %s)\n' "$rc" "$want" "$needle"
+    fi
 }
 
 skip() { SKIP=$((SKIP+1)); printf '  %-6s %-8s %s\n' "$1" "SKIPPED" "$2"; }
@@ -371,12 +384,30 @@ else
 # Where the host actually keeps its libraries: the directory the ICD lives in,
 # not a guess. Debian puts them under /usr/lib/<triplet>, Alpine in /usr/lib.
 CORPUS=$(dirname "$LVP")
-under 1 /w/build/corpus "$CORPUS" 2>/dev/null > /tmp/corpus_on.txt
-under 0 /w/build/corpus "$CORPUS" 2>/dev/null > /tmp/corpus_off.txt
+# ⛔ STDERR TO A FILE, NOT TO /dev/null. This was `2>/dev/null` on both lines,
+# and it is T-13's shape a third time: when the feature-ON run produced nothing
+# at all, $total came out 0, E33 and E34 reported "0 / 0 load", and the reason
+# was in the stream that had been discarded. The suite's first ever completed
+# run on the new AppImage said exactly that on two hosts and could not say why.
+# ⚠ The redirect is still there because a driver probe writes chatter to stderr
+# on every host and inlining it would bury the table. It is now KEPT and
+# printed only when the run produced no verdict line, which is the only case in
+# which it is the answer.
+under 1 /w/build/corpus "$CORPUS" 2>/tmp/corpus_on.err  > /tmp/corpus_on.txt
+under 0 /w/build/corpus "$CORPUS" 2>/tmp/corpus_off.err > /tmp/corpus_off.txt
 total=$(grep -cE '^(OK|FAIL)' /tmp/corpus_on.txt)
 off=$(grep -c '^OK' /tmp/corpus_off.txt)
 on=$(grep -c '^OK' /tmp/corpus_on.txt)
 echo "  corpus directory: $CORPUS  ($total libraries)"
+if [ "$total" -eq 0 ]; then
+    echo "  ⛔ the feature-ON corpus run produced no OK or FAIL line at all, so"
+    echo "     the total below is 0 and E33/E34 are scored against nothing."
+    echo "     Its stderr, which used to be discarded:"
+    sed 's/^/       | /' /tmp/corpus_on.err | head -20
+    echo "     and the feature-OFF run, for contrast:"
+    printf '       | %s OK line(s)\n' "$off"
+    sed 's/^/       | /' /tmp/corpus_off.err | head -5
+fi
 
 # The verdicts are computed OUTSIDE a command substitution. Incrementing PASS
 if [ "$HOSTLIBC" = musl ]; then
