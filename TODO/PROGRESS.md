@@ -136,7 +136,7 @@ block before assuming it is yours to do.
 
 ## What this session did
 
-Every claim below has its measurement in `docs/REPORT.md` 9.14 through 9.17.
+Every claim below has its measurement in `docs/REPORT.md` 9.14 through 9.18.
 
 **Three deep review passes**, each with a different question.
 
