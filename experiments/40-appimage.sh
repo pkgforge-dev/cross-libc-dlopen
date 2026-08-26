@@ -2,8 +2,9 @@
 # The end-to-end suite: a real AppImage, a real host driver, on a host whose
 # libc is not the AppImage's.  Runs INSIDE the host container.
 #
-#   /w/AppDir   the extracted demo AppImage (upstream's foreign-dlopen.so kept
-#               beside it as foreign-dlopen.upstream.so)
+#   /w/AppDir   the extracted demo AppImage. The shipped dispatcher is kept
+#               beside it as <slot>.upstream.so, and 41-extract.sh writes the
+#               slot's name to .cld-slot because upstream has renamed it once
 #   /w/build    cross-libc-dlopen.so and the test binaries, built on the glibc
 #               FLOOR so they only need old symbols
 #
@@ -15,6 +16,19 @@ set -u
 
 APPDIR=/w/AppDir
 LP="$APPDIR/lib"
+# ⛔ THE DISPATCHER SLOT IS DERIVED, NOT SPELLED. 41-extract.sh finds it in the
+# extracted AppDir and writes the name here, because upstream renamed it:
+# lib/foreign-dlopen.so up to the build hashed 712766f8, lib/cross-libc-dlopen.so
+# in the one pinned now. Hardcoding either spelling makes the A/B a no-op
+# against the other, and a no-op A/B reports both arms agreeing. 9.17.
+if [ ! -f "$APPDIR/.cld-slot" ]; then
+    echo "  FATAL: $APPDIR/.cld-slot is missing, so the dispatcher slot is unknown."
+    echo "  Delete .tmp/AppDir and re-run so 41-extract.sh can find it."
+    exit 2
+fi
+SLOT=$(cat "$APPDIR/.cld-slot")
+DISPATCH="$LP/$SLOT"
+DISPATCH_UPSTREAM="$LP/$SLOT.upstream.so"
 # ⚠ The bundled loader's name and musl's soname carry the architecture.
 # Derived from uname -m, the same way scripts/suite-lib.sh derives the asset
 # suffix, so this stage runs on the aarch64 AppImage as well as the x86-64 one.
@@ -41,17 +55,17 @@ TIMINGS=/tmp/cld-timings.tsv
 GLPATH=""
 XA='-screen 0 1024x768x24 +extension GLX +extension RANDR +render' 
 
-# 41-extract.sh keeps upstream's shim beside the AppDir at extraction time. If it
-# is missing, the AppDir has been used before and lib/foreign-dlopen.so is
+# 41-extract.sh keeps the shipped dispatcher beside the AppDir at extraction
+# time. If it is missing, the AppDir has been used before and the slot holds
 # whatever the last run left there -- copying that as "upstream" would quietly
 # run the entire A/B against the patched build twice and report it as a pass.
-if [ ! -f "$LP/foreign-dlopen.upstream.so" ] || [ ! -f "$APPDIR/.preload.shipped" ]; then
-    echo "  FATAL: $LP/foreign-dlopen.upstream.so or $APPDIR/.preload.shipped is missing."
+if [ ! -f "$DISPATCH_UPSTREAM" ] || [ ! -f "$APPDIR/.preload.baseline" ]; then
+    echo "  FATAL: $DISPATCH_UPSTREAM or $APPDIR/.preload.baseline is missing."
     echo "  The AppDir is stale. Delete .tmp/AppDir and re-run so extraction can"
-    echo "  preserve BOTH the shipped shim and the shipped .preload; without the"
-    echo "  first the 'as shipped' cases silently measure the patched build, and"
-    echo "  without the second the OpenGL cases that must run with NO shim would"
-    echo "  run with whatever the last run left in .preload."
+    echo "  preserve BOTH the shipped dispatcher and the .preload baseline;"
+    echo "  without the first the 'as shipped' cases silently measure the"
+    echo "  patched build, and without the second the OpenGL cases that must"
+    echo "  run with NO shim would run with whatever was left in .preload."
     exit 2
 fi
 
@@ -68,9 +82,13 @@ fi
 #
 # The guard above catches a missing baseline. This catches a dirty one, which
 # is the more common and much quieter of the two.
+# ⚠ .preload.BASELINE, not .preload.shipped. The pinned AppImage ships this
+# project's own forwarding shims in its .preload, so restoring the shipped list
+# would restore them and every absence case would measure their presence.
+# 41-extract.sh derives the baseline and prints what it took out. 9.17.
 reset_appdir() {
-    cp "$APPDIR/.preload.shipped" "$APPDIR/.preload"
-    rm -f "$LP/gl-fwd.so" "$LP/egl-fwd.so"
+    cp "$APPDIR/.preload.baseline" "$APPDIR/.preload"
+    rm -f "$LP/gl-fwd.so" "$LP/egl-fwd.so" "$LP/gles-fwd.so"
     # Probes and demo binaries that section J installs, and anything a hand-run
     # left beside them. Only names this suite creates are removed.
     for p in glprobe eglprobe; do
@@ -86,12 +104,14 @@ if [ -n "$stray" ]; then
 fi
 reset_appdir
 
-# ONE NAME HERE IS NOT THIS PROJECT'S, and renaming it would turn E30, E37a
-# and E43a -- the controls the whole A/B rests on -- into silent passes:
+# ONE PATH HERE IS NOT SPELLED BY THIS PROJECT, and getting it wrong turns
+# E30, E37a and E43a -- the controls the whole A/B rests on -- into silent
+# passes:
 #
-#   $LP/foreign-dlopen.so     the slot quick-sharun writes and .preload names.
-#                             Our build is copied INTO it; the path stays
-#                             upstream's because .preload says so.
+#   $DISPATCH   the slot quick-sharun writes and .preload names. Our build is
+#               copied INTO it; the name is whatever .preload says, which is
+#               why 41-extract.sh reads it out of the AppDir rather than
+#               either side spelling it. Upstream has changed it once already.
 #
 # ⚠ .foreign-dlopen-enabled USED TO BE THE SECOND, and is not any more. It is
 # quick-sharun's opt-in marker and it is still present in the AppDir, but
@@ -107,8 +127,8 @@ reset_appdir
 # measured nothing.
 use_preload() {                # upstream | patched
     case "$1" in
-        upstream) cp "$LP/foreign-dlopen.upstream.so" "$LP/foreign-dlopen.so" ;;
-        patched)  cp /w/build/cross-libc-dlopen.so       "$LP/foreign-dlopen.so" ;;
+        upstream) cp "$DISPATCH_UPSTREAM" "$DISPATCH" ;;
+        patched)  cp /w/build/cross-libc-dlopen.so       "$DISPATCH" ;;
     esac
 }
 
@@ -164,7 +184,7 @@ verdict() {                    # verdict <id> <0|1 ok> <text>
 under() {                      # under <0|1> <prog> [args...]
     mode="$1"; shift
     env CROSS_LIBC_DLOPEN="$mode" ANYLINUX_LIB_FOREIGN_DLOPEN="$mode" APPDIR="$APPDIR" \
-        "$LD" --library-path "$LP" --preload "$LP/foreign-dlopen.so" "$@"
+        "$LD" --library-path "$LP" --preload "$DISPATCH" "$@"
 }
 
 # The same, plus one host directory appended AFTER the bundled ones, for the
@@ -177,7 +197,7 @@ under_at() {                   # under_at <0|1> <extra-dirs> <prog> [args...]
     mode="$1"; extra="$2"; shift 2
     env CROSS_LIBC_DLOPEN="$mode" ANYLINUX_LIB_FOREIGN_DLOPEN="$mode" APPDIR="$APPDIR" \
         "$LD" --library-path "$LP${extra:+:$extra}" \
-        --preload "$LP/foreign-dlopen.so" "$@"
+        --preload "$DISPATCH" "$@"
 }
 
 # vkprobe reduced to one word, because "it did not work" arrives in three
@@ -327,7 +347,7 @@ else
 # than the bundled glibc, nothing can be missing, so the right number is zero.
 rm -f "$XDG_RUNTIME_DIR"/.cross-libc-dlopen-* 2>/dev/null
 trace=$(env CROSS_LIBC_DLOPEN=1 ANYLINUX_LIB_FOREIGN_DLOPEN=1 APPDIR="$APPDIR" CROSS_LIBC_DLOPEN_DEBUG=1 ANYLINUX_LIB_DEBUG=1 \
-        "$LD" --library-path "$LP" --preload "$LP/foreign-dlopen.so" \
+        "$LD" --library-path "$LP" --preload "$DISPATCH" \
         /w/build/vkprobe 2>&1)
 rw=$(printf '%s' "$trace" | grep -c 'cross-libc-dlopen: rewriting')
 kept=$(printf '%s' "$trace" | grep -c 'needs no rewrite')
@@ -402,7 +422,7 @@ else
 
     # E40: the whole thing stated the way a user would.
     #
-    # Replace exactly one file inside the AppDir, lib/foreign-dlopen.so, and run
+    # Replace exactly one file inside the AppDir, the dispatcher slot, and run
     # it. No CROSS_LIBC_DLOPEN_* variables and no VK_DRIVER_FILES: the feature
     # is ON BY DEFAULT once the object is preloaded, so it turns itself on and
     # the Vulkan loader finds the host's ICD by itself.
@@ -503,7 +523,7 @@ else
     # arriving from a vendor binary instead of a synthetic probe.
     rm -f "$XDG_RUNTIME_DIR"/.cross-libc-dlopen-* 2>/dev/null
     ctrace=$(env CROSS_LIBC_DLOPEN=1 ANYLINUX_LIB_FOREIGN_DLOPEN=1 APPDIR="$APPDIR" CROSS_LIBC_DLOPEN_DEBUG=1 ANYLINUX_LIB_DEBUG=1 \
-             "$LD" --library-path "$LP:$WSLLIB" --preload "$LP/foreign-dlopen.so" \
+             "$LD" --library-path "$LP:$WSLLIB" --preload "$DISPATCH" \
              /w/build/cudaprobe "$CUDA" 2>&1)
     crw=$(printf '%s' "$ctrace" | grep -c 'cross-libc-dlopen: rewriting')
     ckept=$(printf '%s' "$ctrace" | grep -c 'needs no rewrite')
@@ -519,12 +539,12 @@ else
     use_preload upstream
     run E43a FAIL "BINDINGS MIXED" env LD_BIND_NOW=1 CROSS_LIBC_DLOPEN=1 ANYLINUX_LIB_FOREIGN_DLOPEN=1 \
         APPDIR="$APPDIR" "$LD" --library-path "$LP:$WSLLIB" \
-        --preload "$LP/foreign-dlopen.so" \
+        --preload "$DISPATCH" \
         /w/build/bindprobe "$CUDA" --init cuInit $CONDS
     use_preload patched
     run E43  OK "BINDINGS UNIFORM" env LD_BIND_NOW=1 CROSS_LIBC_DLOPEN=1 ANYLINUX_LIB_FOREIGN_DLOPEN=1 \
         APPDIR="$APPDIR" "$LD" --library-path "$LP:$WSLLIB" \
-        --preload "$LP/foreign-dlopen.so" \
+        --preload "$DISPATCH" \
         /w/build/bindprobe "$CUDA" --init cuInit $CONDS
 
     # E44: the discovery gap, with nothing but the AppImage's own library path.
@@ -787,11 +807,17 @@ fi
 echo "  host GL stack: $GLHOST$([ $GLHOST = classic ] && echo ' (no libGLX_<vendor>.so.0 anywhere)')"
 
 # The .preload file drives which shims the AppRun loads. Restore it from the
-# copy 41-extract.sh kept, so a case whose whole point is the shim's ABSENCE
-# cannot silently run with it present.
+# BASELINE 41-extract.sh derived, so a case whose whole point is the shim's
+# ABSENCE cannot silently run with it present.
+#
+# ⛔ Not from .preload.shipped. The pinned AppImage names gl-fwd.so, egl-fwd.so
+# and gles-fwd.so in its own .preload, so restoring the shipped list would put
+# upstream's copy of the very shim under test back into every arm, including
+# the ones that assert it is not there. Those arms would then append a
+# duplicate line and pass. 41-extract.sh prints what the baseline drops. 9.17.
 use_gl_shims() {               # use_gl_shims [gl] [egl]
-    cp "$APPDIR/.preload.shipped" "$APPDIR/.preload"
-    rm -f "$LP/gl-fwd.so" "$LP/egl-fwd.so"
+    cp "$APPDIR/.preload.baseline" "$APPDIR/.preload"
+    rm -f "$LP/gl-fwd.so" "$LP/egl-fwd.so" "$LP/gles-fwd.so"
     for s in "$@"; do
         case "$s" in
             gl)  cp /w/build/gl-fwd.so  "$LP/gl-fwd.so";  echo gl-fwd.so  >> "$APPDIR/.preload" ;;
@@ -1078,7 +1104,7 @@ else
     #      would produce: E74b is the same command after a GL call.
     use_gl_shims gl egl
     vkout=$(env CROSS_LIBC_DLOPEN=1 ANYLINUX_LIB_FOREIGN_DLOPEN=1 CROSS_LIBC_DLOPEN_DEBUG=1 ANYLINUX_LIB_DEBUG=1 APPDIR="$APPDIR" \
-            "$LD" --library-path "$LP" --preload "$LP/foreign-dlopen.so $LP/gl-fwd.so $LP/egl-fwd.so" \
+            "$LD" --library-path "$LP" --preload "$DISPATCH $LP/gl-fwd.so $LP/egl-fwd.so" \
             /w/build/vkprobe 2>&1)
     if printf '%s' "$vkout" | grep -q 'entry points resolved'; then
         verdict E74 0 "a Vulkan-only run still resolved the GL stack"

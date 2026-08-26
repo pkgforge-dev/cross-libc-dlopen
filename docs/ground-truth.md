@@ -43,24 +43,25 @@ blocks `libX11.so.6` and `libdbus-1.so.3`. See REPORT.md section 5.3.
 10 736 056 bytes. Extracted with `--appimage-extract`; the embedded filesystem
 is DwarFS, not squashfs.
 
-⛔ **That hash is not what the suite pins any more, and this table has not been
-re-measured against what it does pin.** The upstream release is a mutable tag
-and the asset was replaced; the build the suite now runs is a different size.
-⚠ Everything below is UNVERIFIED against it until a completed AppImage run
-says otherwise. The hash above is left as written because it names the binary
-these answers were actually taken from, which is the only thing that makes
-them checkable. [`REPORT.md`](REPORT.md) 9.15 has the policy and the new pins.
+⛔ **That hash is not what the suite pins any more.** The upstream release is a
+mutable tag and the asset was replaced. The hash above is left as written
+because it names the binary these answers were taken from, which is the only
+thing that makes them checkable, and the **verdict** column below says what
+each row is against the build the suite pins today.
+[`REPORT.md`](REPORT.md) 9.15 has the pin policy and 9.17 has the
+re-measurement, including why two rows are UNVERIFIED rather than corrected.
 
-| Question | Answer |
-|---|---|
-| **Bundled glibc version** | **2.44**, from `ld.so (GNU libc) stable release version 2.44` |
-| Legacy split libs bundled? | **Yes**: `libpthread.so.0`, `libdl.so.2`, `librt.so.1`, `libutil.so.1`, `libresolv.so.2`. `libanl.so.1` is **absent** |
-| Are they real libraries? | **No, they are post-2.34 stubs.** Measured export counts: libpthread **13**, libdl **4**, librt **6**, libutil **2** |
-| `.preload` contents | `path-mapping.so`, `anylinux.so`, `cross-libc-dlopen.so`, in that order |
-| `.foreign-dlopen-enabled` | present, 0 bytes. It was the opt-in marker quick-sharun writes; this project no longer reads it, and the feature is on by default whenever the object is preloaded |
-| Bundled `cross-libc-dlopen.c` | **byte-identical** to upstream `main`, 24 785 bytes |
-| Bundled libraries | 51 sonames, plus `gconv/`, `locale/` and `vkmark/` subdirectories |
-| gconv bundled? | **Yes**, so the Dolphin issue #63 lesson has been applied |
+| Question | Answer | against the build pinned today |
+|---|---|---|
+| **Bundled glibc version** | **2.44**, from `ld.so (GNU libc) stable release version 2.44` | unchanged |
+| Legacy split libs bundled? | **Yes**: `libpthread.so.0`, `libdl.so.2`, `librt.so.1`, `libutil.so.1`, `libresolv.so.2`. `libanl.so.1` is **absent** | unchanged |
+| Are they real libraries? | **No, they are post-2.34 stubs.** Measured export counts: libpthread **13**, libdl **4**, librt **6**, libutil **2** | ⚠ UNVERIFIED. No counting method reproduces these four on the new binary and the old one is gone, so method and artefact cannot be separated. The stub claim holds |
+| `.preload` contents | `path-mapping.so`, `anylinux.so`, `cross-libc-dlopen.so`, in that order | ⛔ CHANGED. Three more entries, and they are this project's own forwarding shims |
+| `.foreign-dlopen-enabled` | present, 0 bytes. It was the opt-in marker quick-sharun writes; this project no longer reads it, and the feature is on by default whenever the object is preloaded | unchanged |
+| Bundled `cross-libc-dlopen.c` | **byte-identical** to upstream `main`, 24 785 bytes | ⛔ GONE. No such file ships now |
+| Bundled libraries | 51 sonames, plus `gconv/`, `locale/` and `vkmark/` subdirectories | ⚠ the three subdirectories are unchanged; the soname total is UNVERIFIED for the same reason as the export counts |
+| gconv bundled? | **Yes**, so the Dolphin issue #63 lesson has been applied | unchanged |
+| the dispatcher slot `.preload` names | `lib/foreign-dlopen.so` | ⛔ CHANGED to `lib/cross-libc-dlopen.so` |
 
 ### Why the stub detail matters
 

@@ -2435,6 +2435,124 @@ No case depends on the answer, because every arm sets the variable explicitly.
 
 ---
 
+### 9.17 Upstream shipped this project, and the AppDir changed shape
+
+Re-pinned to the current asset, the suite got further and then refused on both
+architectures, in run
+[32951892766](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32951892766):
+
+```
+demo.AppImage (x86_64) sha256 ok
+==> debian:trixie-slim  (41-extract.sh)
+cp: cannot stat 'AppDir/lib/foreign-dlopen.so': No such file or directory
+suite: extraction failed
+```
+
+⭐ **A sha256 pin says the bytes are the ones somebody reviewed. It says
+nothing about the layout inside them.** The layout moved.
+
+**What the pinned AppImage now contains.** Extracted and measured here:
+
+| `AppDir/lib` | |
+|---|---|
+| `cross-libc-dlopen.so` | 51 608 bytes. Debug tag `[cross-libc-dlopen]`, and it reads both the `CROSS_LIBC_DLOPEN_*` names and the `ANYLINUX_*` aliases. It is a build of THIS project |
+| `gl-fwd.so` | 566 608 bytes, SONAME `libGL.so.1`. This project's forwarding shim |
+| `egl-fwd.so` | 27 200 bytes |
+| `gles-fwd.so` | 78 864 bytes |
+| `foreign-dlopen.so` | ⛔ gone |
+
+⛔ **Upstream adopted this project and renamed the slot to it.** The one file
+the whole A/B replaces used to be `lib/foreign-dlopen.so` and is now
+`lib/cross-libc-dlopen.so`. `experiments/41-extract.sh` reads the name out of
+the AppDir and writes it to `.cld-slot`; `40-appimage.sh` takes it from there
+rather than either file spelling it. Both spellings are accepted by name, the
+one that was found is printed, and an AppDir with neither is a refusal that
+lists what is actually in `lib/`. A guess would be worse than a refusal: the
+A/B is one `cp` into one path, and a wrong path makes both arms identical and
+reports them agreeing.
+
+⚠ **The rename is the loud half. The quiet half is `.preload`.**
+
+| | |
+|---|---|
+| recorded in `ground-truth.md` | `path-mapping.so`, `anylinux.so`, `cross-libc-dlopen.so` |
+| shipped by the pinned build | the same three, then `gl-fwd.so`, `egl-fwd.so`, `gles-fwd.so` |
+
+`41-extract.sh` saved the shipped `.preload` as the baseline that every later
+case restores from before appending the one shim under test. With this project's
+shims already in that list, every case whose whole point is a shim's ABSENCE
+would have run with upstream's copy of it present, appended a duplicate line,
+and passed. ⛔ Nothing would have reported anything: no MISMATCH, no skip, no
+warning. The suite would have gone green measuring the opposite of its claim.
+
+Two files now, and the difference between them is the point:
+
+| file | what it is |
+|---|---|
+| `.preload.shipped` | what the AppImage ships, byte for byte. A record. Never restored from |
+| `.preload.baseline` | the same list with this project's own forwarding shims removed. What the cases restore from |
+
+⭐ **The derived baseline is exactly the old shipped list**, which is the
+check that it reconstructs the contrast the cases were written against rather
+than inventing one:
+
+```
+dispatcher slot: lib/cross-libc-dlopen.so
+shipped .preload:
+    path-mapping.so
+    anylinux.so
+    cross-libc-dlopen.so
+    gl-fwd.so
+    egl-fwd.so
+    gles-fwd.so
+  ⚠ removed from the restore baseline: gl-fwd.so egl-fwd.so gles-fwd.so
+AppDir: 94 libraries, bundled glibc 2.44
+```
+
+That runs on every extraction. A suite that edits the artefact under test and
+does not say so is worse than one that refuses.
+
+**The inventory, re-measured against the pinned build.**
+
+| row | verdict |
+|---|---|
+| bundled glibc 2.44 | unchanged, confirmed |
+| legacy split libs present, `libanl.so.1` absent | unchanged, confirmed |
+| `.foreign-dlopen-enabled` present, 0 bytes | unchanged, confirmed |
+| `gconv/` bundled, beside `locale/` and `vkmark/` | unchanged, confirmed |
+| `.preload` contents | ⛔ CHANGED, above |
+| the dispatcher's filename | ⛔ CHANGED, above |
+| bundled `cross-libc-dlopen.c`, 24 785 bytes | ⛔ GONE. The only `.c` in the AppDir is `.anylinux.c`, 20 731 bytes, a `linuxdeploy-plugin-checkrt` derivative belonging to `anylinux.so`. It names this project 0 times |
+| stub export counts 13, 4, 6, 2 | ⚠ NOT RE-ESTABLISHED |
+| 51 sonames | ⚠ NOT RE-ESTABLISHED |
+
+⚠ **Why two rows are UNVERIFIED rather than corrected.** Four counting methods
+were tried against the new binary and none reproduces 13, 4, 6, 2:
+
+| method | libpthread | libdl | librt | libutil |
+|---|---|---|---|---|
+| `objdump -T`, `DF .text` | 12 | 3 | 5 | 1 |
+| the same, versioned only | 12 | 3 | 5 | 1 |
+| `objdump -T`, every global or weak | 28 | 10 | 14 | 6 |
+| `nm -D --defined-only` | 24 | 6 | 10 | 2 |
+
+Every one of the first method's four numbers is exactly one below the recorded
+value, which is the signature of a counting difference rather than four
+independent changes. The old binary no longer exists, so the method cannot be
+tested against it, and artefact and method cannot be separated. ⭐ The claim
+those numbers exist to support does hold: all four are single digits, so they
+are stubs. The soname total is the same shape of question, measured at 49
+distinct sonames over 55 regular files and 35 symlinks.
+
+⛔ **One thing is NOT resolved here, and it is a decision rather than a defect.**
+The A/B's "as shipped" arm used to be upstream's own shim. It is now a build of
+this project, older than the working tree, still carrying the `ANYLINUX_*`
+aliases this branch removed. E30, E37a and E43a predict that arm fails; whether
+it still does is a question about what those cases now measure, and the answer
+changes what the suite claims rather than whether it runs. The next completed
+run is the evidence, and a changed verdict there is a finding.
+---
+
 ## 10. Measured versus assumed
 
 **Measured:** every table and quoted output above, plus `experiments/run.ps1`

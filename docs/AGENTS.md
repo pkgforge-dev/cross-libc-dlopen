@@ -160,7 +160,7 @@ is in [`gates.yml`](../.github/workflows/gates.yml).
 | `src/forward-shim.c`, `src/gl-fwd-*.h` | ⛔ **generated.** [`conventions/code.md`](conventions/code.md) has the regeneration commands |
 | `inventories/*.json` | measured symbol inventories the generator consumes |
 | `.gitattributes` | enforces LF on `.sh`. A CR makes every command in a script report "not found" while naming something else |
-| `$APPDIR/lib/foreign-dlopen.so` | ⚠ **this name is upstream's**, and `.preload` is what names it. Renaming it turns E30, E37a and E43a into silent passes, and so does dropping the `ANYLINUX_*` spelling from the `env` calls in `experiments/40-appimage.sh`, which drive upstream's own binary. `sh scripts/verify-upstream-controls.sh` proves the difference. ⚠ `.foreign-dlopen-enabled` was listed here and is not any more: nothing in `src/` reads it. [`REPORT.md`](REPORT.md) 9.16 |
+| the AppDir's dispatcher slot | ⛔ **upstream spells it, and upstream has already changed the spelling.** `lib/foreign-dlopen.so` became `lib/cross-libc-dlopen.so`, so `experiments/41-extract.sh` reads the name out of the AppDir into `.cld-slot` and nothing hardcodes it. Hardcoding either spelling makes the A/B a no-op that reports both arms agreeing. Dropping the `ANYLINUX_*` spelling from the `env` calls in `experiments/40-appimage.sh` does the same to E30, E37a and E43a. `sh scripts/verify-upstream-controls.sh` proves the difference. [`REPORT.md`](REPORT.md) 9.17 |
 
 ---
 

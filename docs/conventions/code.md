@@ -48,10 +48,14 @@ build by name when the host is newer.
 
 ---
 
-## One name in this tree is not this project's
+## One path in this tree is not spelled by this project
 
-⛔ `$APPDIR/lib/foreign-dlopen.so` is the slot `quick-sharun` writes and
-`.preload` names. It stays spelled upstream's way.
+⛔ **The AppDir's dispatcher slot is the file `quick-sharun` writes and
+`.preload` names, and its name is upstream's to change.** It has changed:
+`lib/foreign-dlopen.so` up to the build hashed `712766f8`, and
+`lib/cross-libc-dlopen.so` in the one pinned now. So it is READ out of the
+extracted AppDir by `experiments/41-extract.sh` and never spelled by us.
+[`../REPORT.md`](../REPORT.md) 9.17.
 
 ⚠ **`.foreign-dlopen-enabled` was the second name here, and is not one any
 more.** It is `quick-sharun`'s opt-in marker and an AppDir still carries it,
