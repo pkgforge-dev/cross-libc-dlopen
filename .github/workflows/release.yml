@@ -22,9 +22,25 @@
 
 name: release
 
+# ⭐ A pull request that touches the release path RUNS it, up to but not
+# including the publish. A release workflow first exercised on the day of the
+# first release is a release workflow nobody has tested, and workflow_dispatch
+# cannot reach a workflow that is not yet on the default branch, so a pull
+# request is the only place this can be proven before it matters.
+# ⚠ `paths` keeps it off every unrelated pull request: it is a two-architecture
+# build and it is not a fast gate.
 on:
   push:
     tags: ['v*']
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
+      - 'scripts/build.sh'
+      - 'scripts/build-in-env.sh'
+      - 'scripts/verify-artifacts.sh'
+      - 'scripts/package-release.sh'
+      - 'scripts/release-notes.sh'
+      - 'src/**'
   workflow_dispatch:
 
 permissions:
