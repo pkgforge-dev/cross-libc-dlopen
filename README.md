@@ -1,32 +1,25 @@
+<div align="center">
+
 # cross-libc `dlopen`
 
-**Load the host's GPU drivers into a process that carries its own libc.**
+Allow portable applications that bundle their own GLIBC dlopen GPU drivers without GLIBC symbol collisions, **allows dlopening MUSL linked drivers as well.**
 
-A bundled application ships its glibc so it runs anywhere. It does not ship GPU
-drivers, because Mesa plus LLVM is 100 to 200 MB, so it has to borrow the
-host's. Two separate things stop it, and they give different symptoms.
-
-| | the gap | what you see |
+</div>
+  
+| | the problem | what you see |
 |---|---|---|
-| **1** | the host's driver was built against a **different libc**: a newer glibc, or musl | `version 'GLIBC_2.38' not found`, or `libc.musl-x86_64.so.1: cannot open shared object file` |
-| **2** | the host has the capability but ships **nothing in the shape the bundled loader looks for**, with no `libGLX_<vendor>.so.0` behind libglvnd | ⭐ `couldn't get an RGB, Double-buffered visual`, a message about visuals for a fault about neither visuals nor libc |
+| **1** | the host's driver was built against a **different libc**: a newer glibc or musl | `version 'GLIBC_2.38' not found`, or `libc.musl-x86_64.so.1: cannot open shared object file` |
 
-Gap 1 is repaired by an `LD_PRELOAD`ed `dlopen` interposer. It rewrites the host
-object in a private copy so its symbol version requirements stop mattering. Gap
+Problem 1 is repaired by an `LD_PRELOAD`ed `dlopen` interposer `cross-libc-dlopen.so`. It rewrites the host
+object in a private copy so its symbol version requirements stop mattering. 
+
+| | the problem | what you see |
+|---|---|---|
+| **2** | the host has has OpenGL drivers but doesn't have libglvnd | `couldn't get an RGB, Double-buffered visual`, a message about visuals for a fault about neither visuals nor libc |
+
 2 is repaired by an object built with the **SONAME of the library it replaces**,
 so `ld.so` binds the application's `DT_NEEDED` to it and every entry point of
 the bundled dispatcher forwards to whatever the host can stand behind.
-
-⭐ **This is a preload, not an AppImage feature.** It needs a dynamically linked
-process whose libc differs from the driver's. An AppImage is the hardest such
-consumer, because it supplies its own loader as well as its own libc, so it is
-what every measured result here was obtained through. Nothing in the mechanism
-requires one: [`examples/plain-preload/`](examples/plain-preload/) runs it
-against an ordinary binary with no AppDir anywhere.
-
-⚠ **What has not been measured** is a non-AppImage process against a real GPU
-driver, so this page does not claim one.
-[`TODO/measurement.md`](TODO/measurement.md) T-03 is that work.
 
 ---
 
