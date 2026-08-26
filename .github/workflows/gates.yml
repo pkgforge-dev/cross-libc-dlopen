@@ -170,12 +170,42 @@ jobs:
       - name: the documents still describe the tree
         run: sh scripts/check-drift.sh
 
+      # ⛔ THE EMOJI ALLOWLIST IS WIDENED IN OUR COPY OF THE TEMPLATE'S CHECK,
+      # and that is a deliberate local divergence rather than a workaround.
+      #
+      # docs/conventions/prose.md defines the markers this repository uses and
+      # it now defines five: the three stops, plus the tick and the cross for
+      # a state table. The template's check-docs.sh hardcodes three, with no
+      # allowlist file and no variable, and it lives in another repository
+      # that docs/conventions/git.md section 4 forbids writing to. So the
+      # FETCHED COPY is patched, one line, before it runs. Every other rule in
+      # it is untouched, including the link and prose checks.
+      #
+      # ⚠ THE PATCH IS ASSERTED, NOT ASSUMED, and the assertion looks for the
+      # BACKSLASH. Written without one the substitution still succeeds and
+      # produces `x{2705}`, which PCRE reads as the letter x repeated 2705
+      # times: it matches nothing, the check silently goes back to refusing
+      # two markers this repository uses, and the failure reads as a prose
+      # defect rather than a stale patch. That is not hypothetical, it is what
+      # the first two attempts at this line did.
       - name: template checks
         run: |
           T=https://raw.githubusercontent.com/Azathothas/TEMPLATE/main
           fail=0
           for c in check-docs check-control-bytes; do
             curl -fsSL -o "/tmp/$c.sh" "$T/scripts/common/$c.sh"
+          done
+
+          sed -i 's#x{26A0}#x{26A0}|\\x{2705}|\\x{274C}#' /tmp/check-docs.sh
+          if ! grep -q '\\x{2705}' /tmp/check-docs.sh; then
+            echo "the emoji allowlist patch did not apply to check-docs.sh."
+            echo "The template changed the line it targets. Re-read"
+            echo "scripts/common/check-docs.sh upstream and re-aim it."
+            echo "Do NOT drop the tick and cross from prose.md to go green."
+            exit 1
+          fi
+
+          for c in check-docs check-control-bytes; do
             sh "/tmp/$c.sh" || fail=1
           done
           exit $fail
