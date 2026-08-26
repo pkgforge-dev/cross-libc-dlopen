@@ -686,6 +686,17 @@ else
         # The names come out of the same run as the count. Hardcoding them
         # beside a measured number is how a report ends up describing a
         # different result from the one it counted.
+        #
+        # ⚠ TWO IS AN x86-64 NUMBER AND THE AARCH64 ONE IS NOT ESTABLISHED.
+        # aarch64 reported 0, and that was not a finding: abi-host ABORTED at
+        # T1.6 before the scan, because musl's pthread_mutex_t is 40 bytes
+        # there and glibc's is 48, so a mutex the guest allocates is eight
+        # bytes short of what the host writes into it. tests/abi-host.c now
+        # declines that write and reports it as a hazard, so the scan
+        # completes and the count means something. ⛔ Leave the 2 alone until
+        # a completed aarch64 run says what the number is there. Pinning a
+        # guess is how a measured figure becomes an estimate.
+        # docs/REPORT.md 9.18.
         hazout=$(under 1 /w/build/abi-host /w/build/libabi_musl.so musl 2>&1)
         haz=$(printf '%s' "$hazout" | grep -c 'LIVE HAZARD')
         hazwhat=$(printf '%s' "$hazout" | grep -E '^ *DIFF ' |

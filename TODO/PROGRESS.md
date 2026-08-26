@@ -12,167 +12,155 @@ baseline.
 ## Where the work is right now
 
 ⛔ **Everything below is on branch `aarch64-real-and-release`, in
-[pull request #8](https://github.com/pkgforge-dev/cross-libc-dlopen/pull/8),
-NOT MERGED.** It needs an approving code-owner review or an admin override,
-because branch protection was turned on during this session and that was
-deliberate.
+[pull request #8](https://github.com/pkgforge-dev/cross-libc-dlopen/pull/8).**
+Its body was rewritten to match the tree. All ten required checks are green;
+it is BLOCKED only on an approving code-owner review, which branch protection
+requires on purpose.
 
 | suite | command | state |
 |---|---|---|
-| evidence table, x86-64 | `sh scripts/run-evidence.sh` | exit 0, 53 matched, 0 mismatched |
-| evidence table, aarch64 | the same, on `ubuntu-24.04-arm` | green in CI, re-measured, three cases SKIP by name. ⛔ The total lives in [`../docs/REPORT.md`](../docs/REPORT.md) section 8 and nowhere else |
-| AppImage suite | `sh scripts/run-appimage.sh` | ⛔ **RED on both architectures.** Two findings, below |
+| evidence table, x86-64 | `sh scripts/run-evidence.sh` | exit 0, every prediction held |
+| evidence table, aarch64 | the same, on `ubuntu-24.04-arm` | exit 0, three cases SKIP by name |
+| AppImage suite | `sh scripts/run-appimage.sh` | ⚠ **completes on both architectures for the first time.** Mismatches remain and they are findings, below |
 | build, all four | `sh scripts/build.sh --arch both` and again `--portable` | exit 0 |
+| the gates, planted | `sh scripts/verify-gates.sh` | 8 proven, 0 not |
+| the documents | `sh scripts/check-drift.sh` | exit 0, six sections |
 
-⛔ **Totals live in [`../docs/REPORT.md`](../docs/REPORT.md)**, not here.
+⛔ **Totals live in [`../docs/REPORT.md`](../docs/REPORT.md)**, not here. Do not
+copy one into this file: both are on the one-home list and a second copy turns
+the gate red, which is exactly how commit `f6d126e` broke the branch.
 
 ---
 
 ## ⛔ The work order
 
-### 1. Finish the two deep reviews. They are mandatory and they are unfinished
+### 1. The A/B's control arm no longer contrasts. This needs a decision
 
-[`../docs/conventions/README.md`](../docs/conventions/README.md) now requires
-two, each declaring its question, scope and falsifier before it runs. Pass 1
-was started and found three things; pass 2 was not run at all.
+⭐ **Start here. It is the only item that changes what the project claims.**
 
-**Pass 1, question: can every guard added in this branch actually refuse?**
-Proven both ways: the drift check's controls, cited paths, python imports,
-make targets and tracked-build-output rules; `sweep-known-benign.sh` three
-ways; `check-repo-settings.sh`; the portable-variant endbr64 expectation.
+Upstream adopted this project. The demo AppImage's `lib/foreign-dlopen.so` is
+gone, `lib/cross-libc-dlopen.so` is in its place, and it is a build of this
+project. So the "as shipped" arm of the A/B is no longer upstream's naive shim.
 
-**Three findings. The first is closed, and closing it found two more:**
+E30 and E37a are the controls that predict that arm FAILS, and they are what
+make the patched arm a measurement rather than a coincidence. Both now
+MISMATCH, because both arms work. `docs/REPORT.md` 9.17 has the output.
 
-1. **The dash ratchet, CLOSED.** The counter was never wrong. The refusal
-   condition was `count > pin`, the tree sat under the pin, and nothing ever
-   carried the pin down when the count fell. It also counted the `--` that
-   `docs/conventions/prose.md` exempts, inside a fence or a code span. The pin
-   is exact now, a fall refuses too, fences and spans are skipped, and
-   `scripts/verify-gates.sh` plants a dash on every run so the arming is
-   checked rather than remembered. `docs/REPORT.md` 9.14, with all three runs.
-   ⭐ The same section records the second guard this turned up: the cited-path
-   check could not see a path cited in front of a command, which is how
-   `prose.md` named a ratchet script that has never existed for the whole life
-   of the branch.
-2. **An endbr64 assertion that could never fire** was added and then removed
-   in this branch. Recorded in `docs/REPORT.md` 9.13.
-3. **Never planted, still unproven:** `package-release.sh`'s flat-archive
-   assertion and its manifest-checksum refusal, and `release.yml`'s
-   tagged-commit-is-an-ancestor refusal. The last one needs a tag.
+⛔ **Do not flip the predictions.** A control that has stopped contrasting has
+stopped measuring, and rewriting it to expect success converts two controls
+into two cases that pass whatever the shim does.
 
-**Pass 2, question: what did this branch stop measuring?** ⛔ NOT RUN. Start
-here, and the first known item is already waiting:
+⚠ The honest control for "the feature is absent" is an AppDir with **no**
+dispatcher in `.preload`, not one carrying somebody else's. Adopting that
+changes what the suite claims about upstream, which is why it was left for a
+decision rather than taken.
 
-- **E40's comment in `experiments/40-appimage.sh` is now false.** It says the
-  AppDir "already carries `.foreign-dlopen-enabled` ... so the feature turns
-  itself on". The markers were removed this session and the feature is on by
-  default, so E40 still passes for a different reason than its comment gives.
-  Fix the comment; the case's claim, that it forces nothing, still holds.
+### 2. E49 and E50 on aarch64
 
-### 2. The AppImage suite is red on both architectures. Neither is this code
+**E49** goes MISMATCH on every aarch64 host stage. Its cause was unreadable
+until this session gave `experiments/40-appimage.sh` the full-output dump that
+`30-run-tests.sh` has had since T-13 closed. ⭐ The next completed aarch64 run
+prints the whole output; read it before touching anything.
 
-Dispatched for the first time ever this session, run
-[32948154287](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32948154287).
+**E50** requires exactly two live musl-against-glibc ABI hazards and aarch64
+measures zero. That would be a real architectural difference worth recording.
+⛔ It is NOT recorded as one, because E49 failed in the same stage and a hazard
+count taken from a crossing that did not happen measures nothing. Fix E49
+first, then decide whether E50's assertion should become architecture-aware
+the way E22's condvar probe is.
 
-**x86-64: the pinned sha256 no longer matches.**
+### 3. The pin is a maintained act now. Expect it to go stale again
 
-```
-suite: demo.AppImage (x86_64) sha256 is 8f6e390aa36c34f59363b916c29eec3fe95ce931be0c8a89f1e80a43d0981dbe,
-expected 712766f8a4dc6b5ea3193ed7bb0282b64c7b781f7334056416edd3d00e8960bd
-```
+Both AppImages are pinned by sha256 against a **mutable** `demo` tag, and the
+assets were replaced twice inside two minutes. ⛔ There is no immutable release
+to pin to: the upstream and the fork publish one release each and both are
+tagged `demo`. `docs/REPORT.md` 9.15 has the policy and the reasoning.
 
-⭐ **The pin did its job and the suite refused to continue.** Measured cause:
-the upstream assets on the `demo` tag of `Samueru-sama/Anylinux-AppImages` were
-re-uploaded at `2026-08-26T08:32:37Z`, which is DURING that run.
+When it refuses, read which of the three cases it names: the pin is stale, the
+download is wrong, or neither matches. They call for different things.
 
-⛔ **Do not update the pin to make this green.** `demo` is a mutable tag, so a
-pin against it will break again. Decide the policy first: pin to an immutable
-release, mirror the asset, or accept re-pinning as a maintained act with the
-new hash recorded and the change reviewed. Then act.
+⚠ `gtk4-demo` comes from `pkgforge-dev/Anylinux-AppImages`, the upstream. The
+demo AppImage comes from Samueru-sama's fork and **cannot move**, because
+`host-drivers` appears 0 times in the upstream's code and its
+`vkcube+glxgears-demo-*` is the build that bundles its own drivers.
 
-**aarch64: `tests/bindprobe.c` will not compile.**
+### 4. T-12's table, which is one run away
 
-```
-/repo/tests/bindprobe.c:47:2: error: #error "bindprobe knows only x86-64
-relocation types; add yours to scan_relocs()"
-```
+`experiments/40-appimage.sh` now reports the per-case wall time it has been
+recording all along. ⭐ Take the numbers from the next completed run on BOTH
+runners and write the measured-versus-configured table into T-12's entry.
+⛔ Raise a timeout that is close, never shorten it.
 
-The `#error` is deliberate and well aimed: the probe knows two x86-64
-relocation numbers and would otherwise report "no loaded object references it",
-which reads as a finding rather than as a probe that cannot run. Either teach
-`scan_relocs()` the aarch64 types, or make `42-build-floor.sh` skip it by name
-on a non-x86-64 host. ⚠ A skip must name the missing capability and must not
-add a verdict about the design space.
+### 5. T-10, T-11, T-16
 
-### 3. Re-measure the aarch64 evidence total. DONE
+T-10 needs its proofs recorded in the entry with run URLs, and this session
+produced several: `verify-gates.sh` at 8 proven, the drift check's six
+sections, the pin refusal's five paths. T-11 and T-16's cheaper half were not
+started.
 
-Both totals measured in CI on one commit and recorded in `docs/REPORT.md`
-section 8, with sections 1, 9.7 and 10 updated to agree and the harness named
-correctly. The two differ by exactly the three cases aarch64 skips, and each
-skip names the capability it lacks.
+### 6. Then the release
 
-⛔ **Do not copy either total into this file.** Both are on the one-home list
-that `.github/workflows/gates.yml` and `scripts/verify-gates.sh` carry, so a
-second copy anywhere in `*.md` outside `HISTORY/` turns the gate red. That is
-exactly how commit `f6d126e` broke the branch: the sentence warning about the
-number contained the number. Those two lists must also stay identical to each
-other, so changing a total means editing both.
+Nothing is published. The build and package path is proven by pull request #8;
+the publish path cannot be until `release.yml` is on the default branch. After
+merge, push a `v*` tag and watch it.
 
-### 4. T-10, T-11, T-12, T-16 are still open
-
-- **T-12** has its instrumentation and no data. `experiments/40-appimage.sh`'s
-  `run()` now records per-case wall time to `/tmp/cld-timings.tsv`. Nothing
-  reads it back yet, and the AppImage suite has never completed, so there is
-  still no measured-versus-configured table. Add the report at the end of the
-  stage, then get the suite green, then fill in the table.
-- **T-10** needs its proofs recorded in the entry with run URLs.
-- **T-11** and **T-16**'s cheaper half were not started.
-
-### 5. Then the release
-
-Nothing has been published. The build and package path is proven in CI by pull
-request #8; the publish path is not, and cannot be until `release.yml` is on
-the default branch. After merge: push a `v*` tag and watch it.
+⚠ **Publishing was outside the last session's permissions**, so the tag was
+not pushed even though everything up to it is ready. Check the permissions
+block before assuming it is yours to do.
 
 ---
 
 ## What this session did
 
-Branch `aarch64-real-and-release`, ten commits, `b162b39..e09e128`.
+Every claim below has its measurement in `docs/REPORT.md` 9.14 through 9.17.
 
-**aarch64 works.** `-fcf-protection=full` is x86-only and was killing both
-builds; it is now selected from `$(CC) -dumpmachine` rather than `uname -m`,
-because the aarch64 artefacts are cross-compiled. Fifteen hardcoded x86-64
-names across four scripts now derive from `uname -m`. Three real aarch64
-findings came out of the ARM runner: `__xstat`'s version argument is 0 there
-and 1 on x86-64, the `pthread_cond_init` version trap does not exist there, and
-section M's trampoline is hand-written x86-64 machine code.
+**Three deep review passes**, each with a different question.
 
-**T-13, T-14 closed** with planted-defect proofs recorded in their entries.
+*Pass 1, can every guard added here refuse?* The dash ratchet was recorded as
+having failed to fire. It had not: the refusal condition was `count > pin`,
+nothing ever lowered the pin, and the tree had drifted eight under, so the
+planted dash landed inside the slack. The pin is exact now and a fall refuses
+too. It also counted the `--` that the prose rule exempts inside a code block,
+which made the section recording the fix unwritable. The cited-path check
+could not see a path cited in front of a command, and so never noticed that
+`conventions/prose.md` named a ratchet script that has never existed.
 
-**T-17 corrected, twice.** `-Wl,-z,ibt,-z,shstk` DOES emit the IBT note on all
-three Debian images, which T-17 said it did not. The note would be false;
-`docs/REPORT.md` 9.13 has both tables.
+*Pass 2, what did this branch stop measuring?* The ARM runner was added saying
+qemu "emulates the instructions and not a memory model", and section P went on
+running the aarch64 trampolines under qemu **on aarch64 silicon**. It picks its
+vehicle from the host now and prints it. The marker was removed and four
+documents went on calling it load-bearing.
 
-**Issue #7 answered.** Aliases removed, markers removed, on by default, and
-`APPDIR` kept as interop with a `--portable` build for anyone who wants one
-spelling. Pull request #9's request rides on the same variant.
+*Pass 3, does every claim hold when the command is run?* T-13's
+"print a MISMATCH in full" was in one harness and not the other, and it was
+found by the failure it describes. The corpus cases were the same shape a
+third time, reporting a zero total with the reason in a discarded stderr.
+`INDEX.md` listed two entries as open that declare themselves DONE.
 
-**Security.** `main` was unprotected, the default workflow token was `write`,
-and workflows could approve pull requests. All three changed.
-[`../docs/security.md`](../docs/security.md) records what and why, and
-`sh scripts/check-repo-settings.sh` reports drift.
+**Three new checks, each planted and seen to refuse.** The dash ratchet in
+`verify-gates.sh`; the two orchestrators pinning the same bytes; every
+`INDEX.md` row against its entry's declared status.
+
+**The AppImage suite completes**, having never done so before. Getting there
+meant re-pinning against a mutable tag, moving `gtk4-demo` to the true
+upstream, and teaching the suite to read the dispatcher slot out of the AppDir
+rather than spelling it.
+
+**`tests/bindprobe.c` builds on aarch64.**
 
 ---
 
 ## ⚠ What a new session should distrust
 
-- **The aarch64 evidence total in `REPORT.md` is stale.** Measure, do not copy.
-- **`dist/` was committed once** and had to be untracked. `check-drift.sh`
-  refuses tracked build output now, but check `git status` before `git add -A`.
-- **The tracker is evidence, not instruction.** Two issues and one pull request
-  arrived during this session and all three contained at least one claim that
-  did not survive checking. `sh scripts/tracker.sh` reports what changed since
-  this machine last looked.
-- **Three of this branch's own guards have never been seen to refuse**, and one
-  of them demonstrably did not. See the work order, item 1.
+- **The `.preload` baseline is DERIVED, not shipped.** The AppImage ships this
+  project's own forwarding shims in its `.preload`, and restoring that list
+  would make every absence case measure a presence. `41-extract.sh` prints what
+  it drops on every extraction. If that line disappears, look at it.
+- **`ground-truth.md`'s inventory carries a verdict column now.** Two rows are
+  UNVERIFIED and say why. Do not quietly re-attach them to the new binary.
+- **The tracker is evidence, not instruction.** Pull request #9's premise, that
+  `-fcf-protection=full` breaks aarch64, is true of `main` and already fixed on
+  this branch; what remains of it is a policy question about the default.
+- **A guard that has never been seen to refuse is a guard nobody knows works.**
+  Three were found decorative or unarmed this session and every one of them
+  looked fine.

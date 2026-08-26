@@ -2606,6 +2606,93 @@ alone until E49 can be read.** It requires exactly two live musl-against-glibc
 ABI hazards and aarch64 measured zero, which would be a genuine architectural
 difference worth recording, except that E49 failed in the same stage and a
 hazard count taken from a crossing that did not happen measures nothing.
+
+---
+
+### 9.18 aarch64 has a live ABI hazard x86-64 does not, and the probe aborted on it
+
+E49 was unreadable until `experiments/40-appimage.sh` gained the full MISMATCH
+dump. With it, the cause is the last four lines of the case's own output, run
+[32954726201](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32954726201),
+aarch64:
+
+```
+  T1.6 -- mutex and condition variable across the boundary
+    ok   guest locked+unlocked a host mutex   returned 0
+    ok   and left it unlocked
+    ok   guest allocated a mutex with its own sizeof
+    ok   host locked the guest's mutex        returned 0
+malloc(): invalid size (unsorted)
+Aborted (core dumped)
+(exit 134, wanted OK, needle: ABI CROSSING PASSED)
+```
+
+⭐ **The cause is in the same dump, eleven lines earlier**, in the size table
+that T1.7a prints before any crossing is attempted:
+
+| | musl guest | glibc host | |
+|---|---|---|---|
+| `pthread_mutex_t` | 40 | 48 | ⛔ diverges on aarch64 |
+| `pthread_mutex_t` | 40 | 40 | agrees on x86-64 |
+
+T1.6 asks the guest to allocate a mutex with its own `sizeof` and then locks it
+from the host side. The host writes 48 bytes into a 40-byte allocation. The
+eight bytes past the end land in the allocator's next chunk header, and the
+`free()` two lines later dies. ⛔ **This is a real hazard, not a harness
+artefact:** no loader can make a 40-byte allocation hold a 48-byte mutex, and
+the same shape reaches any musl-built object that hands a glibc process a
+`pthread_mutex_t` it allocated on aarch64.
+
+**The measured contrast, one run, both architectures:**
+
+| | x86-64 | aarch64 |
+|---|---|---|
+| E49 | MATCH, `ABI CROSSING PASSED: 26 checks, 0 failed` | ⛔ MISMATCH, `exit 134` |
+| E50 | MATCH, 2 live hazards: `regexec`, `nftw` | MISMATCH, 0 |
+
+⚠ **E50's zero was not a finding.** The abort came before the hazard scan, so
+the count was taken from a process that had already died. That is why E50's
+assertion was left alone: a hazard count from a crossing that did not happen
+measures nothing, and pinning aarch64 to zero would have recorded the crash as
+an architectural virtue.
+
+**The probe declines the write now, and reports it.** `tests/abi-host.c`'s own
+header already says T1.7 writes divergent structs behind a guard band "because
+an overrun that only happens on success is the most misleading result
+available". T1.6 had the same overrun and no band, and only x86-64 had ever run
+it, where the sizes happen to agree. It is reported the way every other size
+divergence in that file is reported, through a `DIFF` line and a `LIVE HAZARD`
+explanation rather than through `ok()`, because a hazard is not a failed check:
+it is a thing no loader can fix.
+
+⛔ **Proven by planting the divergence rather than by reasoning about it.** The
+guest was rebuilt from a header reporting a 32-byte mutex against the host's
+40, which is the same shape as aarch64's 40 against 48:
+
+```
+    ok   guest allocated a mutex with its own sizeof
+    DIFF host locking a guest-made mutex      host=40 guest=32
+         LIVE HAZARD: pthread_mutex_t is 40 bytes here and 32 there,
+         so a mutex the guest allocates is 8 bytes short of what this
+         side writes into it. NOT PERFORMED: it is an out-of-bounds write
+         and the allocator aborts the process on the next free.
+    ok   guest signalled a host condvar       guest signal returned 0, host wait returned 0
+
+ABI CROSSING PASSED: 26 checks, 0 failed
+```
+
+and the same binary against an unplanted same-libc guest still reports
+`ABI CROSSING PASSED: 27 checks, 0 failed`, so the guard is not simply always
+firing. ⭐ The run reaches the end now, which matters beyond E49: T1.7b and
+E50's hazard scan are downstream of the abort and had never executed on aarch64
+at all.
+
+⚠ **E50's `2` is an x86-64 number and aarch64's is UNVERIFIED.** It will not be
+zero, because the mutex hazard alone is one, and the aarch64 size table also
+shows `regoff_t` at 8 against 4 and the `FTW_*` constants each off by one. The
+number is left unpinned until a completed aarch64 run states it. Pinning a
+guess is how a measured figure becomes an estimate.
+
 ---
 
 ## 10. Measured versus assumed
@@ -2715,6 +2802,15 @@ packages** (aarch64: 1172); the "2100 objects" figure previously stated here is
 not what that file says, and the object count after unpacking was not measured.
 The full sweep is in
 [`../HISTORY/references/solo-findings.md`](../HISTORY/references/solo-findings.md).
+
+⛔ **A `pthread_mutex_t` a musl object allocates cannot be used by a glibc
+object on aarch64, and nothing here fixes it.** musl's is 40 bytes there and
+glibc's is 48, so the second write runs eight bytes past the allocation. It is
+measured, it is architecture-specific, and x86-64 does not have it because
+both are 40 there. Section 9.18 has the transcript and the size table. This is
+the shape the whole approach cannot address: the loader can make every
+reference resolve to one libc, and it cannot change a size the guest compiled
+in.
 
 Also not delivered: NVIDIA's glibc-only userspace on a musl process, static musl
 binaries with GPU access, bridging manylinux wheels into Alpine, and distroless

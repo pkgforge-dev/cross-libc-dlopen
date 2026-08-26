@@ -13,7 +13,10 @@
  *   T1.4  an errno set inside the guest is read here, in the same thread
  *   T1.5  a FILE* opened here is written from the guest
  *   T1.6  a mutex made here is locked there, a mutex made there is locked
- *         here, and a condition variable made here is signalled from there
+ *         here, and a condition variable made here is signalled from there.
+ *         ⚠ The second of those is SKIPPED and reported as a live hazard when
+ *         the guest's pthread_mutex_t is smaller than ours, because then it is
+ *         an out-of-bounds write. aarch64 is such a pair and x86-64 is not
  *   T1.7  every struct size and constant the two sides could disagree about,
  *         printed side by side -- and then the divergent structs actually
  *         WRITTEN by the guest into storage this side allocated, behind a
@@ -320,10 +323,46 @@ int main(int argc, char **argv) {
 		void *gm = g_newmtx();
 		ok(gm != NULL, "guest allocated a mutex with its own sizeof", NULL);
 		if (gm) {
-			r = pthread_mutex_lock((pthread_mutex_t *)gm);
-			snprintf(detail, sizeof detail, "returned %d", r);
-			ok(r == 0, "host locked the guest's mutex", detail);
-			if (r == 0) pthread_mutex_unlock((pthread_mutex_t *)gm);
+			/* ⛔ THIS CROSSING IS NOT ALWAYS LEGAL, AND UNGUARDED IT ABORTED
+			 * THE PROCESS. The guest allocates sizeof(ITS pthread_mutex_t).
+			 * Locking it from here writes sizeof(OURS). On x86-64 both are 40
+			 * bytes and the write fits, which is why this stood for as long as
+			 * only x86-64 ran it. On aarch64 musl's is 40 and glibc's is 48,
+			 * so the eight bytes past the end land in the allocator's next
+			 * chunk header and the following free() dies with
+			 * "malloc(): invalid size (unsorted)". Measured: exit 134, and the
+			 * abort took T1.7b and E50's hazard scan with it, so a real
+			 * finding also destroyed the measurement that would have named it.
+			 *
+			 * ⭐ Reported the way every other size divergence in this file is
+			 * reported, and NOT performed. This file's own header says T1.7
+			 * writes divergent structs behind a guard band "because an overrun
+			 * that only happens on success is the most misleading result
+			 * available". T1.6 had the same overrun and no band.
+			 *
+			 * ⚠ It does not go through ok(). A hazard is not a failed check:
+			 * it is a thing no loader can fix, which is what E50 counts and
+			 * what section 11 of docs/REPORT.md is a list of. */
+			if (gv.sz_pthread_mutex_t < hv.sz_pthread_mutex_t) {
+				printf("    %-4s %-36s host=%llu guest=%llu\n", "DIFF",
+				       "host locking a guest-made mutex",
+				       (unsigned long long)hv.sz_pthread_mutex_t,
+				       (unsigned long long)gv.sz_pthread_mutex_t);
+				printf("         LIVE HAZARD: pthread_mutex_t is %llu bytes here and "
+				       "%llu there,\n         so a mutex the guest allocates is %llu "
+				       "bytes short of what this\n         side writes into it. NOT "
+				       "PERFORMED: it is an out-of-bounds write\n         and the "
+				       "allocator aborts the process on the next free.\n",
+				       (unsigned long long)hv.sz_pthread_mutex_t,
+				       (unsigned long long)gv.sz_pthread_mutex_t,
+				       (unsigned long long)(hv.sz_pthread_mutex_t
+				                            - gv.sz_pthread_mutex_t));
+			} else {
+				r = pthread_mutex_lock((pthread_mutex_t *)gm);
+				snprintf(detail, sizeof detail, "returned %d", r);
+				ok(r == 0, "host locked the guest's mutex", detail);
+				if (r == 0) pthread_mutex_unlock((pthread_mutex_t *)gm);
+			}
 			free(gm);
 		}
 
