@@ -89,6 +89,43 @@ substitute for them: they prove four different gates.
   Shortening hides the problem and makes the failure mode less legible.
 - **Prove.** A table of measured-vs-configured per case, in this entry.
 
+### Measured, both runners, run [32955888055](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32955888055)
+
+⭐ The instrumentation had been in `run()` since this entry was opened and
+nothing read it back, because no run of the AppImage suite had ever reached the
+end. The stage reports it now. Worst observed wall time per case, across all
+four host stages:
+
+| case | configured | x86-64 | aarch64 | |
+|---|---|---|---|---|
+| E61 `glxgears` | `timeout -k 2 30` | 30 | 30 | ⚠ runs to its timeout |
+| E62 `glxgears`, feature on | `timeout -k 2 30` | 30 | 30 | ⚠ runs to its timeout |
+| E59 boundary scan | none | 11 | 1 | |
+| everything else recorded | 25 to 90 | 0 to 1 | 0 to 1 | |
+
+⛔ **E61 and E62 are not close to their timeout. They ARE their timeout, and
+that is by construction.** A GL binary never exits on its own, so `timeout` is
+how those cases end, and their wall time is the configured value by definition.
+`experiments/40-appimage.sh` says so where it wraps them. ⚠ **Do not read 30
+against 30 as no margin**, and do not raise it on that reading: E62 produced
+`GL_RENDERER = llvmpipe` inside the window, so the work finished and only the
+process did not.
+
+⭐ **Every case that terminates on its own is far under.** The slowest is E59 at
+11 seconds against a 25-second floor, and the rest are at or below 1 second on
+both runners. The fear this entry was opened on, a slow shared runner turning a
+pass into a red build, is not visible in this data.
+
+### ⛔ What this measurement still cannot tell you
+
+The timing report cannot distinguish "ran to its timeout because that is how
+this case ends" from "was killed before it finished". Both appear as a wall
+time equal to the configured value. For E61 and E62 the distinction is settled
+by their output, which carried the answer; for a case that produced nothing it
+would not be. ⚠ That is why the entry stays open: the margin question is
+answered for the self-terminating cases and unanswerable, as instrumented, for
+the two that are killed on purpose.
+
 ---
 
 ## T-13 A build error hidden by `2>/dev/null` cost a debugging cycle
