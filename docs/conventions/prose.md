@@ -36,11 +36,20 @@ mark that is not a dash:
 horizontal rule are all `--` or `---` doing their own job. The rule is about
 prose.
 
-⚠ The ratchet is `sh scripts/check-prose-dashes.sh`, and it is a ratchet rather
-than a gate: the count may fall and may not rise. The tree it was written
-against still carries several hundred, `HISTORY/` is excluded because it
-records original wording, and a single change that rewrote them all would be a
-change nobody could review.
+⚠ **The ratchet is section 4 of `scripts/check-drift.sh`**, which CI runs on
+every push. `HISTORY/` is excluded because it records original wording, and a
+single change that rewrote every dash in the tree would be a change nobody
+could review, so they go as the files they live in are touched for other
+reasons.
+
+⛔ **The pin is exact, and a FALL refuses as loudly as a rise.** That looks
+like pedantry and is the whole mechanism: the pin is a number in the script,
+nothing lowers it on its own, and a version of this check that merely
+suggested lowering it was ignored three commits running until it had drifted
+eight under the tree. A planted dash then landed inside the slack and passed,
+and the ratchet was recorded as broken when it was only unarmed. Lower the
+number in the same change that lowers the count. `docs/REPORT.md` 9.14 has
+both halves proven.
 
 Write for an agent with no memory of the session that wrote the file, and for a
 person looking for one fact.

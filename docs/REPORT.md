@@ -2128,6 +2128,137 @@ costs on a host that does not implement CET is the four bytes.
 
 ---
 
+### 9.14 A guard that could not refuse, and a guard that could not see itself
+
+Deep review pass 1 asked whether every guard added on this branch can actually
+refuse. Two could not, and neither was broken in the way it looked.
+
+**The dash ratchet.** `scripts/check-drift.sh` section 4 counts ` -- ` across
+every tracked `.md` outside `HISTORY/` and compares it to a number written in
+the script. A previous session appended `A sentence -- with a dash.` to
+`docs/building.md`, ran the check, read "at the budget", and recorded the
+ratchet as broken.
+
+The counter was never wrong. Measured, per commit on this branch, counting
+every occurrence the way the check did at the time:
+
+| commit | ` -- ` in tracked `.md` outside `HISTORY/` | pin in the script |
+|---|---|---|
+| `b162b39` initial | 270 | none yet |
+| `bc29fce` front-door rewrite | 236 | set to 236 |
+| `e09e128` portable variant | 235 | still 236 |
+| `f6d126e` PROGRESS rewrite | 228 | still 236 |
+
+The refusal condition was `count > pin`. At `e09e128` the tree carried 235, so
+the planted dash took it to exactly 236, and 236 is not greater than 236. The
+check printed the truth. The expectation that it would print 237 assumed the
+tree was at the pin, and it was one under.
+
+⛔ **The defect is the slack, and the slack is structural.** Nothing lowered
+the pin when the count fell. The script printed a line asking the next reader
+to lower it, and three commits running the next reader did not, so a guard
+that refuses one dash too many silently became a guard that would accept eight
+more before saying anything.
+
+⚠ **A second defect surfaced while writing this section: the counter counted
+what the rule exempts.** `docs/conventions/prose.md` says a flag, a literal
+inside a code block and a shell comment are all `--` doing their own job. The
+counter read the file raw and counted those too. Measured on the tree with
+this section in it:
+
+| | count |
+|---|---|
+| every ` -- ` in tracked `.md` outside `HISTORY/` | 233 |
+| inside a fenced code block | 10 |
+| inside a code span | 5 |
+| actual prose, which is what the rule is about | 218 |
+
+Two consequences, and the second is the one that forced the change. A document
+that added a correct shell snippet was refused for being correct. And a
+rewrite that traded a prose dash for a code one netted to zero and passed
+unseen. ⛔ Together with an exact pin it also made this section unwritable:
+recording the planted sentence means putting the planted sentence in a
+document. The counter now skips fences and spans, and the pin is the prose
+number.
+
+Three runs against the script as it stands, on a tree that is otherwise clean:
+
+```
+$ printf 'A sentence -- with a dash.\n' >> docs/building.md
+$ sh scripts/check-drift.sh
+  FAIL 219 dashes used as punctuation, and the pin is 218.
+$ echo $?
+1
+
+$ perl -0pi -e 's/ -- / instead /' docs/building.md
+$ sh scripts/check-drift.sh
+  FAIL 217 dashes used as punctuation, and the pin is still 218.
+$ echo $?
+1
+
+$ printf '\n~~~\nrun this -- and that\n~~~\n' >> docs/building.md
+$ sh scripts/check-drift.sh
+  218, at the pin. It may fall, and a fall lowers the pin with it.
+$ echo $?
+0
+```
+
+The first is the rule. The second is what carries the pin down with the count,
+and it is the half that was missing. The third is the exemption the rule
+always claimed and the check never honoured. `scripts/verify-gates.sh` plants
+the first of the three on every run, so the arming is checked rather than
+remembered.
+
+**The cited-path check, on the citation shape this repository actually uses.**
+Section 2 of the same script reads every repository path a document cites and
+opens it. It anchored the path on an opening backtick and required a closing
+backtick straight after, which matches `` `scripts/build.sh` `` and nothing
+else. The common form here is a command:
+
+```
+⚠ The ratchet is `sh scripts/check-prose-dashes.sh`, and it is a ratchet rather
+        docs/conventions/prose.md, line 39, before this change
+```
+
+No script of that name has ever existed in this repository. The ratchet is
+section 4 of `check-drift.sh`. The citation survived the entire branch because
+the check that exists to catch a stale citation could not see one written in
+front of a command, and the citation it could not see was a citation of
+itself.
+
+Widened to allow backtick-free, space-terminated words before the path, and to
+drop the closing-backtick requirement so a path followed by its arguments
+counts:
+
+| | paths checked |
+|---|---|
+| before | 80 |
+| after | 87 |
+
+Both measured on the tree as it stands with this section in it. Three of the
+seven newly visible paths did not exist. One is the real defect
+above, the check-prose-dashes name, fixed in `docs/conventions/prose.md`. One
+belongs to `Azathothas/TEMPLATE` and is cited at a URL as not being in this
+tree. One is `tests/bindprobe`, which is ours, is built from
+`tests/bindprobe.c`, and is cited as a command rather than as a file. The last
+two are exempt by name.
+
+⚠ **`*` had to enter the path character class in the same change.** Without it
+the class stops at the hyphen in `` `src/gl-fwd-*.h` ``, so the wildcard skip
+never sees a wildcard and the check reports the truncated stem, everything up
+to and including the hyphen, as a file that does not exist. The widened
+pattern did exactly that on its first run.
+
+⚠ **And this paragraph is why the check skips a fenced block.** Recording a
+broken-path finding means writing the broken path down. The quotation above
+sits in a fence and is read as the transcript it is; the two sentences here
+name the defect without putting it in citation shape, the way
+`scripts/verify-gates.sh` assembles its plants at runtime rather than letting
+them sit in the file as literals. Both dodges are the same dodge: a checker
+that reads the tree cannot tell a claim from a quotation of a broken one.
+
+---
+
 ## 10. Measured versus assumed
 
 **Measured:** every table and quoted output above, plus `experiments/run.ps1`

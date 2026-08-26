@@ -41,13 +41,19 @@ Proven both ways: the drift check's controls, cited paths, python imports,
 make targets and tracked-build-output rules; `sweep-known-benign.sh` three
 ways; `check-repo-settings.sh`; the portable-variant endbr64 expectation.
 
-⛔ **Three findings, and the first is open:**
+**Three findings. The first is closed, and closing it found two more:**
 
-1. **The dash ratchet did not fire on a planted dash.** Appending
-   `A sentence -- with a dash.` to `docs/building.md` left the count at 236
-   rather than raising it to 237, and `check-drift.sh` reported "at the
-   budget". Reproduce exactly that, find out why, and fix it. Until then it is
-   a guard that has never been seen to refuse.
+1. **The dash ratchet, CLOSED.** The counter was never wrong. The refusal
+   condition was `count > pin`, the tree sat under the pin, and nothing ever
+   carried the pin down when the count fell. It also counted the `--` that
+   `docs/conventions/prose.md` exempts, inside a fence or a code span. The pin
+   is exact now, a fall refuses too, fences and spans are skipped, and
+   `scripts/verify-gates.sh` plants a dash on every run so the arming is
+   checked rather than remembered. `docs/REPORT.md` 9.14, with all three runs.
+   ⭐ The same section records the second guard this turned up: the cited-path
+   check could not see a path cited in front of a command, which is how
+   `prose.md` named a ratchet script that has never existed for the whole life
+   of the branch.
 2. **An endbr64 assertion that could never fire** was added and then removed
    in this branch. Recorded in `docs/REPORT.md` 9.13.
 3. **Never planted, still unproven:** `package-release.sh`'s flat-archive
@@ -101,11 +107,17 @@ add a verdict about the design space.
 ### 3. Re-measure the aarch64 evidence total and put it in REPORT
 
 `docs/REPORT.md` §8 still says the old figure and names `experiments/run.ps1`,
-which is not the harness any more. x86-64 is 53/53, measured. aarch64 was 46/49
-before eight cases were added. Run the aarch64 job, take the number, and update
-§8 and §10 together. ⚠ `46/46` is in the headline-number list in
-`.github/workflows/gates.yml` and in `scripts/verify-gates.sh`; those two lists
-must stay identical to each other.
+which is not the harness any more. x86-64 is 53/53, measured. aarch64 was
+46/49 before eight cases were added. Run the aarch64 job, take the number, and
+update §8 and §10 together.
+
+⛔ **Do not write the old aarch64 total into this file to remind yourself of
+it.** It is on the one-home list that `.github/workflows/gates.yml` and
+`scripts/verify-gates.sh` both carry, so a second copy anywhere in `*.md`
+outside `HISTORY/` turns the gate red. That is exactly how commit `f6d126e`
+broke the branch: the sentence warning about the number contained the number.
+Those two lists must also stay identical to each other, so changing the total
+means editing both.
 
 ### 4. T-10, T-11, T-12, T-16 are still open
 

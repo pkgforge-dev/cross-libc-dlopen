@@ -74,16 +74,58 @@ head_ "cited paths"
 # Repository-relative paths in backticks, anchored on a real top-level
 # directory so /usr/lib and $APPDIR/lib are not mistaken for citations.
 #
+# ⛔ THE PREFIX IS WHY THIS MISSED ONE. The first version of this anchored the
+# path on the opening backtick and required a closing backtick straight after
+# it, so it only ever saw a path cited alone. This repository's most common
+# citation is not that shape: it is a COMMAND, `sh scripts/check-drift.sh`,
+# and every one of those was invisible. docs/conventions/prose.md named
+# `sh scripts/check-prose-dashes.sh` as the dash ratchet for the whole life of
+# the branch. No such script has ever existed. The check that exists to catch
+# a stale citation could not see a stale citation about itself.
+#
+# So: allow any run of backtick-free, space-terminated words between the
+# opening backtick and the path, and drop the closing-backtick requirement so
+# a path followed by its arguments still counts. Then pull the path back out
+# of whatever matched.
+#
+# ⚠ `*` IS IN THE PATH CLASS ON PURPOSE. `src/gl-fwd-*.h` is a class of files,
+# not a file, and the skip below drops it. Leave `*` out and the class stops
+# at the hyphen, the wildcard skip never sees a wildcard, and the check
+# reports `src/gl-fwd-` missing. That is not hypothetical: it is what the
+# widened pattern did on its first run.
+#
 # ⚠ These paths belong to ANOTHER project and are cited as that project's own
-# files: the first two are onelf's, which is Rust and has no src/main.rs here.
+# files: the first three are onelf's, which is Rust and has no src/main.rs
+# here, and the fourth is Azathothas/TEMPLATE's, which docs/AGENTS.md cites at
+# a URL and says in the same sentence is not in this tree. `tests/bindprobe`
+# is ours and is a BUILT binary, so it is cited as a command and is not, and
+# should not be, a tracked file.
 # Exempt BY NAME rather than by pattern, so adding one is a deliberate act and
 # a typo in a path of ours is still caught.
-foreign=" docs/guide/cross-libc.md src/main.rs src/utils.rs "
+foreign=" docs/guide/cross-libc.md src/main.rs src/utils.rs docs/methodology/references.md tests/bindprobe "
 
+# ⚠ A FENCED BLOCK IS A TRANSCRIPT, NOT A CITATION, and this check skips one.
+# docs/REPORT.md's evidence is quoted command output, and output that records a
+# failure names the path that was wrong. Without this, the one document whose
+# job is to record a broken-path finding is the one document that cannot quote
+# it. Measured before the exemption went in: 88 paths cited with fences read,
+# 88 with fences skipped, and no path anywhere in the tree is cited ONLY inside
+# a fence. It costs no coverage on this tree. Backticks in running text are
+# still read, which is where a stale citation actually misleads somebody.
+unfenced() {
+	docs | tr '\n' '\0' | xargs -0 awk '
+		FNR == 1     { fence = 0 }
+		/^[ \t]*(```|~~~)/ { fence = !fence; next }
+		fence        { next }
+		             { print }
+	' 2>/dev/null
+}
+
+anchor='(src|scripts|tests|tools|docs|experiments|examples|TODO|HISTORY|inventories)/[A-Za-z0-9_./*-]+'
 missing=0
-docs | tr '\n' '\0' |
-	xargs -0 grep -hoE '`(src|scripts|tests|tools|docs|experiments|examples|TODO|HISTORY|inventories)/[A-Za-z0-9_./-]+`' 2>/dev/null |
-	tr -d '`' | sed 's/[.,)]*$//' | sort -u > /tmp/cd_paths.txt
+unfenced |
+	grep -hoE "\`([^\` ]+ )*$anchor" 2>/dev/null |
+	grep -oE "$anchor" | sed 's/[.,)]*$//' | sort -u > /tmp/cd_paths.txt
 while IFS= read -r p; do
 	[ -n "$p" ] || continue
 	case "$p" in */) continue ;; esac
@@ -169,21 +211,58 @@ done < /tmp/cd_targets.txt
 # ------------------------------------------------- 4. the dash ratchet ------
 head_ "dashes used as punctuation"
 
-# ⛔ A RATCHET, NOT A GATE. The count may fall and may not rise. The tree this
-# was written against carries the number below; rewriting all of them in one
-# change would be a change nobody could review, so they go as the files they
-# live in are touched for other reasons. When the count falls, lower BUDGET.
+# ⛔ A RATCHET, AND THE PIN IS EXACT. The count may fall and may not rise, and
+# a FALL refuses too. That second half is not pedantry: it is the only thing
+# that carries the pin down, and without it the ratchet stops ratcheting.
+#
+# ⚠ MEASURED, AND THIS IS WHY. The pin was set to 236 at bc29fce, when the
+# tree carried 236. e09e128 took the tree to 235 and f6d126e took it to 228,
+# and neither lowered the pin, because the only thing asking them to was a
+# suggestion this script printed and nobody read. Eight of slack later, a
+# planted dash raises 228 to 229, which is under 236, so the check reports
+# "down from a budget" and exits 0. A session planted exactly that dash, read
+# exactly that, and recorded the ratchet as broken. The count was never wrong.
+# The guard was unarmed, and a ratchet that only ever suggests tightening
+# never tightens. docs/REPORT.md 9.14 has both halves proven.
+#
+# Rewriting every dash in one change would be a change nobody could review, so
+# they go as the files they live in are touched for other reasons, and each
+# such change lowers the number below in the same commit.
 # docs/conventions/prose.md says why `--` is not the fix for an em dash.
-BUDGET=236
-have=$(docs | tr '\n' '\0' | xargs -0 grep -hoF ' -- ' 2>/dev/null | wc -l | tr -d ' ')
+# ⚠ PROSE ONLY, and the rule is the reason. docs/conventions/prose.md exempts
+# `--` doing its own job: a command-line flag, a literal inside a code block, a
+# shell comment. The first version of this counted those too, so a document
+# that added a correct shell snippet was refused, and a rewrite that traded a
+# prose dash for a code one netted to zero and passed. Measured on the tree
+# this was written against: 233 counted raw, 15 of them inside a fence or a
+# span, 218 actually prose. It also made this section unwritable, because
+# recording the planted sentence puts the planted sentence in a document.
+#
+# A fence toggles on ``` or ~~~ and resets per file. Both are markdown, and a
+# transcript that quotes one has to open with the other. A code span is
+# stripped from the lines that are left.
+count_dashes() {
+	docs | tr '\n' '\0' | xargs -0 awk '
+		FNR == 1           { fence = 0 }
+		/^[ \t]*(```|~~~)/ { fence = !fence; next }
+		fence              { next }
+		                   { gsub(/`[^`]*`/, ""); print }
+	' 2>/dev/null | grep -oF ' -- ' | wc -l | tr -d ' '
+}
+
+BUDGET=218
+have=$(count_dashes)
 if [ "$have" -gt "$BUDGET" ]; then
-	bad "$have dashes used as punctuation, and the budget is $BUDGET."
+	bad "$have dashes used as punctuation, and the pin is $BUDGET."
 	say "       Rewrite the sentence rather than swapping one dash for another."
 	say "       docs/conventions/prose.md has the four replacements."
 elif [ "$have" -lt "$BUDGET" ]; then
-	say "$have, down from a budget of $BUDGET. ⭐ Lower BUDGET in this script to $have."
+	bad "$have dashes used as punctuation, and the pin is still $BUDGET."
+	say "       The count fell, which is the point of the ratchet. Set BUDGET to"
+	say "       $have in scripts/check-drift.sh, in this same change. Left alone"
+	say "       the slack accumulates and the ratchet stops being able to refuse."
 else
-	say "$have, at the budget. It may fall and may not rise."
+	say "$have, at the pin. It may fall, and a fall lowers the pin with it."
 fi
 
 printf '\n'
