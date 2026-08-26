@@ -65,7 +65,7 @@ Build, CI and orchestration.
   message was discarded. Ten cases reported `./tramp2: No such file or
   directory`, which names the wrong thing entirely.
 - **Category** infrastructure · **Priority** medium · **Effort** low ·
-  **Status** open
+  **Status** ⭐ **DONE**
 - **Problem.** Several helper builds in the stages redirect stderr to
   `/dev/null`. When one fails the suite reports a cascade of downstream
   mismatches with no cause in the output.
@@ -76,6 +76,41 @@ Build, CI and orchestration.
   changes no assertion. That is the shape.
 - **Prove.** Break a helper build deliberately; the suite output names the
   compiler error rather than only its consequences.
+
+### Closure
+
+⚠ **It stopped being theoretical twice more before it was fixed.** Moving a
+Python module out from under the shim generator broke it, and the suite
+reported `gcc: error: gen-shim.c: No such file or directory` from E15 and
+`./shimtest: No such file or directory` from E16. Neither named a cause,
+because the generator's own message went to `/dev/null`.
+
+Nine helper builds and the generator now capture stderr to `$BERR` and print it
+only on failure, through a `bfail` helper. A passing run is exactly as quiet as
+before, and no assertion changed: the capture happens at build time and the
+cases still score themselves afterwards.
+
+⭐ **The harness got the same shape first**, and that is what made the rest
+findable. `run` now prints the WHOLE captured output of a MISMATCH rather than
+its first line. E16 had been reporting `ok strlcpy short`, which is a step that
+had succeeded; the real failure was `FAIL stat matches __xstat`, forty checks
+later.
+
+**Proven, by planting the defect.** A syntax error was added to
+`tests/shim-selftest.c` and the suite run:
+
+```
+  E15    MATCH predicted=OK    compiled
+  BUILD FAILED: shimtest
+           | /repo/tests/shim-selftest.c:135:40: error: unknown type name 'this'
+           |   135 | static void t13_planted_defect(void) { this is not C; }
+  E16    MISMATCH predicted=OK    ./shimtest: No such file or directory
+ predictions matched: 48   mismatched: 1
+```
+
+⭐ The compiler error is named, above the case it used to only look like.
+Against a clean tree the same run reports 49 matched, 0 mismatched, and prints
+no `BUILD FAILED` line at all, so the helper is not merely always shouting.
 
 ---
 
