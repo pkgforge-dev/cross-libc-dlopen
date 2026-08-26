@@ -10,3 +10,5 @@ src/runtime-select
 .tmp/
 # build output from scripts/build.sh
 build/
+# release assets from scripts/package-release.sh
+dist/

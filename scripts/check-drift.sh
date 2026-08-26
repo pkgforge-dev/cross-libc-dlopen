@@ -126,6 +126,34 @@ for f in $(git ls-files 'tools/*.py'); do
 done
 [ "$badi" = 0 ] && say "every module a tool imports is beside it or one level up"
 
+# ------------------------------------ 2c. nothing enters that does not belong --
+head_ "what is tracked"
+
+# ⛔ THIS CHECK EXISTS BECAUSE IT HAPPENED. `git add -A` after a packaging run
+# took 22 files and 6.7 MB of built objects into the index, in a repository
+# whose entire output is reproducible from source. .gitignore covered build/
+# and not dist/, and nothing else was looking.
+#
+# The rule is by SHAPE, not by directory: an ELF object, an archive or an
+# AppImage has no business being tracked here whatever it is called.
+badf=0
+for f in $(git ls-files); do
+	case "$f" in
+		*.so|*.so.[0-9]*|*.o|*.a|*.tar|*.tar.*|*.zip|*.AppImage|*.gz|*.xz)
+			bad "tracked build output or archive: $f"; badf=1 ;;
+	esac
+done
+# And anything executable-shaped that is not a script or a source file.
+for f in $(git ls-files); do
+	case "$f" in
+		*.sh|*.py|*.ps1|*.c|*.h|*.md|*.json|*.yml|*.yaml|*/Makefile|Makefile|LICENSE|.git*) continue ;;
+	esac
+	if [ -f "$f" ] && head -c 4 "$f" 2>/dev/null | grep -q 'ELF'; then
+		bad "tracked ELF binary: $f"; badf=1
+	fi
+done
+[ "$badf" = 0 ] && say "nothing tracked that this repository builds"
+
 # ----------------------------------------------- 3. make targets exist ------
 head_ "make targets"
 
