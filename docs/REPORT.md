@@ -2276,6 +2276,28 @@ name the defect without putting it in citation shape, the way
 them sit in the file as literals. Both dodges are the same dodge: a checker
 that reads the tree cannot tell a claim from a quotation of a broken one.
 
+**And two refusals that had never been planted at all.**
+`scripts/package-release.sh` carries the last two guards before anything is
+published: every artefact against its manifest entry, and both archives being
+flat. Neither had been made to fire. Both were, against a synthetic build
+directory of two files and a hand-written manifest, so no real build was
+needed:
+
+| | result |
+|---|---|
+| a manifest that matches its files | exit 0, `both archives are flat: LICENSE build-manifest.json cross-libc-dlopen.so gl-fwd.so` |
+| one artefact edited after the manifest was written | exit 1, `gl-fwd.so does not match its manifest entry`, with both hashes printed |
+| the `tar` invocation changed to archive the staging directory instead of its contents | exit 1, `the tar has a path separator in it, so it would extract into a directory`, with the offending listing printed |
+
+⚠ The third is planted in the SCRIPT rather than in the data, and that is the
+right place for it: the assertion's own comment says a nested directory "is
+exactly the kind of thing that reappears when somebody changes a tar
+invocation", so changing the tar invocation is the defect it names.
+
+⛔ **One guard in this family is still unproven:** `release.yml` refuses to
+publish a tag whose commit is not an ancestor of the default branch. Firing it
+needs a tag, and pushing one publishes a release.
+
 
 ---
 

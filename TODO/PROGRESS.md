@@ -93,10 +93,20 @@ runners and write the measured-versus-configured table into T-12's entry.
 
 ### 5. T-10, T-11, T-16
 
-T-10 needs its proofs recorded in the entry with run URLs, and this session
-produced several: `verify-gates.sh` at 8 proven, the drift check's six
-sections, the pin refusal's five paths. T-11 and T-16's cheaper half were not
-started.
+T-10's entry now carries which gates have been seen to refuse and where, and
+⭐ four of them were not planted: they went red on a runner against a real
+defect, which is stronger than a plant because nobody chose the shape of the
+failure. ⛔ Four are still unproven and the entry names them: the endings gate,
+which `.gitattributes` makes unplantable from the working tree; the two
+`generated` steps; and the artefact verifier's floor rule. Those need a runner
+and a deliberate push.
+
+⛔ **One guard remains unproven and cannot be proven without publishing:**
+`release.yml` refuses a tag whose commit is not an ancestor of the default
+branch. `package-release.sh`'s two were planted this session and both refuse.
+
+T-11 and T-16's cheaper half were not started. T-16's is a `glprobe` change,
+and it can only be verified by a GL-capable suite run.
 
 ### 6. Then the release
 
