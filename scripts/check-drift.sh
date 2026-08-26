@@ -278,7 +278,7 @@ count_dashes() {
 	' 2>/dev/null | grep -oF ' -- ' | wc -l | tr -d ' '
 }
 
-BUDGET=218
+BUDGET=217
 have=$(count_dashes)
 if [ "$have" -gt "$BUDGET" ]; then
 	bad "$have dashes used as punctuation, and the pin is $BUDGET."

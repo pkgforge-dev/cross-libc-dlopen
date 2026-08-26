@@ -2223,7 +2223,11 @@ $ echo $?
 ```
 
 The first is the rule. The second is what carries the pin down with the count,
-and it is the half that was missing. The third is the exemption the rule
+and it is the half that was missing. ⭐ **It caught its own author within the
+hour.** A rewrite of `docs/integrating.md` dropped one prose dash, the count
+fell to 217, and the check refused the commit until the pin came down with it.
+That is the whole mechanism working: under the old one-sided version the slack
+would simply have widened by one and nobody would have been told. The third is the exemption the rule
 always claimed and the check never honoured. `scripts/verify-gates.sh` plants
 the first of the three on every run, so the arming is checked rather than
 remembered.
