@@ -14,14 +14,11 @@ Entries whose deliverable is a number that does not exist yet.
 - **Problem.** [`docs/limits.md`](../docs/limits.md) states three cases and
   labels all three UNVERIFIED. A user linking a portable release binary has no
   answer.
-- **Premise**, and how far it was checked: **read, not measured.**
-  - *Static musl*: `dlopen` is a stub that always fails. Believed from musl's
-    own source; ⚠ not confirmed against a specific musl version here.
-  - *Static glibc*: `dlopen` works, and glibc warns at link time that it
-    "requires at runtime the shared libraries from the glibc version used for
-    linking". ⭐ That warning is a description of this project's entire
-    subject.
-  - *Dynamically linked against libc only*: believed squarely in scope.
+- **Premise**, and how far it was checked: **read, not measured.** The three
+  cases and what is believed about each are the static rows in
+  [`docs/limits.md`](../docs/limits.md), which is where they are stated and
+  where the closure rewrites them. ⚠ Nothing there was confirmed against a
+  specific musl or glibc version.
 - **Approach.** ⚠ The suspected blocker is **not** `dlopen`: it is that a
   fully static binary has no `LD_PRELOAD` mechanism, because there is no
   dynamic loader to honour it. Measure that first; if the preload cannot be

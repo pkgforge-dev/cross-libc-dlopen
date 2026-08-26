@@ -1,11 +1,10 @@
 # What it cannot do
 
 Every row names the measurement behind it, or says plainly that there is none.
-⭐ **A SKIP names a missing capability and stops there.** It may say "this host
-has no X". It may not say "and therefore nothing can be done". That is a claim
-about the design space, it needs its own evidence, and welded to a measured fact
-it inherits the measured fact's authority. One such sentence kept OpenGL broken
-on every musl distribution for a whole session.
+
+⭐ **Every row stops at the missing capability and claims nothing about the
+design space.** That rule, and the session it cost this project, are in
+[`conventions/prose.md`](conventions/prose.md).
 
 Open items with a route to closing them are in
 [`TODO/blocked.md`](../TODO/blocked.md). This page is what a *user* needs.

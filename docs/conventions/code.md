@@ -140,6 +140,62 @@ everything else in them.
 
 ---
 
+## The implementation invariants
+
+⛔ **Each of these is here because the opposite was tried.** They govern
+`src/`, and a change that breaks one is a change that needs a case before it
+needs a review.
+
+- **Never modify a host file.** Every write goes under `$XDG_RUNTIME_DIR` or
+  `$TMPDIR`. [`../../tests/invariants.c`](../../tests/invariants.c) and the
+  checksum comparison in [`../REPORT.md`](../REPORT.md) guard this.
+- **Exactly one libc family per process.** Never `dlopen` a second libc. E8 and
+  E9 measure why for glibc. musl's libc *can* be mapped by a glibc `ld.so`,
+  which is worse rather than better, because it succeeds quietly.
+- **Bundled libraries always beat host libraries**, for everything except the
+  libc runtime set when Design R deliberately switches it.
+- **Never strip symbol versions partially.** `DT_VERSYM`, `DT_VERNEED`,
+  `DT_VERDEF` and `DT_VERDEFNUM` go together. A verdef without its versym
+  segfaults `ld.so`.
+- **Strip only when the object actually needs it.** A rewritten object is a
+  private copy loaded from a path the application did not ask for, and the
+  Vulkan loader says so. On a host that can satisfy every requirement, the
+  right number of rewrites is zero.
+- **Never touch `ld-linux*`, `libc.so.*`, `ld-musl*`.** `cld_never_touch[]`
+  exists for this. `ld-linux` has no `SONAME`, so `RTLD_NOLOAD` cannot catch
+  it.
+- **Anything appended to a library path goes at the END.** Bundled directories
+  first, then the host runtime dir, then the conventional host dirs, then
+  whatever `/etc/ld.so.conf` names. Inserting anywhere else hands a host
+  library a win it should not have.
+
+---
+
+## Finding libraries is not this project's job
+
+⛔ **Do not add library searching to `src/cross-libc-dlopen.c`.** That is
+`ld.so`'s job, driven by `--library-path`. Two search implementations would
+diverge, and the C one would be the buggy one.
+
+⭐ **Assembling that path is a different job, and it belongs to whatever
+launches the process.** Two launchers needed the same fix independently:
+sharun assembles the path for the bundled runtime, fixed upstream in
+[Anylinux-sharun@`54208d2`](https://github.com/pkgforge-dev/Anylinux-sharun/commit/54208d2bc7d4c919ba46a6c234f6af7f8426b537),
+and `rs_library_path()` in
+[`../../src/runtime-select.c`](../../src/runtime-select.c) assembles it for the
+switched one. Adding a directory to a path is not searching it, and the shim
+still never opens a library it was not handed by name.
+
+⚠ **[`../../src/gl-fwd.c`](../../src/gl-fwd.c) is the one deliberate exception,
+and it is bounded.** It resolves exactly ONE soname, the one it is
+impersonating, because `ld.so` cannot: that name is taken by the shim itself,
+so `dlopen("libGL.so.1")` would hand back the shim's own handle and every
+forward would recurse. A closed, single-name lookup over a fixed directory list
+plus `CROSS_LIBC_DLOPEN_GL_HOST_DIR` is not a search implementation, and it
+must not grow into one.
+
+---
+
 ## Naming
 
 - New environment variables take the `CROSS_LIBC_DLOPEN_` prefix and go through
