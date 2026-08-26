@@ -2467,7 +2467,7 @@ things, measured on the tree as it stands:
 
 | name | still load-bearing? |
 |---|---|
-| `$APPDIR/lib/foreign-dlopen.so` | yes. `.preload` names it and our build is copied into that slot |
+| the AppDir's dispatcher slot | yes. `.preload` names it and our build is copied into it. ⚠ Its NAME is not load-bearing and must not be spelled by us: 9.17 has upstream changing it |
 | the `ANYLINUX_*` env spelling in `experiments/40-appimage.sh` | yes. 13 call sites, none touched by this branch, and upstream's binary understands no other spelling |
 | `.foreign-dlopen-enabled` | ⛔ no. Nothing in `src/` reads it |
 
@@ -2669,13 +2669,36 @@ that T1.7a prints before any crossing is attempted:
 | `pthread_mutex_t` | 40 | 48 | ⛔ diverges on aarch64 |
 | `pthread_mutex_t` | 40 | 40 | agrees on x86-64 |
 
-T1.6 asks the guest to allocate a mutex with its own `sizeof` and then locks it
-from the host side. The host writes 48 bytes into a 40-byte allocation. The
-eight bytes past the end land in the allocator's next chunk header, and the
-`free()` two lines later dies. ⛔ **This is a real hazard, not a harness
-artefact:** no loader can make a 40-byte allocation hold a 48-byte mutex, and
-the same shape reaches any musl-built object that hands a glibc process a
-`pthread_mutex_t` it allocated on aarch64.
+⛔ **The overflow is inside the GUEST, and it needs no crossing at all.**
+That is worth stating precisely, because the first reading of this was wrong
+and the fix built on it did not work. `abi_new_mutex()` in
+`tests/abi-guest.c` is four lines:
+
+```
+pthread_mutex_t *m = malloc(sizeof *m);        /* the GUEST's 40 */
+if (!m) return NULL;
+if (pthread_mutex_init(m, NULL) != 0) ...      /* resolves to OURS, writes 48 */
+return m;
+```
+
+The guest allocates its own size. Its `pthread_mutex_init` is glibc's, because
+making every reference in the guest resolve to this process's libc is the
+entire point of the thing under test. So glibc writes 48 bytes into a 40-byte
+allocation before anything is handed back, and the host's `free()` further down
+is merely where glibc notices.
+
+⚠ **Whether it is noticed depends on allocator rounding, and the write is
+real either way.** Measured on x86-64 with a guest planted to report and
+allocate eight bytes short: glibc rounds a 32-byte request up to a 40-byte
+usable chunk, the overflow lands in that padding, and nothing aborts. Planted
+32 bytes short instead, it escapes the padding and aborts. ⛔ A silent one is
+the worse outcome of the two, and it is the one a size pair closer together
+produces.
+
+⛔ **This is a real hazard, not a harness artefact:** no loader can make a
+40-byte allocation hold a 48-byte mutex, and the same shape reaches any
+musl-built object that allocates a `pthread_mutex_t` with its own `sizeof` in
+a glibc process on aarch64.
 
 **The measured contrast, one run, both architectures:**
 
@@ -2690,7 +2713,7 @@ assertion was left alone: a hazard count from a crossing that did not happen
 measures nothing, and pinning aarch64 to zero would have recorded the crash as
 an architectural virtue.
 
-**The probe declines the write now, and reports it.** `tests/abi-host.c`'s own
+**The probe declines the CALL now, and reports it.** `tests/abi-host.c`'s own
 header already says T1.7 writes divergent structs behind a guard band "because
 an overrun that only happens on success is the most misleading result
 available". T1.6 had the same overrun and no band, and only x86-64 had ever run
@@ -2699,25 +2722,51 @@ divergence in that file is reported, through a `DIFF` line and a `LIVE HAZARD`
 explanation rather than through `ok()`, because a hazard is not a failed check:
 it is a thing no loader can fix.
 
-⛔ **Proven by planting the divergence rather than by reasoning about it.** The
-guest was rebuilt from a header reporting a 32-byte mutex against the host's
-40, which is the same shape as aarch64's 40 against 48:
+⚠ **The first version of that guard wrapped the wrong thing**, and this is
+recorded rather than quietly corrected because the failure it produced looked
+exactly like success. It guarded the host's `pthread_mutex_lock`, which is the
+crossing the case is about, and left `g_newmtx()` being called. Run
+[32955888055](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32955888055)
+printed the hazard, in full, and then died at the same `free()` with the same
+`exit 134`. ⭐ It did move E50 from 0 live hazards to 1, because the hazard
+line was printed before the abort, which is precisely the kind of partial
+improvement that reads as a fix.
+
+⛔ **Proven by reproducing the abort on x86-64, not by reasoning about it.**
+A guest was rebuilt to report AND allocate a short mutex, which is what a real
+musl guest does on aarch64. Both hosts were built from the same tree and run
+against the same planted guest:
+
+| guard | exit |
+|---|---|
+| wrapping the host's lock, the first attempt | ⛔ **134**, SIGABRT. `g_newmtx()` is still called and the overflow is inside it |
+| wrapping the call, as it stands | **0**, `ABI CROSSING PASSED: 25 checks, 0 failed` |
+
+⚠ The delta has to be large enough to escape glibc's chunk rounding for the
+abort to appear at all, which is the same caveat as above. At eight bytes short
+both hosts exit 0 and the difference is visible only in the output: the old one
+still prints `ok guest allocated a mutex with its own sizeof`, because it
+called the function that does the overflowing write.
+
+The reported form, from the same runs:
 
 ```
-    ok   guest allocated a mutex with its own sizeof
-    DIFF host locking a guest-made mutex      host=40 guest=32
-         LIVE HAZARD: pthread_mutex_t is 40 bytes here and 32 there,
-         so a mutex the guest allocates is 8 bytes short of what this
-         side writes into it. NOT PERFORMED: it is an out-of-bounds write
-         and the allocator aborts the process on the next free.
+    ok   and left it unlocked
+    DIFF a mutex the guest allocates and inits host=40 guest=8
+         LIVE HAZARD: pthread_mutex_t is 40 bytes here and 8
+         there. The guest allocates its own size and calls
+         pthread_mutex_init, which resolves to OURS and writes this
+         size into it. NOT PERFORMED: on this pair it is an
+         out-of-bounds write inside the guest, and the allocator
+         aborts the process on the next free.
     ok   guest signalled a host condvar       guest signal returned 0, host wait returned 0
 
-ABI CROSSING PASSED: 26 checks, 0 failed
+ABI CROSSING PASSED: 25 checks, 0 failed
 ```
 
 and the same binary against an unplanted same-libc guest still reports
-`ABI CROSSING PASSED: 27 checks, 0 failed`, so the guard is not simply always
-firing. ⭐ The run reaches the end now, which matters beyond E49: T1.7b and
+`ABI CROSSING PASSED: 27 checks, 0 failed` with the crossing performed, so the
+guard is not simply always firing. ⭐ The run reaches the end now, which matters beyond E49: T1.7b and
 E50's hazard scan are downstream of the abort and had never executed on aarch64
 at all.
 
@@ -2837,14 +2886,16 @@ not what that file says, and the object count after unpacking was not measured.
 The full sweep is in
 [`../HISTORY/references/solo-findings.md`](../HISTORY/references/solo-findings.md).
 
-⛔ **A `pthread_mutex_t` a musl object allocates cannot be used by a glibc
-object on aarch64, and nothing here fixes it.** musl's is 40 bytes there and
-glibc's is 48, so the second write runs eight bytes past the allocation. It is
-measured, it is architecture-specific, and x86-64 does not have it because
-both are 40 there. Section 9.18 has the transcript and the size table. This is
-the shape the whole approach cannot address: the loader can make every
-reference resolve to one libc, and it cannot change a size the guest compiled
-in.
+⛔ **A musl object cannot allocate and initialise its own `pthread_mutex_t` in
+a glibc process on aarch64, and nothing here fixes it.** musl's is 40 bytes
+there and glibc's is 48, so the object allocates 40 and the `pthread_mutex_init`
+it reaches writes 48. ⚠ No crossing is involved: the overflow is inside the
+musl object, on its own allocation, and it happens because the loader did
+exactly what it is supposed to do. It is measured, it is architecture-specific,
+and x86-64 does not have it because both are 40 there. Section 9.18 has the
+transcript and the size table. This is the shape the whole approach cannot
+address: the loader can make every reference resolve to one libc, and it cannot
+change a size the object compiled in.
 
 Also not delivered: NVIDIA's glibc-only userspace on a musl process, static musl
 binaries with GPU access, bridging manylinux wheels into Alpine, and distroless
