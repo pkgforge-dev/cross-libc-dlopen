@@ -100,15 +100,35 @@ down restates it in different words, because the two then drift and a reader
 has no way to tell which is current. Where the purpose depends on a rule this
 directory owns, the header cites the rule rather than repeating it.
 
-⛔ **A comment is not a changelog.** It describes the code as it is, never what
-it used to be, what a change did, or which commit did it. That belongs in the
-commit message, or in [`../../HISTORY/`](../../HISTORY/README.md) when the
-superseded wording is worth keeping. A comment beginning "Before this change"
-is a comment that will outlive the reader who needed it.
+⛔ **A comment narrates no change.** "Before this change those arms could rely
+on the variable being unset; now they must say 0, and they do" tells a reader
+nothing they can act on: the diff already showed the change, and the sentence
+survives it to describe a tree nobody is looking at. That belongs in the commit
+message.
 
-⚠ **One comment syntax per file.** Whichever already carries the majority of
-that file's comments is the one that stays, so bringing a file into line never
-produces a diff larger than the change it accompanies.
+⭐ **A rejected alternative is not a changelog, and it is the most valuable
+comment in the file.** The difference is what the reader can do with it. A
+narration says what happened; a rationale says what will happen to the next
+person who tries the obvious thing. Keep the second, with the cost measured:
+
+> THE DEPRECATED ALIASES ARE GONE, and their removal is a decision rather than
+> an oversight. Every control had two names, only one of which appeared in any
+> document, so a reader could not tell which was authoritative and a check
+> could not tell either.
+
+[`../../src/cld-env.h`](../../src/cld-env.h) is the worked example, and
+[`../../scripts/build-in-env.sh`](../../scripts/build-in-env.sh) is a second.
+⚠ Both read like history at a glance, and neither is: each names a failure
+mode that comes back the moment somebody undoes the decision.
+
+⚠ **One comment syntax per file, below the header.** A file header may use the
+block form whatever the body uses, which is the ordinary C convention and is
+what every file here already does. Below it, whichever syntax already carries
+the majority of that file's comments is the one that stays, so bringing a file
+into line never produces a diff larger than the change it accompanies.
+
+⚠ Measured when this rule was written: no file in `src/` mixes the two. The
+rule exists to keep that true, not to license a rewrite of one that does not.
 
 ⛔ **A comment defect in a generated file is fixed at its generator.** The four
 files above are output. Editing one directly is refused by the regeneration
