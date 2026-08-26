@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+# build products
+src/cross-libc-dlopen.so
+src/gl-fwd.so
+src/egl-fwd.so
+src/gles-fwd.so
+src/runtime-select
+# ephemeral scratch
+.tmp/
+# build output from scripts/build.sh
+build/

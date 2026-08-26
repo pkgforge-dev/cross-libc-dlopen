@@ -1,0 +1,90 @@
+# The slow suite: a real AppImage driving a real host driver, on four host
+# classes and a second application.
+#
+# WHY IT IS NOT ON EVERY PUSH. It downloads two AppImages (10 MB and 30 MB) and
+# installs apt or apk packages on four distributions, two of which are from
+# 2014 and 2016 and are served by archive.ubuntu.com -- a third-party mirror
+# this repository does not control and whose slowness is not a finding about
+# this code. gates.yml is the ~4 minute gate; this is the wide one.
+#
+# WHAT THIS CANNOT DO, and what stands in for it. A skipped job with no reason
+# is indistinguishable from a broken one, so the reasons are here and not only
+# in a document:
+#
+#   a real GPU              -- lavapipe and llvmpipe exercise the SAME dlopen,
+#                              rewrite and forward paths. The driver differs;
+#                              the loader does not. The hardware cases SKIP by
+#                              name, which is the existing mechanism.
+#   /dev/dri DRM drivers    -- the ICD interface is identical for a software
+#                              ICD. What is untested is the driver's own
+#                              device handling.
+#   NVIDIA's closed stack   -- nothing stands in for it. Untested in CI; the
+#                              local result on an RTX 3050 Ti is in the record.
+#   aarch64 on real silicon -- ⭐ NOT a gap here. ubuntu-24.04-arm IS real
+#                              silicon, so this job CLOSES what qemu-user
+#                              could only approximate: a real memory model and
+#                              a real Mesa behind the trampolines.
+
+name: appimage-suite
+
+on:
+  schedule:
+    # Weekly. The two Ubuntu stages depend on archive.ubuntu.com and are slow;
+    # per-push would spend most of its time in somebody else's mirror.
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'one host: alpine, debian, ubuntu1404, ubuntu1604, gtk4, both, all'
+        required: false
+        default: 'all'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: appimage-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  suite:
+    name: appimage suite (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      # Both AppImages are sha256-verified by the driver, so a cache hit is
+      # exactly as trustworthy as a fresh download -- a poisoned cache fails
+      # the pin and stops the run.
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .tmp/*.AppImage
+          key: appimages-${{ matrix.arch }}-v1
+
+      # Extraction runs the AppImage's own ELF runtime over a DwarFS payload
+      # and needs --privileged. Hosted runners allow it; a hardened
+      # self-hosted one may not, and then this is the first thing that breaks.
+      - name: run the suite
+        run: sh scripts/run-appimage.sh --only "${{ inputs.only || 'all' }}"
+        env:
+          CLD_ENGINE: docker
+          CLD_TARGET_ARCH: ${{ matrix.arch }}
+
+      # This gate is DECORATIVE anywhere else: gles-syms-check exits 0 with a
+      # SKIP when no AppDir bundles libGLESv2.so.2, and only the gtk4 AppImage
+      # extracted above has one. So it runs here, after extraction, or not at
+      # all.
+      - name: the GL, EGL and GLES tables are not stale
+        if: always()
+        run: |
+          make -C src gl-syms-check  GLVND=../.tmp/AppDir/lib
+          make -C src gles-syms-check GLES=../.tmp/gtk4x/AppDir/lib

@@ -1,0 +1,259 @@
+{
+ "classification": {
+  "_IO_feof_unlocked": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE: macro in glibc"
+  },
+  "_IO_ferror_unlocked": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE: macro in glibc"
+  },
+  "_IO_getc_unlocked": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE: macro in glibc"
+  },
+  "_IO_putc_unlocked": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE: macro in glibc"
+  },
+  "___environ": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__dls2b": {
+   "kind": "irrelevant",
+   "reason": "musl's own dynamic-loader internals; there is no musl ld.so here"
+  },
+  "__dls3": {
+   "kind": "irrelevant",
+   "reason": "musl's own dynamic-loader internals; there is no musl ld.so here"
+  },
+  "__fgetwc_unlocked": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__flt_rounds": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__fputwc_unlocked": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__freadahead": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__freadptr": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__freadptrinc": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__fseterr": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__lgammal_r": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__libanl_version_placeholder": {
+   "kind": "irrelevant",
+   "reason": "empty ABI placeholder symbol"
+  },
+  "__nl_langinfo": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__optpos": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__optreset": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__setjmp": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__stack_chk_guard": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__strerror_l": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE: glibc spells it without the underscores"
+  },
+  "__strtoimax_internal": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "__strtoumax_internal": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "_dl_debug_addr": {
+   "kind": "irrelevant",
+   "reason": "ld.so internals (except _dl_find_object)"
+  },
+  "_dlstart": {
+   "kind": "irrelevant",
+   "reason": "musl's own dynamic-loader internals; there is no musl ld.so here"
+  },
+  "_fini": {
+   "kind": "irrelevant",
+   "reason": "the .init/.fini sections themselves, supplied by crti.o"
+  },
+  "_init": {
+   "kind": "irrelevant",
+   "reason": "the .init/.fini sections themselves, supplied by crti.o"
+  },
+  "_ns_flagdata": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "at_quick_exit": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE. Returns failure rather than register a handler with the wrong lifetime. Callers must handle a non-zero return."
+  },
+  "atexit": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE (5.1 Design A), not a version gap: glibc keeps atexit in the static libc_nonshared.a at every release, musl exports it dynamically. Measured absent from the bundled libc.so.6."
+  },
+  "crypt": {
+   "kind": "irrelevant",
+   "reason": "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; shimming it would interpose over a working implementation"
+  },
+  "crypt_r": {
+   "kind": "irrelevant",
+   "reason": "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; shimming it would interpose over a working implementation"
+  },
+  "encrypt": {
+   "kind": "irrelevant",
+   "reason": "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; shimming it would interpose over a working implementation"
+  },
+  "fgetln": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "fpurge": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE: BSD fpurge over glibc's __fpurge"
+  },
+  "getdents": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "h_errno": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "issetugid": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE: BSD issetugid over AT_SECURE, as musl implements it"
+  },
+  "membarrier": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE: thin syscall wrapper"
+  },
+  "optreset": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "posix_close": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE"
+  },
+  "res_init": {
+   "kind": "irrelevant",
+   "reason": "resolver internals"
+  },
+  "setkey": {
+   "kind": "irrelevant",
+   "reason": "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; shimming it would interpose over a working implementation"
+  },
+  "sigsetjmp": {
+   "kind": "stub-only",
+   "reason": "no audited implementation"
+  },
+  "tcgetwinsize": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE: ioctl under a POSIX name"
+  },
+  "tcsetwinsize": {
+   "kind": "implementable",
+   "reason": "MUSL BRIDGE: ioctl under a POSIX name"
+  }
+ },
+ "counts": {
+  "forwardable": 0,
+  "implementable": 13,
+  "irrelevant": 12,
+  "stub-only": 22
+ },
+ "floor": {
+  "name": "appdir-bundled",
+  "release": "2.44",
+  "symbols": 4287
+ },
+ "gap_total": 47,
+ "generator": "tools/gen_forward_shim.py",
+ "musl_only": [
+  "_IO_feof_unlocked",
+  "_IO_ferror_unlocked",
+  "_IO_getc_unlocked",
+  "_IO_putc_unlocked",
+  "___environ",
+  "__dls2b",
+  "__dls3",
+  "__fgetwc_unlocked",
+  "__flt_rounds",
+  "__fputwc_unlocked",
+  "__freadahead",
+  "__freadptr",
+  "__freadptrinc",
+  "__fseterr",
+  "__lgammal_r",
+  "__nl_langinfo",
+  "__optpos",
+  "__optreset",
+  "__setjmp",
+  "__stack_chk_guard",
+  "__strerror_l",
+  "__strtoimax_internal",
+  "__strtoumax_internal",
+  "_dl_debug_addr",
+  "_dlstart",
+  "_fini",
+  "_init",
+  "_ns_flagdata",
+  "at_quick_exit",
+  "atexit",
+  "crypt",
+  "crypt_r",
+  "encrypt",
+  "fgetln",
+  "fpurge",
+  "getdents",
+  "h_errno",
+  "issetugid",
+  "membarrier",
+  "optreset",
+  "posix_close",
+  "res_init",
+  "setkey",
+  "sigsetjmp",
+  "tcgetwinsize",
+  "tcsetwinsize"
+ ],
+ "note": "Covers only the enumerable gap. A symbol introduced after this manifest was generated is NOT covered and cannot be -- see REPORT.md. Design R (host-runtime switch) is the forward-compatible path.",
+ "target": {
+  "name": "glibc-2.44",
+  "release": "2.44",
+  "symbols": 4288
+ }
+}

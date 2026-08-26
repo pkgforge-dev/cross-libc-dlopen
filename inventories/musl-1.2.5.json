@@ -1,0 +1,9899 @@
+{
+ "counts": {
+  "ld-musl-x86_64.so.1": 1645,
+  "libc.musl-x86_64.so.1": 1645
+ },
+ "family": "musl",
+ "kinds": {
+  "_Exit": {
+   "abs": false,
+   "size": 22,
+   "type": "FUNC"
+  },
+  "_Fork": {
+   "abs": false,
+   "size": 72,
+   "type": "FUNC"
+  },
+  "_IO_feof_unlocked": {
+   "abs": false,
+   "size": 66,
+   "type": "FUNC"
+  },
+  "_IO_ferror_unlocked": {
+   "abs": false,
+   "size": 66,
+   "type": "FUNC"
+  },
+  "_IO_getc": {
+   "abs": false,
+   "size": 63,
+   "type": "FUNC"
+  },
+  "_IO_getc_unlocked": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "_IO_putc": {
+   "abs": false,
+   "size": 87,
+   "type": "FUNC"
+  },
+  "_IO_putc_unlocked": {
+   "abs": false,
+   "size": 44,
+   "type": "FUNC"
+  },
+  "___environ": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "__assert_fail": {
+   "abs": false,
+   "size": 42,
+   "type": "FUNC"
+  },
+  "__ctype_b_loc": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "__ctype_get_mb_cur_max": {
+   "abs": false,
+   "size": 35,
+   "type": "FUNC"
+  },
+  "__ctype_tolower_loc": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "__ctype_toupper_loc": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "__cxa_atexit": {
+   "abs": false,
+   "size": 166,
+   "type": "FUNC"
+  },
+  "__cxa_finalize": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "__daylight": {
+   "abs": false,
+   "size": 4,
+   "type": "OBJECT"
+  },
+  "__dls2b": {
+   "abs": false,
+   "size": 168,
+   "type": "FUNC"
+  },
+  "__dls3": {
+   "abs": false,
+   "size": 2992,
+   "type": "FUNC"
+  },
+  "__duplocale": {
+   "abs": false,
+   "size": 61,
+   "type": "FUNC"
+  },
+  "__environ": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "__errno_location": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "__fbufsize": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__fgetwc_unlocked": {
+   "abs": false,
+   "size": 314,
+   "type": "FUNC"
+  },
+  "__flbf": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "__flt_rounds": {
+   "abs": false,
+   "size": 72,
+   "type": "FUNC"
+  },
+  "__fpclassify": {
+   "abs": false,
+   "size": 60,
+   "type": "FUNC"
+  },
+  "__fpclassifyf": {
+   "abs": false,
+   "size": 57,
+   "type": "FUNC"
+  },
+  "__fpclassifyl": {
+   "abs": false,
+   "size": 77,
+   "type": "FUNC"
+  },
+  "__fpending": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "__fpurge": {
+   "abs": false,
+   "size": 23,
+   "type": "FUNC"
+  },
+  "__fputwc_unlocked": {
+   "abs": false,
+   "size": 242,
+   "type": "FUNC"
+  },
+  "__freadable": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "__freadahead": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "__freading": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "__freadptr": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "__freadptrinc": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__freelocale": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "__fseterr": {
+   "abs": false,
+   "size": 4,
+   "type": "FUNC"
+  },
+  "__fsetlocking": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "__fwritable": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "__fwriting": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "__fxstat": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "__fxstatat": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "__getdelim": {
+   "abs": false,
+   "size": 805,
+   "type": "FUNC"
+  },
+  "__h_errno_location": {
+   "abs": false,
+   "size": 31,
+   "type": "FUNC"
+  },
+  "__isalnum_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__isalpha_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__isblank_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iscntrl_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__isdigit_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__isgraph_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__islower_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__isoc99_fscanf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "__isoc99_fwscanf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "__isoc99_scanf": {
+   "abs": false,
+   "size": 148,
+   "type": "FUNC"
+  },
+  "__isoc99_sscanf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "__isoc99_swscanf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "__isoc99_vfscanf": {
+   "abs": false,
+   "size": 3670,
+   "type": "FUNC"
+  },
+  "__isoc99_vfwscanf": {
+   "abs": false,
+   "size": 3624,
+   "type": "FUNC"
+  },
+  "__isoc99_vscanf": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "__isoc99_vsscanf": {
+   "abs": false,
+   "size": 75,
+   "type": "FUNC"
+  },
+  "__isoc99_vswscanf": {
+   "abs": false,
+   "size": 92,
+   "type": "FUNC"
+  },
+  "__isoc99_vwscanf": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "__isoc99_wscanf": {
+   "abs": false,
+   "size": 148,
+   "type": "FUNC"
+  },
+  "__isprint_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__ispunct_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__isspace_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__isupper_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswalnum_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswalpha_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswblank_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswcntrl_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswctype_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswdigit_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswgraph_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswlower_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswprint_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswpunct_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswspace_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswupper_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__iswxdigit_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__isxdigit_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__lgammal_r": {
+   "abs": false,
+   "size": 1709,
+   "type": "FUNC"
+  },
+  "__libc_current_sigrtmax": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "__libc_current_sigrtmin": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "__libc_start_main": {
+   "abs": false,
+   "size": 50,
+   "type": "FUNC"
+  },
+  "__lxstat": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "__newlocale": {
+   "abs": false,
+   "size": 437,
+   "type": "FUNC"
+  },
+  "__nl_langinfo": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "__nl_langinfo_l": {
+   "abs": false,
+   "size": 220,
+   "type": "FUNC"
+  },
+  "__optpos": {
+   "abs": false,
+   "size": 4,
+   "type": "OBJECT"
+  },
+  "__optreset": {
+   "abs": false,
+   "size": 4,
+   "type": "OBJECT"
+  },
+  "__posix_getopt": {
+   "abs": false,
+   "size": 720,
+   "type": "FUNC"
+  },
+  "__progname": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "__progname_full": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "__res_state": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "__sched_cpucount": {
+   "abs": false,
+   "size": 55,
+   "type": "FUNC"
+  },
+  "__setjmp": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "__signbit": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "__signbitf": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "__signbitl": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "__signgam": {
+   "abs": false,
+   "size": 4,
+   "type": "OBJECT"
+  },
+  "__sigsetjmp": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "__stack_chk_fail": {
+   "abs": false,
+   "size": 2,
+   "type": "FUNC"
+  },
+  "__stack_chk_guard": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "__strcasecmp_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__strcoll_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__strerror_l": {
+   "abs": false,
+   "size": 44,
+   "type": "FUNC"
+  },
+  "__strncasecmp_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__strtod_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__strtof_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__strtoimax_internal": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__strtol_internal": {
+   "abs": false,
+   "size": 121,
+   "type": "FUNC"
+  },
+  "__strtold_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__strtoll_internal": {
+   "abs": false,
+   "size": 121,
+   "type": "FUNC"
+  },
+  "__strtoul_internal": {
+   "abs": false,
+   "size": 118,
+   "type": "FUNC"
+  },
+  "__strtoull_internal": {
+   "abs": false,
+   "size": 118,
+   "type": "FUNC"
+  },
+  "__strtoumax_internal": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__strxfrm_l": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "__sysv_signal": {
+   "abs": false,
+   "size": 91,
+   "type": "FUNC"
+  },
+  "__timezone": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "__tls_get_addr": {
+   "abs": false,
+   "size": 25,
+   "type": "FUNC"
+  },
+  "__tolower_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__toupper_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__towctrans_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__towlower_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__towupper_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__tzname": {
+   "abs": false,
+   "size": 16,
+   "type": "OBJECT"
+  },
+  "__uselocale": {
+   "abs": false,
+   "size": 58,
+   "type": "FUNC"
+  },
+  "__wcscoll_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__wcsftime_l": {
+   "abs": false,
+   "size": 640,
+   "type": "FUNC"
+  },
+  "__wcsxfrm_l": {
+   "abs": false,
+   "size": 97,
+   "type": "FUNC"
+  },
+  "__wctrans_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__wctype_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "__xmknod": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "__xmknodat": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "__xpg_basename": {
+   "abs": false,
+   "size": 92,
+   "type": "FUNC"
+  },
+  "__xpg_strerror_r": {
+   "abs": false,
+   "size": 89,
+   "type": "FUNC"
+  },
+  "__xstat": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "_dl_debug_addr": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "_dl_debug_state": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "_dlstart": {
+   "abs": false,
+   "size": 0,
+   "type": "NOTYPE"
+  },
+  "_environ": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "_exit": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "_fini": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "_flushlbf": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "_init": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "_longjmp": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "_ns_flagdata": {
+   "abs": false,
+   "size": 128,
+   "type": "OBJECT"
+  },
+  "_pthread_cleanup_pop": {
+   "abs": false,
+   "size": 42,
+   "type": "FUNC"
+  },
+  "_pthread_cleanup_push": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "_setjmp": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "a64l": {
+   "abs": false,
+   "size": 84,
+   "type": "FUNC"
+  },
+  "abort": {
+   "abs": false,
+   "size": 144,
+   "type": "FUNC"
+  },
+  "abs": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "accept": {
+   "abs": false,
+   "size": 47,
+   "type": "FUNC"
+  },
+  "accept4": {
+   "abs": false,
+   "size": 208,
+   "type": "FUNC"
+  },
+  "access": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "acct": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "acos": {
+   "abs": false,
+   "size": 378,
+   "type": "FUNC"
+  },
+  "acosf": {
+   "abs": false,
+   "size": 501,
+   "type": "FUNC"
+  },
+  "acosh": {
+   "abs": false,
+   "size": 192,
+   "type": "FUNC"
+  },
+  "acoshf": {
+   "abs": false,
+   "size": 179,
+   "type": "FUNC"
+  },
+  "acoshl": {
+   "abs": false,
+   "size": 194,
+   "type": "FUNC"
+  },
+  "acosl": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "addmntent": {
+   "abs": false,
+   "size": 89,
+   "type": "FUNC"
+  },
+  "adjtime": {
+   "abs": false,
+   "size": 198,
+   "type": "FUNC"
+  },
+  "adjtimex": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "aio_cancel": {
+   "abs": false,
+   "size": 330,
+   "type": "FUNC"
+  },
+  "aio_error": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "aio_fsync": {
+   "abs": false,
+   "size": 53,
+   "type": "FUNC"
+  },
+  "aio_read": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "aio_return": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "aio_suspend": {
+   "abs": false,
+   "size": 564,
+   "type": "FUNC"
+  },
+  "aio_write": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "alarm": {
+   "abs": false,
+   "size": 69,
+   "type": "FUNC"
+  },
+  "aligned_alloc": {
+   "abs": false,
+   "size": 788,
+   "type": "FUNC"
+  },
+  "alphasort": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "arch_prctl": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "asctime": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "asctime_r": {
+   "abs": false,
+   "size": 167,
+   "type": "FUNC"
+  },
+  "asin": {
+   "abs": false,
+   "size": 377,
+   "type": "FUNC"
+  },
+  "asinf": {
+   "abs": false,
+   "size": 335,
+   "type": "FUNC"
+  },
+  "asinh": {
+   "abs": false,
+   "size": 288,
+   "type": "FUNC"
+  },
+  "asinhf": {
+   "abs": false,
+   "size": 266,
+   "type": "FUNC"
+  },
+  "asinhl": {
+   "abs": false,
+   "size": 251,
+   "type": "FUNC"
+  },
+  "asinl": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "asprintf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "at_quick_exit": {
+   "abs": false,
+   "size": 82,
+   "type": "FUNC"
+  },
+  "atan": {
+   "abs": false,
+   "size": 531,
+   "type": "FUNC"
+  },
+  "atan2": {
+   "abs": false,
+   "size": 460,
+   "type": "FUNC"
+  },
+  "atan2f": {
+   "abs": false,
+   "size": 452,
+   "type": "FUNC"
+  },
+  "atan2l": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "atanf": {
+   "abs": false,
+   "size": 533,
+   "type": "FUNC"
+  },
+  "atanh": {
+   "abs": false,
+   "size": 183,
+   "type": "FUNC"
+  },
+  "atanhf": {
+   "abs": false,
+   "size": 166,
+   "type": "FUNC"
+  },
+  "atanhl": {
+   "abs": false,
+   "size": 162,
+   "type": "FUNC"
+  },
+  "atanl": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "atexit": {
+   "abs": false,
+   "size": 17,
+   "type": "FUNC"
+  },
+  "atof": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "atoi": {
+   "abs": false,
+   "size": 128,
+   "type": "FUNC"
+  },
+  "atol": {
+   "abs": false,
+   "size": 137,
+   "type": "FUNC"
+  },
+  "atoll": {
+   "abs": false,
+   "size": 137,
+   "type": "FUNC"
+  },
+  "basename": {
+   "abs": false,
+   "size": 92,
+   "type": "FUNC"
+  },
+  "bcmp": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "bcopy": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "bind": {
+   "abs": false,
+   "size": 38,
+   "type": "FUNC"
+  },
+  "bind_textdomain_codeset": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "bindtextdomain": {
+   "abs": false,
+   "size": 415,
+   "type": "FUNC"
+  },
+  "brk": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "bsd_signal": {
+   "abs": false,
+   "size": 91,
+   "type": "FUNC"
+  },
+  "bsearch": {
+   "abs": false,
+   "size": 108,
+   "type": "FUNC"
+  },
+  "btowc": {
+   "abs": false,
+   "size": 56,
+   "type": "FUNC"
+  },
+  "bzero": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "c16rtomb": {
+   "abs": false,
+   "size": 134,
+   "type": "FUNC"
+  },
+  "c32rtomb": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "cabs": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "cabsf": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "cabsl": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "cacos": {
+   "abs": false,
+   "size": 38,
+   "type": "FUNC"
+  },
+  "cacosf": {
+   "abs": false,
+   "size": 90,
+   "type": "FUNC"
+  },
+  "cacosh": {
+   "abs": false,
+   "size": 52,
+   "type": "FUNC"
+  },
+  "cacoshf": {
+   "abs": false,
+   "size": 95,
+   "type": "FUNC"
+  },
+  "cacoshl": {
+   "abs": false,
+   "size": 65,
+   "type": "FUNC"
+  },
+  "cacosl": {
+   "abs": false,
+   "size": 44,
+   "type": "FUNC"
+  },
+  "call_once": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "calloc": {
+   "abs": false,
+   "size": 231,
+   "type": "FUNC"
+  },
+  "capget": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "capset": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "carg": {
+   "abs": false,
+   "size": 17,
+   "type": "FUNC"
+  },
+  "cargf": {
+   "abs": false,
+   "size": 22,
+   "type": "FUNC"
+  },
+  "cargl": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "casin": {
+   "abs": false,
+   "size": 121,
+   "type": "FUNC"
+  },
+  "casinf": {
+   "abs": false,
+   "size": 215,
+   "type": "FUNC"
+  },
+  "casinh": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "casinhf": {
+   "abs": false,
+   "size": 96,
+   "type": "FUNC"
+  },
+  "casinhl": {
+   "abs": false,
+   "size": 39,
+   "type": "FUNC"
+  },
+  "casinl": {
+   "abs": false,
+   "size": 83,
+   "type": "FUNC"
+  },
+  "catan": {
+   "abs": false,
+   "size": 260,
+   "type": "FUNC"
+  },
+  "catanf": {
+   "abs": false,
+   "size": 287,
+   "type": "FUNC"
+  },
+  "catanh": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "catanhf": {
+   "abs": false,
+   "size": 96,
+   "type": "FUNC"
+  },
+  "catanhl": {
+   "abs": false,
+   "size": 39,
+   "type": "FUNC"
+  },
+  "catanl": {
+   "abs": false,
+   "size": 229,
+   "type": "FUNC"
+  },
+  "catclose": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "catgets": {
+   "abs": false,
+   "size": 187,
+   "type": "FUNC"
+  },
+  "catopen": {
+   "abs": false,
+   "size": 595,
+   "type": "FUNC"
+  },
+  "cbrt": {
+   "abs": false,
+   "size": 315,
+   "type": "FUNC"
+  },
+  "cbrtf": {
+   "abs": false,
+   "size": 229,
+   "type": "FUNC"
+  },
+  "cbrtl": {
+   "abs": false,
+   "size": 426,
+   "type": "FUNC"
+  },
+  "ccos": {
+   "abs": false,
+   "size": 25,
+   "type": "FUNC"
+  },
+  "ccosf": {
+   "abs": false,
+   "size": 45,
+   "type": "FUNC"
+  },
+  "ccosh": {
+   "abs": false,
+   "size": 970,
+   "type": "FUNC"
+  },
+  "ccoshf": {
+   "abs": false,
+   "size": 903,
+   "type": "FUNC"
+  },
+  "ccoshl": {
+   "abs": false,
+   "size": 64,
+   "type": "FUNC"
+  },
+  "ccosl": {
+   "abs": false,
+   "size": 23,
+   "type": "FUNC"
+  },
+  "ceil": {
+   "abs": false,
+   "size": 155,
+   "type": "FUNC"
+  },
+  "ceilf": {
+   "abs": false,
+   "size": 109,
+   "type": "FUNC"
+  },
+  "ceill": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "cexp": {
+   "abs": false,
+   "size": 296,
+   "type": "FUNC"
+  },
+  "cexpf": {
+   "abs": false,
+   "size": 312,
+   "type": "FUNC"
+  },
+  "cexpl": {
+   "abs": false,
+   "size": 64,
+   "type": "FUNC"
+  },
+  "cfgetispeed": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "cfgetospeed": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "cfmakeraw": {
+   "abs": false,
+   "size": 74,
+   "type": "FUNC"
+  },
+  "cfsetispeed": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "cfsetospeed": {
+   "abs": false,
+   "size": 51,
+   "type": "FUNC"
+  },
+  "cfsetspeed": {
+   "abs": false,
+   "size": 51,
+   "type": "FUNC"
+  },
+  "chdir": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "chmod": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "chown": {
+   "abs": false,
+   "size": 28,
+   "type": "FUNC"
+  },
+  "chroot": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "cimag": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "cimagf": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "cimagl": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "clearenv": {
+   "abs": false,
+   "size": 48,
+   "type": "FUNC"
+  },
+  "clearerr": {
+   "abs": false,
+   "size": 40,
+   "type": "FUNC"
+  },
+  "clearerr_unlocked": {
+   "abs": false,
+   "size": 40,
+   "type": "FUNC"
+  },
+  "clock": {
+   "abs": false,
+   "size": 114,
+   "type": "FUNC"
+  },
+  "clock_adjtime": {
+   "abs": false,
+   "size": 51,
+   "type": "FUNC"
+  },
+  "clock_getcpuclockid": {
+   "abs": false,
+   "size": 56,
+   "type": "FUNC"
+  },
+  "clock_getres": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "clock_gettime": {
+   "abs": false,
+   "size": 121,
+   "type": "FUNC"
+  },
+  "clock_nanosleep": {
+   "abs": false,
+   "size": 103,
+   "type": "FUNC"
+  },
+  "clock_settime": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "clog": {
+   "abs": false,
+   "size": 72,
+   "type": "FUNC"
+  },
+  "clogf": {
+   "abs": false,
+   "size": 125,
+   "type": "FUNC"
+  },
+  "clogl": {
+   "abs": false,
+   "size": 83,
+   "type": "FUNC"
+  },
+  "clone": {
+   "abs": false,
+   "size": 350,
+   "type": "FUNC"
+  },
+  "close": {
+   "abs": false,
+   "size": 61,
+   "type": "FUNC"
+  },
+  "closedir": {
+   "abs": false,
+   "size": 36,
+   "type": "FUNC"
+  },
+  "closelog": {
+   "abs": false,
+   "size": 81,
+   "type": "FUNC"
+  },
+  "cnd_broadcast": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "cnd_destroy": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "cnd_init": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "cnd_signal": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "cnd_timedwait": {
+   "abs": false,
+   "size": 31,
+   "type": "FUNC"
+  },
+  "cnd_wait": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "confstr": {
+   "abs": false,
+   "size": 98,
+   "type": "FUNC"
+  },
+  "conj": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "conjf": {
+   "abs": false,
+   "size": 41,
+   "type": "FUNC"
+  },
+  "conjl": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "connect": {
+   "abs": false,
+   "size": 46,
+   "type": "FUNC"
+  },
+  "copy_file_range": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "copysign": {
+   "abs": false,
+   "size": 37,
+   "type": "FUNC"
+  },
+  "copysignf": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "copysignl": {
+   "abs": false,
+   "size": 47,
+   "type": "FUNC"
+  },
+  "cos": {
+   "abs": false,
+   "size": 174,
+   "type": "FUNC"
+  },
+  "cosf": {
+   "abs": false,
+   "size": 365,
+   "type": "FUNC"
+  },
+  "cosh": {
+   "abs": false,
+   "size": 169,
+   "type": "FUNC"
+  },
+  "coshf": {
+   "abs": false,
+   "size": 157,
+   "type": "FUNC"
+  },
+  "coshl": {
+   "abs": false,
+   "size": 206,
+   "type": "FUNC"
+  },
+  "cosl": {
+   "abs": false,
+   "size": 243,
+   "type": "FUNC"
+  },
+  "cpow": {
+   "abs": false,
+   "size": 109,
+   "type": "FUNC"
+  },
+  "cpowf": {
+   "abs": false,
+   "size": 174,
+   "type": "FUNC"
+  },
+  "cpowl": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "cproj": {
+   "abs": false,
+   "size": 97,
+   "type": "FUNC"
+  },
+  "cprojf": {
+   "abs": false,
+   "size": 95,
+   "type": "FUNC"
+  },
+  "cprojl": {
+   "abs": false,
+   "size": 96,
+   "type": "FUNC"
+  },
+  "creal": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "crealf": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "creall": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "creat": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "crypt": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "crypt_r": {
+   "abs": false,
+   "size": 83,
+   "type": "FUNC"
+  },
+  "csin": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "csinf": {
+   "abs": false,
+   "size": 96,
+   "type": "FUNC"
+  },
+  "csinh": {
+   "abs": false,
+   "size": 857,
+   "type": "FUNC"
+  },
+  "csinhf": {
+   "abs": false,
+   "size": 832,
+   "type": "FUNC"
+  },
+  "csinhl": {
+   "abs": false,
+   "size": 64,
+   "type": "FUNC"
+  },
+  "csinl": {
+   "abs": false,
+   "size": 39,
+   "type": "FUNC"
+  },
+  "csqrt": {
+   "abs": false,
+   "size": 638,
+   "type": "FUNC"
+  },
+  "csqrtf": {
+   "abs": false,
+   "size": 496,
+   "type": "FUNC"
+  },
+  "csqrtl": {
+   "abs": false,
+   "size": 64,
+   "type": "FUNC"
+  },
+  "ctan": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "ctanf": {
+   "abs": false,
+   "size": 96,
+   "type": "FUNC"
+  },
+  "ctanh": {
+   "abs": false,
+   "size": 559,
+   "type": "FUNC"
+  },
+  "ctanhf": {
+   "abs": false,
+   "size": 512,
+   "type": "FUNC"
+  },
+  "ctanhl": {
+   "abs": false,
+   "size": 64,
+   "type": "FUNC"
+  },
+  "ctanl": {
+   "abs": false,
+   "size": 39,
+   "type": "FUNC"
+  },
+  "ctermid": {
+   "abs": false,
+   "size": 25,
+   "type": "FUNC"
+  },
+  "ctime": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "ctime_r": {
+   "abs": false,
+   "size": 38,
+   "type": "FUNC"
+  },
+  "cuserid": {
+   "abs": false,
+   "size": 123,
+   "type": "FUNC"
+  },
+  "daemon": {
+   "abs": false,
+   "size": 178,
+   "type": "FUNC"
+  },
+  "daylight": {
+   "abs": false,
+   "size": 4,
+   "type": "OBJECT"
+  },
+  "dcgettext": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "dcngettext": {
+   "abs": false,
+   "size": 1251,
+   "type": "FUNC"
+  },
+  "delete_module": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "dgettext": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "difftime": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "dirfd": {
+   "abs": false,
+   "size": 4,
+   "type": "FUNC"
+  },
+  "dirname": {
+   "abs": false,
+   "size": 138,
+   "type": "FUNC"
+  },
+  "div": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "dl_iterate_phdr": {
+   "abs": false,
+   "size": 195,
+   "type": "FUNC"
+  },
+  "dladdr": {
+   "abs": false,
+   "size": 433,
+   "type": "FUNC"
+  },
+  "dlclose": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "dlerror": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "dlinfo": {
+   "abs": false,
+   "size": 56,
+   "type": "FUNC"
+  },
+  "dlopen": {
+   "abs": false,
+   "size": 2605,
+   "type": "FUNC"
+  },
+  "dlsym": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "dn_comp": {
+   "abs": false,
+   "size": 1091,
+   "type": "FUNC"
+  },
+  "dn_expand": {
+   "abs": false,
+   "size": 290,
+   "type": "FUNC"
+  },
+  "dn_skipname": {
+   "abs": false,
+   "size": 80,
+   "type": "FUNC"
+  },
+  "dngettext": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "dprintf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "drand48": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "drem": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "dremf": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "dup": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "dup2": {
+   "abs": false,
+   "size": 38,
+   "type": "FUNC"
+  },
+  "dup3": {
+   "abs": false,
+   "size": 146,
+   "type": "FUNC"
+  },
+  "duplocale": {
+   "abs": false,
+   "size": 61,
+   "type": "FUNC"
+  },
+  "eaccess": {
+   "abs": false,
+   "size": 20,
+   "type": "FUNC"
+  },
+  "ecvt": {
+   "abs": false,
+   "size": 166,
+   "type": "FUNC"
+  },
+  "encrypt": {
+   "abs": false,
+   "size": 361,
+   "type": "FUNC"
+  },
+  "endgrent": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "endhostent": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "endmntent": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "endnetent": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "endprotoent": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "endpwent": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "endservent": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "endspent": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "endusershell": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "endutent": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "endutxent": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "environ": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "epoll_create": {
+   "abs": false,
+   "size": 32,
+   "type": "FUNC"
+  },
+  "epoll_create1": {
+   "abs": false,
+   "size": 54,
+   "type": "FUNC"
+  },
+  "epoll_ctl": {
+   "abs": false,
+   "size": 36,
+   "type": "FUNC"
+  },
+  "epoll_pwait": {
+   "abs": false,
+   "size": 121,
+   "type": "FUNC"
+  },
+  "epoll_wait": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "erand48": {
+   "abs": false,
+   "size": 51,
+   "type": "FUNC"
+  },
+  "erf": {
+   "abs": false,
+   "size": 339,
+   "type": "FUNC"
+  },
+  "erfc": {
+   "abs": false,
+   "size": 363,
+   "type": "FUNC"
+  },
+  "erfcf": {
+   "abs": false,
+   "size": 356,
+   "type": "FUNC"
+  },
+  "erfcl": {
+   "abs": false,
+   "size": 342,
+   "type": "FUNC"
+  },
+  "erff": {
+   "abs": false,
+   "size": 330,
+   "type": "FUNC"
+  },
+  "erfl": {
+   "abs": false,
+   "size": 326,
+   "type": "FUNC"
+  },
+  "err": {
+   "abs": false,
+   "size": 135,
+   "type": "FUNC"
+  },
+  "errx": {
+   "abs": false,
+   "size": 135,
+   "type": "FUNC"
+  },
+  "ether_aton": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "ether_aton_r": {
+   "abs": false,
+   "size": 111,
+   "type": "FUNC"
+  },
+  "ether_hostton": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "ether_line": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "ether_ntoa": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "ether_ntoa_r": {
+   "abs": false,
+   "size": 122,
+   "type": "FUNC"
+  },
+  "ether_ntohost": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "euidaccess": {
+   "abs": false,
+   "size": 20,
+   "type": "FUNC"
+  },
+  "eventfd": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "eventfd_read": {
+   "abs": false,
+   "size": 31,
+   "type": "FUNC"
+  },
+  "eventfd_write": {
+   "abs": false,
+   "size": 41,
+   "type": "FUNC"
+  },
+  "execl": {
+   "abs": false,
+   "size": 336,
+   "type": "FUNC"
+  },
+  "execle": {
+   "abs": false,
+   "size": 322,
+   "type": "FUNC"
+  },
+  "execlp": {
+   "abs": false,
+   "size": 336,
+   "type": "FUNC"
+  },
+  "execv": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "execve": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "execvp": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "execvpe": {
+   "abs": false,
+   "size": 432,
+   "type": "FUNC"
+  },
+  "exit": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "exp": {
+   "abs": false,
+   "size": 492,
+   "type": "FUNC"
+  },
+  "exp10": {
+   "abs": false,
+   "size": 147,
+   "type": "FUNC"
+  },
+  "exp10f": {
+   "abs": false,
+   "size": 144,
+   "type": "FUNC"
+  },
+  "exp10l": {
+   "abs": false,
+   "size": 254,
+   "type": "FUNC"
+  },
+  "exp2": {
+   "abs": false,
+   "size": 507,
+   "type": "FUNC"
+  },
+  "exp2f": {
+   "abs": false,
+   "size": 210,
+   "type": "FUNC"
+  },
+  "exp2l": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "expf": {
+   "abs": false,
+   "size": 218,
+   "type": "FUNC"
+  },
+  "expl": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "explicit_bzero": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "expm1": {
+   "abs": false,
+   "size": 786,
+   "type": "FUNC"
+  },
+  "expm1f": {
+   "abs": false,
+   "size": 776,
+   "type": "FUNC"
+  },
+  "expm1l": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "fabs": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "fabsf": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "fabsl": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "faccessat": {
+   "abs": false,
+   "size": 419,
+   "type": "FUNC"
+  },
+  "fallocate": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "fanotify_init": {
+   "abs": false,
+   "size": 28,
+   "type": "FUNC"
+  },
+  "fanotify_mark": {
+   "abs": false,
+   "size": 32,
+   "type": "FUNC"
+  },
+  "fchdir": {
+   "abs": false,
+   "size": 84,
+   "type": "FUNC"
+  },
+  "fchmod": {
+   "abs": false,
+   "size": 94,
+   "type": "FUNC"
+  },
+  "fchmodat": {
+   "abs": false,
+   "size": 354,
+   "type": "FUNC"
+  },
+  "fchown": {
+   "abs": false,
+   "size": 106,
+   "type": "FUNC"
+  },
+  "fchownat": {
+   "abs": false,
+   "size": 35,
+   "type": "FUNC"
+  },
+  "fclose": {
+   "abs": false,
+   "size": 173,
+   "type": "FUNC"
+  },
+  "fcntl": {
+   "abs": false,
+   "size": 328,
+   "type": "FUNC"
+  },
+  "fcvt": {
+   "abs": false,
+   "size": 200,
+   "type": "FUNC"
+  },
+  "fdatasync": {
+   "abs": false,
+   "size": 42,
+   "type": "FUNC"
+  },
+  "fdim": {
+   "abs": false,
+   "size": 83,
+   "type": "FUNC"
+  },
+  "fdimf": {
+   "abs": false,
+   "size": 67,
+   "type": "FUNC"
+  },
+  "fdiml": {
+   "abs": false,
+   "size": 93,
+   "type": "FUNC"
+  },
+  "fdopen": {
+   "abs": false,
+   "size": 394,
+   "type": "FUNC"
+  },
+  "fdopendir": {
+   "abs": false,
+   "size": 146,
+   "type": "FUNC"
+  },
+  "feclearexcept": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "fegetenv": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "fegetexceptflag": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "fegetround": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "feholdexcept": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "feof": {
+   "abs": false,
+   "size": 66,
+   "type": "FUNC"
+  },
+  "feof_unlocked": {
+   "abs": false,
+   "size": 66,
+   "type": "FUNC"
+  },
+  "feraiseexcept": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "ferror": {
+   "abs": false,
+   "size": 66,
+   "type": "FUNC"
+  },
+  "ferror_unlocked": {
+   "abs": false,
+   "size": 66,
+   "type": "FUNC"
+  },
+  "fesetenv": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "fesetexceptflag": {
+   "abs": false,
+   "size": 43,
+   "type": "FUNC"
+  },
+  "fesetround": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "fetestexcept": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "feupdateenv": {
+   "abs": false,
+   "size": 45,
+   "type": "FUNC"
+  },
+  "fexecve": {
+   "abs": false,
+   "size": 119,
+   "type": "FUNC"
+  },
+  "fflush": {
+   "abs": false,
+   "size": 331,
+   "type": "FUNC"
+  },
+  "fflush_unlocked": {
+   "abs": false,
+   "size": 331,
+   "type": "FUNC"
+  },
+  "ffs": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "ffsl": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "ffsll": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "fgetc": {
+   "abs": false,
+   "size": 63,
+   "type": "FUNC"
+  },
+  "fgetc_unlocked": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "fgetgrent": {
+   "abs": false,
+   "size": 78,
+   "type": "FUNC"
+  },
+  "fgetln": {
+   "abs": false,
+   "size": 212,
+   "type": "FUNC"
+  },
+  "fgetpos": {
+   "abs": false,
+   "size": 28,
+   "type": "FUNC"
+  },
+  "fgetpwent": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "fgets": {
+   "abs": false,
+   "size": 398,
+   "type": "FUNC"
+  },
+  "fgets_unlocked": {
+   "abs": false,
+   "size": 398,
+   "type": "FUNC"
+  },
+  "fgetspent": {
+   "abs": false,
+   "size": 105,
+   "type": "FUNC"
+  },
+  "fgetwc": {
+   "abs": false,
+   "size": 64,
+   "type": "FUNC"
+  },
+  "fgetwc_unlocked": {
+   "abs": false,
+   "size": 314,
+   "type": "FUNC"
+  },
+  "fgetws": {
+   "abs": false,
+   "size": 153,
+   "type": "FUNC"
+  },
+  "fgetws_unlocked": {
+   "abs": false,
+   "size": 153,
+   "type": "FUNC"
+  },
+  "fgetxattr": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "fileno": {
+   "abs": false,
+   "size": 81,
+   "type": "FUNC"
+  },
+  "fileno_unlocked": {
+   "abs": false,
+   "size": 81,
+   "type": "FUNC"
+  },
+  "finite": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "finitef": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "flistxattr": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "flock": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "flockfile": {
+   "abs": false,
+   "size": 41,
+   "type": "FUNC"
+  },
+  "floor": {
+   "abs": false,
+   "size": 151,
+   "type": "FUNC"
+  },
+  "floorf": {
+   "abs": false,
+   "size": 110,
+   "type": "FUNC"
+  },
+  "floorl": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "fma": {
+   "abs": false,
+   "size": 874,
+   "type": "FUNC"
+  },
+  "fmaf": {
+   "abs": false,
+   "size": 452,
+   "type": "FUNC"
+  },
+  "fmal": {
+   "abs": false,
+   "size": 1388,
+   "type": "FUNC"
+  },
+  "fmax": {
+   "abs": false,
+   "size": 104,
+   "type": "FUNC"
+  },
+  "fmaxf": {
+   "abs": false,
+   "size": 81,
+   "type": "FUNC"
+  },
+  "fmaxl": {
+   "abs": false,
+   "size": 126,
+   "type": "FUNC"
+  },
+  "fmemopen": {
+   "abs": false,
+   "size": 533,
+   "type": "FUNC"
+  },
+  "fmin": {
+   "abs": false,
+   "size": 92,
+   "type": "FUNC"
+  },
+  "fminf": {
+   "abs": false,
+   "size": 72,
+   "type": "FUNC"
+  },
+  "fminl": {
+   "abs": false,
+   "size": 126,
+   "type": "FUNC"
+  },
+  "fmod": {
+   "abs": false,
+   "size": 368,
+   "type": "FUNC"
+  },
+  "fmodf": {
+   "abs": false,
+   "size": 299,
+   "type": "FUNC"
+  },
+  "fmodl": {
+   "abs": false,
+   "size": 20,
+   "type": "FUNC"
+  },
+  "fmtmsg": {
+   "abs": false,
+   "size": 911,
+   "type": "FUNC"
+  },
+  "fnmatch": {
+   "abs": false,
+   "size": 423,
+   "type": "FUNC"
+  },
+  "fopen": {
+   "abs": false,
+   "size": 182,
+   "type": "FUNC"
+  },
+  "fopencookie": {
+   "abs": false,
+   "size": 279,
+   "type": "FUNC"
+  },
+  "fork": {
+   "abs": false,
+   "size": 493,
+   "type": "FUNC"
+  },
+  "forkpty": {
+   "abs": false,
+   "size": 398,
+   "type": "FUNC"
+  },
+  "fpathconf": {
+   "abs": false,
+   "size": 48,
+   "type": "FUNC"
+  },
+  "fprintf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "fpurge": {
+   "abs": false,
+   "size": 23,
+   "type": "FUNC"
+  },
+  "fputc": {
+   "abs": false,
+   "size": 87,
+   "type": "FUNC"
+  },
+  "fputc_unlocked": {
+   "abs": false,
+   "size": 44,
+   "type": "FUNC"
+  },
+  "fputs": {
+   "abs": false,
+   "size": 53,
+   "type": "FUNC"
+  },
+  "fputs_unlocked": {
+   "abs": false,
+   "size": 53,
+   "type": "FUNC"
+  },
+  "fputwc": {
+   "abs": false,
+   "size": 71,
+   "type": "FUNC"
+  },
+  "fputwc_unlocked": {
+   "abs": false,
+   "size": 242,
+   "type": "FUNC"
+  },
+  "fputws": {
+   "abs": false,
+   "size": 236,
+   "type": "FUNC"
+  },
+  "fputws_unlocked": {
+   "abs": false,
+   "size": 236,
+   "type": "FUNC"
+  },
+  "fread": {
+   "abs": false,
+   "size": 254,
+   "type": "FUNC"
+  },
+  "fread_unlocked": {
+   "abs": false,
+   "size": 254,
+   "type": "FUNC"
+  },
+  "free": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "freeaddrinfo": {
+   "abs": false,
+   "size": 97,
+   "type": "FUNC"
+  },
+  "freeifaddrs": {
+   "abs": false,
+   "size": 25,
+   "type": "FUNC"
+  },
+  "freelocale": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "fremovexattr": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "freopen": {
+   "abs": false,
+   "size": 341,
+   "type": "FUNC"
+  },
+  "frexp": {
+   "abs": false,
+   "size": 120,
+   "type": "FUNC"
+  },
+  "frexpf": {
+   "abs": false,
+   "size": 99,
+   "type": "FUNC"
+  },
+  "frexpl": {
+   "abs": false,
+   "size": 133,
+   "type": "FUNC"
+  },
+  "fscanf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "fseek": {
+   "abs": false,
+   "size": 92,
+   "type": "FUNC"
+  },
+  "fseeko": {
+   "abs": false,
+   "size": 92,
+   "type": "FUNC"
+  },
+  "fsetpos": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "fsetxattr": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "fstat": {
+   "abs": false,
+   "size": 45,
+   "type": "FUNC"
+  },
+  "fstatat": {
+   "abs": false,
+   "size": 420,
+   "type": "FUNC"
+  },
+  "fstatfs": {
+   "abs": false,
+   "size": 42,
+   "type": "FUNC"
+  },
+  "fstatvfs": {
+   "abs": false,
+   "size": 202,
+   "type": "FUNC"
+  },
+  "fsync": {
+   "abs": false,
+   "size": 42,
+   "type": "FUNC"
+  },
+  "ftell": {
+   "abs": false,
+   "size": 66,
+   "type": "FUNC"
+  },
+  "ftello": {
+   "abs": false,
+   "size": 66,
+   "type": "FUNC"
+  },
+  "ftime": {
+   "abs": false,
+   "size": 73,
+   "type": "FUNC"
+  },
+  "ftok": {
+   "abs": false,
+   "size": 61,
+   "type": "FUNC"
+  },
+  "ftruncate": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "ftrylockfile": {
+   "abs": false,
+   "size": 161,
+   "type": "FUNC"
+  },
+  "ftw": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "funlockfile": {
+   "abs": false,
+   "size": 64,
+   "type": "FUNC"
+  },
+  "futimens": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "futimes": {
+   "abs": false,
+   "size": 79,
+   "type": "FUNC"
+  },
+  "futimesat": {
+   "abs": false,
+   "size": 112,
+   "type": "FUNC"
+  },
+  "fwide": {
+   "abs": false,
+   "size": 219,
+   "type": "FUNC"
+  },
+  "fwprintf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "fwrite": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "fwrite_unlocked": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "fwscanf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "gai_strerror": {
+   "abs": false,
+   "size": 76,
+   "type": "FUNC"
+  },
+  "gcvt": {
+   "abs": false,
+   "size": 31,
+   "type": "FUNC"
+  },
+  "get_avphys_pages": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "get_current_dir_name": {
+   "abs": false,
+   "size": 129,
+   "type": "FUNC"
+  },
+  "get_nprocs": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "get_nprocs_conf": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "get_phys_pages": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "getaddrinfo": {
+   "abs": false,
+   "size": 1145,
+   "type": "FUNC"
+  },
+  "getauxval": {
+   "abs": false,
+   "size": 65,
+   "type": "FUNC"
+  },
+  "getc": {
+   "abs": false,
+   "size": 63,
+   "type": "FUNC"
+  },
+  "getc_unlocked": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "getchar": {
+   "abs": false,
+   "size": 79,
+   "type": "FUNC"
+  },
+  "getchar_unlocked": {
+   "abs": false,
+   "size": 43,
+   "type": "FUNC"
+  },
+  "getcwd": {
+   "abs": false,
+   "size": 134,
+   "type": "FUNC"
+  },
+  "getdate": {
+   "abs": false,
+   "size": 244,
+   "type": "FUNC"
+  },
+  "getdate_err": {
+   "abs": false,
+   "size": 4,
+   "type": "OBJECT"
+  },
+  "getdelim": {
+   "abs": false,
+   "size": 805,
+   "type": "FUNC"
+  },
+  "getdents": {
+   "abs": false,
+   "size": 39,
+   "type": "FUNC"
+  },
+  "getdomainname": {
+   "abs": false,
+   "size": 94,
+   "type": "FUNC"
+  },
+  "getdtablesize": {
+   "abs": false,
+   "size": 38,
+   "type": "FUNC"
+  },
+  "getegid": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "getentropy": {
+   "abs": false,
+   "size": 130,
+   "type": "FUNC"
+  },
+  "getenv": {
+   "abs": false,
+   "size": 96,
+   "type": "FUNC"
+  },
+  "geteuid": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "getgid": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "getgrent": {
+   "abs": false,
+   "size": 128,
+   "type": "FUNC"
+  },
+  "getgrgid": {
+   "abs": false,
+   "size": 79,
+   "type": "FUNC"
+  },
+  "getgrgid_r": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "getgrnam": {
+   "abs": false,
+   "size": 77,
+   "type": "FUNC"
+  },
+  "getgrnam_r": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "getgrouplist": {
+   "abs": false,
+   "size": 976,
+   "type": "FUNC"
+  },
+  "getgroups": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "gethostbyaddr": {
+   "abs": false,
+   "size": 154,
+   "type": "FUNC"
+  },
+  "gethostbyaddr_r": {
+   "abs": false,
+   "size": 464,
+   "type": "FUNC"
+  },
+  "gethostbyname": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "gethostbyname2": {
+   "abs": false,
+   "size": 147,
+   "type": "FUNC"
+  },
+  "gethostbyname2_r": {
+   "abs": false,
+   "size": 599,
+   "type": "FUNC"
+  },
+  "gethostbyname_r": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "gethostent": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "gethostid": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "gethostname": {
+   "abs": false,
+   "size": 114,
+   "type": "FUNC"
+  },
+  "getifaddrs": {
+   "abs": false,
+   "size": 89,
+   "type": "FUNC"
+  },
+  "getitimer": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "getline": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "getloadavg": {
+   "abs": false,
+   "size": 205,
+   "type": "FUNC"
+  },
+  "getlogin": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "getlogin_r": {
+   "abs": false,
+   "size": 69,
+   "type": "FUNC"
+  },
+  "getmntent": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "getmntent_r": {
+   "abs": false,
+   "size": 453,
+   "type": "FUNC"
+  },
+  "getnameinfo": {
+   "abs": false,
+   "size": 2007,
+   "type": "FUNC"
+  },
+  "getnetbyaddr": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "getnetbyname": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "getnetent": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "getopt": {
+   "abs": false,
+   "size": 720,
+   "type": "FUNC"
+  },
+  "getopt_long": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "getopt_long_only": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "getpagesize": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "getpass": {
+   "abs": false,
+   "size": 321,
+   "type": "FUNC"
+  },
+  "getpeername": {
+   "abs": false,
+   "size": 36,
+   "type": "FUNC"
+  },
+  "getpgid": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "getpgrp": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "getpid": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "getppid": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "getpriority": {
+   "abs": false,
+   "size": 41,
+   "type": "FUNC"
+  },
+  "getprotobyname": {
+   "abs": false,
+   "size": 52,
+   "type": "FUNC"
+  },
+  "getprotobynumber": {
+   "abs": false,
+   "size": 25,
+   "type": "FUNC"
+  },
+  "getprotoent": {
+   "abs": false,
+   "size": 98,
+   "type": "FUNC"
+  },
+  "getpwent": {
+   "abs": false,
+   "size": 93,
+   "type": "FUNC"
+  },
+  "getpwnam": {
+   "abs": false,
+   "size": 47,
+   "type": "FUNC"
+  },
+  "getpwnam_r": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "getpwuid": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "getpwuid_r": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "getrandom": {
+   "abs": false,
+   "size": 42,
+   "type": "FUNC"
+  },
+  "getresgid": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "getresuid": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "getrlimit": {
+   "abs": false,
+   "size": 124,
+   "type": "FUNC"
+  },
+  "getrusage": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "gets": {
+   "abs": false,
+   "size": 183,
+   "type": "FUNC"
+  },
+  "getservbyname": {
+   "abs": false,
+   "size": 55,
+   "type": "FUNC"
+  },
+  "getservbyname_r": {
+   "abs": false,
+   "size": 308,
+   "type": "FUNC"
+  },
+  "getservbyport": {
+   "abs": false,
+   "size": 55,
+   "type": "FUNC"
+  },
+  "getservbyport_r": {
+   "abs": false,
+   "size": 500,
+   "type": "FUNC"
+  },
+  "getservent": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "getsid": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "getsockname": {
+   "abs": false,
+   "size": 36,
+   "type": "FUNC"
+  },
+  "getsockopt": {
+   "abs": false,
+   "size": 39,
+   "type": "FUNC"
+  },
+  "getspent": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "getspnam": {
+   "abs": false,
+   "size": 106,
+   "type": "FUNC"
+  },
+  "getspnam_r": {
+   "abs": false,
+   "size": 702,
+   "type": "FUNC"
+  },
+  "getsubopt": {
+   "abs": false,
+   "size": 180,
+   "type": "FUNC"
+  },
+  "gettext": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "gettid": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "gettimeofday": {
+   "abs": false,
+   "size": 77,
+   "type": "FUNC"
+  },
+  "getuid": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "getusershell": {
+   "abs": false,
+   "size": 98,
+   "type": "FUNC"
+  },
+  "getutent": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "getutid": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "getutline": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "getutxent": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "getutxid": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "getutxline": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "getw": {
+   "abs": false,
+   "size": 48,
+   "type": "FUNC"
+  },
+  "getwc": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "getwc_unlocked": {
+   "abs": false,
+   "size": 314,
+   "type": "FUNC"
+  },
+  "getwchar": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "getwchar_unlocked": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "getxattr": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "glob": {
+   "abs": false,
+   "size": 1207,
+   "type": "FUNC"
+  },
+  "globfree": {
+   "abs": false,
+   "size": 75,
+   "type": "FUNC"
+  },
+  "gmtime": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "gmtime_r": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "grantpt": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "h_errno": {
+   "abs": false,
+   "size": 4,
+   "type": "OBJECT"
+  },
+  "hasmntopt": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "hcreate": {
+   "abs": false,
+   "size": 79,
+   "type": "FUNC"
+  },
+  "hcreate_r": {
+   "abs": false,
+   "size": 76,
+   "type": "FUNC"
+  },
+  "hdestroy": {
+   "abs": false,
+   "size": 52,
+   "type": "FUNC"
+  },
+  "hdestroy_r": {
+   "abs": false,
+   "size": 37,
+   "type": "FUNC"
+  },
+  "herror": {
+   "abs": false,
+   "size": 68,
+   "type": "FUNC"
+  },
+  "hsearch": {
+   "abs": false,
+   "size": 31,
+   "type": "FUNC"
+  },
+  "hsearch_r": {
+   "abs": false,
+   "size": 335,
+   "type": "FUNC"
+  },
+  "hstrerror": {
+   "abs": false,
+   "size": 76,
+   "type": "FUNC"
+  },
+  "htonl": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "htons": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "hypot": {
+   "abs": false,
+   "size": 384,
+   "type": "FUNC"
+  },
+  "hypotf": {
+   "abs": false,
+   "size": 205,
+   "type": "FUNC"
+  },
+  "hypotl": {
+   "abs": false,
+   "size": 366,
+   "type": "FUNC"
+  },
+  "iconv": {
+   "abs": false,
+   "size": 4929,
+   "type": "FUNC"
+  },
+  "iconv_close": {
+   "abs": false,
+   "size": 25,
+   "type": "FUNC"
+  },
+  "iconv_open": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "if_freenameindex": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "if_indextoname": {
+   "abs": false,
+   "size": 120,
+   "type": "FUNC"
+  },
+  "if_nameindex": {
+   "abs": false,
+   "size": 268,
+   "type": "FUNC"
+  },
+  "if_nametoindex": {
+   "abs": false,
+   "size": 100,
+   "type": "FUNC"
+  },
+  "ilogb": {
+   "abs": false,
+   "size": 105,
+   "type": "FUNC"
+  },
+  "ilogbf": {
+   "abs": false,
+   "size": 96,
+   "type": "FUNC"
+  },
+  "ilogbl": {
+   "abs": false,
+   "size": 102,
+   "type": "FUNC"
+  },
+  "imaxabs": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "imaxdiv": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "in6addr_any": {
+   "abs": false,
+   "size": 16,
+   "type": "OBJECT"
+  },
+  "in6addr_loopback": {
+   "abs": false,
+   "size": 16,
+   "type": "OBJECT"
+  },
+  "index": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "inet_addr": {
+   "abs": false,
+   "size": 34,
+   "type": "FUNC"
+  },
+  "inet_aton": {
+   "abs": false,
+   "size": 250,
+   "type": "FUNC"
+  },
+  "inet_lnaof": {
+   "abs": false,
+   "size": 35,
+   "type": "FUNC"
+  },
+  "inet_makeaddr": {
+   "abs": false,
+   "size": 36,
+   "type": "FUNC"
+  },
+  "inet_netof": {
+   "abs": false,
+   "size": 28,
+   "type": "FUNC"
+  },
+  "inet_network": {
+   "abs": false,
+   "size": 20,
+   "type": "FUNC"
+  },
+  "inet_ntoa": {
+   "abs": false,
+   "size": 68,
+   "type": "FUNC"
+  },
+  "inet_ntop": {
+   "abs": false,
+   "size": 539,
+   "type": "FUNC"
+  },
+  "inet_pton": {
+   "abs": false,
+   "size": 733,
+   "type": "FUNC"
+  },
+  "init_module": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "initgroups": {
+   "abs": false,
+   "size": 67,
+   "type": "FUNC"
+  },
+  "initstate": {
+   "abs": false,
+   "size": 234,
+   "type": "FUNC"
+  },
+  "inotify_add_watch": {
+   "abs": false,
+   "size": 29,
+   "type": "FUNC"
+  },
+  "inotify_init": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "inotify_init1": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "inotify_rm_watch": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "insque": {
+   "abs": false,
+   "size": 45,
+   "type": "FUNC"
+  },
+  "ioctl": {
+   "abs": false,
+   "size": 63,
+   "type": "FUNC"
+  },
+  "ioperm": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "iopl": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "isalnum": {
+   "abs": false,
+   "size": 32,
+   "type": "FUNC"
+  },
+  "isalnum_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "isalpha": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "isalpha_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "isascii": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "isastream": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "isatty": {
+   "abs": false,
+   "size": 40,
+   "type": "FUNC"
+  },
+  "isblank": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "isblank_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iscntrl": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "iscntrl_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "isdigit": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "isdigit_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "isgraph": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "isgraph_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "islower": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "islower_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "isprint": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "isprint_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "ispunct": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "ispunct_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "issetugid": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "isspace": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "isspace_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "isupper": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "isupper_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswalnum": {
+   "abs": false,
+   "size": 36,
+   "type": "FUNC"
+  },
+  "iswalnum_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswalpha": {
+   "abs": false,
+   "size": 64,
+   "type": "FUNC"
+  },
+  "iswalpha_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswblank": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswblank_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswcntrl": {
+   "abs": false,
+   "size": 50,
+   "type": "FUNC"
+  },
+  "iswcntrl_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswctype": {
+   "abs": false,
+   "size": 92,
+   "type": "FUNC"
+  },
+  "iswctype_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswdigit": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "iswdigit_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswgraph": {
+   "abs": false,
+   "size": 35,
+   "type": "FUNC"
+  },
+  "iswgraph_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswlower": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "iswlower_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswprint": {
+   "abs": false,
+   "size": 99,
+   "type": "FUNC"
+  },
+  "iswprint_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswpunct": {
+   "abs": false,
+   "size": 55,
+   "type": "FUNC"
+  },
+  "iswpunct_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswspace": {
+   "abs": false,
+   "size": 39,
+   "type": "FUNC"
+  },
+  "iswspace_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswupper": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "iswupper_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "iswxdigit": {
+   "abs": false,
+   "size": 28,
+   "type": "FUNC"
+  },
+  "iswxdigit_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "isxdigit": {
+   "abs": false,
+   "size": 28,
+   "type": "FUNC"
+  },
+  "isxdigit_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "j0": {
+   "abs": false,
+   "size": 289,
+   "type": "FUNC"
+  },
+  "j0f": {
+   "abs": false,
+   "size": 281,
+   "type": "FUNC"
+  },
+  "j1": {
+   "abs": false,
+   "size": 257,
+   "type": "FUNC"
+  },
+  "j1f": {
+   "abs": false,
+   "size": 250,
+   "type": "FUNC"
+  },
+  "jn": {
+   "abs": false,
+   "size": 1426,
+   "type": "FUNC"
+  },
+  "jnf": {
+   "abs": false,
+   "size": 1063,
+   "type": "FUNC"
+  },
+  "jrand48": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "kill": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "killpg": {
+   "abs": false,
+   "size": 36,
+   "type": "FUNC"
+  },
+  "klogctl": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "l64a": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "labs": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "lchmod": {
+   "abs": false,
+   "size": 20,
+   "type": "FUNC"
+  },
+  "lchown": {
+   "abs": false,
+   "size": 28,
+   "type": "FUNC"
+  },
+  "lckpwdf": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "lcong48": {
+   "abs": false,
+   "size": 20,
+   "type": "FUNC"
+  },
+  "ldexp": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "ldexpf": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "ldexpl": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "ldiv": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "lfind": {
+   "abs": false,
+   "size": 88,
+   "type": "FUNC"
+  },
+  "lgamma": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "lgamma_r": {
+   "abs": false,
+   "size": 1983,
+   "type": "FUNC"
+  },
+  "lgammaf": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "lgammaf_r": {
+   "abs": false,
+   "size": 1846,
+   "type": "FUNC"
+  },
+  "lgammal": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "lgammal_r": {
+   "abs": false,
+   "size": 1709,
+   "type": "FUNC"
+  },
+  "lgetxattr": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "link": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "linkat": {
+   "abs": false,
+   "size": 36,
+   "type": "FUNC"
+  },
+  "lio_listio": {
+   "abs": false,
+   "size": 478,
+   "type": "FUNC"
+  },
+  "listen": {
+   "abs": false,
+   "size": 41,
+   "type": "FUNC"
+  },
+  "listxattr": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "llabs": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "lldiv": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "llistxattr": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "llrint": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "llrintf": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "llrintl": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "llround": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "llroundf": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "llroundl": {
+   "abs": false,
+   "size": 56,
+   "type": "FUNC"
+  },
+  "localeconv": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "localtime": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "localtime_r": {
+   "abs": false,
+   "size": 110,
+   "type": "FUNC"
+  },
+  "lockf": {
+   "abs": false,
+   "size": 179,
+   "type": "FUNC"
+  },
+  "log": {
+   "abs": false,
+   "size": 669,
+   "type": "FUNC"
+  },
+  "log10": {
+   "abs": false,
+   "size": 574,
+   "type": "FUNC"
+  },
+  "log10f": {
+   "abs": false,
+   "size": 360,
+   "type": "FUNC"
+  },
+  "log10l": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "log1p": {
+   "abs": false,
+   "size": 465,
+   "type": "FUNC"
+  },
+  "log1pf": {
+   "abs": false,
+   "size": 378,
+   "type": "FUNC"
+  },
+  "log1pl": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "log2": {
+   "abs": false,
+   "size": 727,
+   "type": "FUNC"
+  },
+  "log2f": {
+   "abs": false,
+   "size": 249,
+   "type": "FUNC"
+  },
+  "log2l": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "logb": {
+   "abs": false,
+   "size": 85,
+   "type": "FUNC"
+  },
+  "logbf": {
+   "abs": false,
+   "size": 74,
+   "type": "FUNC"
+  },
+  "logbl": {
+   "abs": false,
+   "size": 80,
+   "type": "FUNC"
+  },
+  "logf": {
+   "abs": false,
+   "size": 249,
+   "type": "FUNC"
+  },
+  "login_tty": {
+   "abs": false,
+   "size": 98,
+   "type": "FUNC"
+  },
+  "logl": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "longjmp": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "lrand48": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "lremovexattr": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "lrint": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "lrintf": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "lrintl": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "lround": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "lroundf": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "lroundl": {
+   "abs": false,
+   "size": 56,
+   "type": "FUNC"
+  },
+  "lsearch": {
+   "abs": false,
+   "size": 148,
+   "type": "FUNC"
+  },
+  "lseek": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "lsetxattr": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "lstat": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "lutimes": {
+   "abs": false,
+   "size": 90,
+   "type": "FUNC"
+  },
+  "madvise": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "malloc": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "malloc_usable_size": {
+   "abs": false,
+   "size": 461,
+   "type": "FUNC"
+  },
+  "mblen": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "mbrlen": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "mbrtoc16": {
+   "abs": false,
+   "size": 163,
+   "type": "FUNC"
+  },
+  "mbrtoc32": {
+   "abs": false,
+   "size": 116,
+   "type": "FUNC"
+  },
+  "mbrtowc": {
+   "abs": false,
+   "size": 297,
+   "type": "FUNC"
+  },
+  "mbsinit": {
+   "abs": false,
+   "size": 20,
+   "type": "FUNC"
+  },
+  "mbsnrtowcs": {
+   "abs": false,
+   "size": 355,
+   "type": "FUNC"
+  },
+  "mbsrtowcs": {
+   "abs": false,
+   "size": 885,
+   "type": "FUNC"
+  },
+  "mbstowcs": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "mbtowc": {
+   "abs": false,
+   "size": 280,
+   "type": "FUNC"
+  },
+  "memalign": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "membarrier": {
+   "abs": false,
+   "size": 331,
+   "type": "FUNC"
+  },
+  "memccpy": {
+   "abs": false,
+   "size": 290,
+   "type": "FUNC"
+  },
+  "memchr": {
+   "abs": false,
+   "size": 248,
+   "type": "FUNC"
+  },
+  "memcmp": {
+   "abs": false,
+   "size": 68,
+   "type": "FUNC"
+  },
+  "memcpy": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "memfd_create": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "memmem": {
+   "abs": false,
+   "size": 393,
+   "type": "FUNC"
+  },
+  "memmove": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "mempcpy": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "memrchr": {
+   "abs": false,
+   "size": 59,
+   "type": "FUNC"
+  },
+  "memset": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "mincore": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "mkdir": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "mkdirat": {
+   "abs": false,
+   "size": 29,
+   "type": "FUNC"
+  },
+  "mkdtemp": {
+   "abs": false,
+   "size": 148,
+   "type": "FUNC"
+  },
+  "mkfifo": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "mkfifoat": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "mknod": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "mknodat": {
+   "abs": false,
+   "size": 32,
+   "type": "FUNC"
+  },
+  "mkostemp": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "mkostemps": {
+   "abs": false,
+   "size": 179,
+   "type": "FUNC"
+  },
+  "mkstemp": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "mkstemps": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "mktemp": {
+   "abs": false,
+   "size": 157,
+   "type": "FUNC"
+  },
+  "mktime": {
+   "abs": false,
+   "size": 227,
+   "type": "FUNC"
+  },
+  "mlock": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "mlock2": {
+   "abs": false,
+   "size": 35,
+   "type": "FUNC"
+  },
+  "mlockall": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "mmap": {
+   "abs": false,
+   "size": 197,
+   "type": "FUNC"
+  },
+  "modf": {
+   "abs": false,
+   "size": 154,
+   "type": "FUNC"
+  },
+  "modff": {
+   "abs": false,
+   "size": 104,
+   "type": "FUNC"
+  },
+  "modfl": {
+   "abs": false,
+   "size": 231,
+   "type": "FUNC"
+  },
+  "mount": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "mprotect": {
+   "abs": false,
+   "size": 55,
+   "type": "FUNC"
+  },
+  "mq_close": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "mq_getattr": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "mq_notify": {
+   "abs": false,
+   "size": 462,
+   "type": "FUNC"
+  },
+  "mq_open": {
+   "abs": false,
+   "size": 95,
+   "type": "FUNC"
+  },
+  "mq_receive": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "mq_send": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "mq_setattr": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "mq_timedreceive": {
+   "abs": false,
+   "size": 46,
+   "type": "FUNC"
+  },
+  "mq_timedsend": {
+   "abs": false,
+   "size": 47,
+   "type": "FUNC"
+  },
+  "mq_unlink": {
+   "abs": false,
+   "size": 53,
+   "type": "FUNC"
+  },
+  "mrand48": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "mremap": {
+   "abs": false,
+   "size": 152,
+   "type": "FUNC"
+  },
+  "msgctl": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "msgget": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "msgrcv": {
+   "abs": false,
+   "size": 46,
+   "type": "FUNC"
+  },
+  "msgsnd": {
+   "abs": false,
+   "size": 47,
+   "type": "FUNC"
+  },
+  "msync": {
+   "abs": false,
+   "size": 44,
+   "type": "FUNC"
+  },
+  "mtx_destroy": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "mtx_init": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "mtx_lock": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "mtx_timedlock": {
+   "abs": false,
+   "size": 31,
+   "type": "FUNC"
+  },
+  "mtx_trylock": {
+   "abs": false,
+   "size": 55,
+   "type": "FUNC"
+  },
+  "mtx_unlock": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "munlock": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "munlockall": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "munmap": {
+   "abs": false,
+   "size": 45,
+   "type": "FUNC"
+  },
+  "name_to_handle_at": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "nan": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "nanf": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "nanl": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "nanosleep": {
+   "abs": false,
+   "size": 34,
+   "type": "FUNC"
+  },
+  "nearbyint": {
+   "abs": false,
+   "size": 68,
+   "type": "FUNC"
+  },
+  "nearbyintf": {
+   "abs": false,
+   "size": 68,
+   "type": "FUNC"
+  },
+  "nearbyintl": {
+   "abs": false,
+   "size": 60,
+   "type": "FUNC"
+  },
+  "newlocale": {
+   "abs": false,
+   "size": 437,
+   "type": "FUNC"
+  },
+  "nextafter": {
+   "abs": false,
+   "size": 191,
+   "type": "FUNC"
+  },
+  "nextafterf": {
+   "abs": false,
+   "size": 148,
+   "type": "FUNC"
+  },
+  "nextafterl": {
+   "abs": false,
+   "size": 323,
+   "type": "FUNC"
+  },
+  "nexttoward": {
+   "abs": false,
+   "size": 314,
+   "type": "FUNC"
+  },
+  "nexttowardf": {
+   "abs": false,
+   "size": 279,
+   "type": "FUNC"
+  },
+  "nexttowardl": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "nftw": {
+   "abs": false,
+   "size": 152,
+   "type": "FUNC"
+  },
+  "ngettext": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "nice": {
+   "abs": false,
+   "size": 88,
+   "type": "FUNC"
+  },
+  "nl_langinfo": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "nl_langinfo_l": {
+   "abs": false,
+   "size": 220,
+   "type": "FUNC"
+  },
+  "nrand48": {
+   "abs": false,
+   "size": 25,
+   "type": "FUNC"
+  },
+  "ns_get16": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "ns_get32": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "ns_initparse": {
+   "abs": false,
+   "size": 222,
+   "type": "FUNC"
+  },
+  "ns_name_uncompress": {
+   "abs": false,
+   "size": 29,
+   "type": "FUNC"
+  },
+  "ns_parserr": {
+   "abs": false,
+   "size": 554,
+   "type": "FUNC"
+  },
+  "ns_put16": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "ns_put32": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "ns_skiprr": {
+   "abs": false,
+   "size": 166,
+   "type": "FUNC"
+  },
+  "ntohl": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "ntohs": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "open": {
+   "abs": false,
+   "size": 140,
+   "type": "FUNC"
+  },
+  "open_by_handle_at": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "open_memstream": {
+   "abs": false,
+   "size": 306,
+   "type": "FUNC"
+  },
+  "open_wmemstream": {
+   "abs": false,
+   "size": 312,
+   "type": "FUNC"
+  },
+  "openat": {
+   "abs": false,
+   "size": 109,
+   "type": "FUNC"
+  },
+  "opendir": {
+   "abs": false,
+   "size": 58,
+   "type": "FUNC"
+  },
+  "openlog": {
+   "abs": false,
+   "size": 214,
+   "type": "FUNC"
+  },
+  "openpty": {
+   "abs": false,
+   "size": 302,
+   "type": "FUNC"
+  },
+  "optarg": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "opterr": {
+   "abs": false,
+   "size": 4,
+   "type": "OBJECT"
+  },
+  "optind": {
+   "abs": false,
+   "size": 4,
+   "type": "OBJECT"
+  },
+  "optopt": {
+   "abs": false,
+   "size": 4,
+   "type": "OBJECT"
+  },
+  "optreset": {
+   "abs": false,
+   "size": 4,
+   "type": "OBJECT"
+  },
+  "pathconf": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "pause": {
+   "abs": false,
+   "size": 41,
+   "type": "FUNC"
+  },
+  "pclose": {
+   "abs": false,
+   "size": 70,
+   "type": "FUNC"
+  },
+  "perror": {
+   "abs": false,
+   "size": 325,
+   "type": "FUNC"
+  },
+  "personality": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "pipe": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "pipe2": {
+   "abs": false,
+   "size": 184,
+   "type": "FUNC"
+  },
+  "pivot_root": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "poll": {
+   "abs": false,
+   "size": 44,
+   "type": "FUNC"
+  },
+  "popen": {
+   "abs": false,
+   "size": 506,
+   "type": "FUNC"
+  },
+  "posix_close": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "posix_fadvise": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "posix_fallocate": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "posix_madvise": {
+   "abs": false,
+   "size": 20,
+   "type": "FUNC"
+  },
+  "posix_memalign": {
+   "abs": false,
+   "size": 48,
+   "type": "FUNC"
+  },
+  "posix_openpt": {
+   "abs": false,
+   "size": 45,
+   "type": "FUNC"
+  },
+  "posix_spawn": {
+   "abs": false,
+   "size": 430,
+   "type": "FUNC"
+  },
+  "posix_spawn_file_actions_addchdir_np": {
+   "abs": false,
+   "size": 102,
+   "type": "FUNC"
+  },
+  "posix_spawn_file_actions_addclose": {
+   "abs": false,
+   "size": 90,
+   "type": "FUNC"
+  },
+  "posix_spawn_file_actions_adddup2": {
+   "abs": false,
+   "size": 95,
+   "type": "FUNC"
+  },
+  "posix_spawn_file_actions_addfchdir_np": {
+   "abs": false,
+   "size": 90,
+   "type": "FUNC"
+  },
+  "posix_spawn_file_actions_addopen": {
+   "abs": false,
+   "size": 149,
+   "type": "FUNC"
+  },
+  "posix_spawn_file_actions_destroy": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "posix_spawn_file_actions_init": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_destroy": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_getflags": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_getpgroup": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_getschedparam": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_getschedpolicy": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_getsigdefault": {
+   "abs": false,
+   "size": 74,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_getsigmask": {
+   "abs": false,
+   "size": 98,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_init": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_setflags": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_setpgroup": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_setschedparam": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_setschedpolicy": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_setsigdefault": {
+   "abs": false,
+   "size": 74,
+   "type": "FUNC"
+  },
+  "posix_spawnattr_setsigmask": {
+   "abs": false,
+   "size": 98,
+   "type": "FUNC"
+  },
+  "posix_spawnp": {
+   "abs": false,
+   "size": 82,
+   "type": "FUNC"
+  },
+  "pow": {
+   "abs": false,
+   "size": 1807,
+   "type": "FUNC"
+  },
+  "pow10": {
+   "abs": false,
+   "size": 147,
+   "type": "FUNC"
+  },
+  "pow10f": {
+   "abs": false,
+   "size": 144,
+   "type": "FUNC"
+  },
+  "pow10l": {
+   "abs": false,
+   "size": 254,
+   "type": "FUNC"
+  },
+  "powf": {
+   "abs": false,
+   "size": 739,
+   "type": "FUNC"
+  },
+  "powl": {
+   "abs": false,
+   "size": 2786,
+   "type": "FUNC"
+  },
+  "ppoll": {
+   "abs": false,
+   "size": 66,
+   "type": "FUNC"
+  },
+  "prctl": {
+   "abs": false,
+   "size": 78,
+   "type": "FUNC"
+  },
+  "pread": {
+   "abs": false,
+   "size": 46,
+   "type": "FUNC"
+  },
+  "preadv": {
+   "abs": false,
+   "size": 50,
+   "type": "FUNC"
+  },
+  "preadv2": {
+   "abs": false,
+   "size": 127,
+   "type": "FUNC"
+  },
+  "printf": {
+   "abs": false,
+   "size": 158,
+   "type": "FUNC"
+  },
+  "prlimit": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "process_vm_readv": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "process_vm_writev": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "program_invocation_name": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "program_invocation_short_name": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "pselect": {
+   "abs": false,
+   "size": 89,
+   "type": "FUNC"
+  },
+  "psiginfo": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "psignal": {
+   "abs": false,
+   "size": 202,
+   "type": "FUNC"
+  },
+  "pthread_atfork": {
+   "abs": false,
+   "size": 122,
+   "type": "FUNC"
+  },
+  "pthread_attr_destroy": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "pthread_attr_getdetachstate": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "pthread_attr_getguardsize": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "pthread_attr_getinheritsched": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "pthread_attr_getschedparam": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "pthread_attr_getschedpolicy": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "pthread_attr_getscope": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "pthread_attr_getstack": {
+   "abs": false,
+   "size": 31,
+   "type": "FUNC"
+  },
+  "pthread_attr_getstacksize": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "pthread_attr_init": {
+   "abs": false,
+   "size": 72,
+   "type": "FUNC"
+  },
+  "pthread_attr_setdetachstate": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "pthread_attr_setguardsize": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "pthread_attr_setinheritsched": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "pthread_attr_setschedparam": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "pthread_attr_setschedpolicy": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "pthread_attr_setscope": {
+   "abs": false,
+   "size": 23,
+   "type": "FUNC"
+  },
+  "pthread_attr_setstack": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "pthread_attr_setstacksize": {
+   "abs": false,
+   "size": 34,
+   "type": "FUNC"
+  },
+  "pthread_barrier_destroy": {
+   "abs": false,
+   "size": 63,
+   "type": "FUNC"
+  },
+  "pthread_barrier_init": {
+   "abs": false,
+   "size": 37,
+   "type": "FUNC"
+  },
+  "pthread_barrier_wait": {
+   "abs": false,
+   "size": 994,
+   "type": "FUNC"
+  },
+  "pthread_barrierattr_destroy": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "pthread_barrierattr_getpshared": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "pthread_barrierattr_init": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "pthread_barrierattr_setpshared": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "pthread_cancel": {
+   "abs": false,
+   "size": 191,
+   "type": "FUNC"
+  },
+  "pthread_cond_broadcast": {
+   "abs": false,
+   "size": 71,
+   "type": "FUNC"
+  },
+  "pthread_cond_destroy": {
+   "abs": false,
+   "size": 112,
+   "type": "FUNC"
+  },
+  "pthread_cond_init": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "pthread_cond_signal": {
+   "abs": false,
+   "size": 69,
+   "type": "FUNC"
+  },
+  "pthread_cond_timedwait": {
+   "abs": false,
+   "size": 1291,
+   "type": "FUNC"
+  },
+  "pthread_cond_wait": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "pthread_condattr_destroy": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "pthread_condattr_getclock": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "pthread_condattr_getpshared": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "pthread_condattr_init": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "pthread_condattr_setclock": {
+   "abs": false,
+   "size": 32,
+   "type": "FUNC"
+  },
+  "pthread_condattr_setpshared": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "pthread_create": {
+   "abs": false,
+   "size": 1745,
+   "type": "FUNC"
+  },
+  "pthread_detach": {
+   "abs": false,
+   "size": 75,
+   "type": "FUNC"
+  },
+  "pthread_equal": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "pthread_exit": {
+   "abs": false,
+   "size": 535,
+   "type": "FUNC"
+  },
+  "pthread_getaffinity_np": {
+   "abs": false,
+   "size": 55,
+   "type": "FUNC"
+  },
+  "pthread_getattr_default_np": {
+   "abs": false,
+   "size": 69,
+   "type": "FUNC"
+  },
+  "pthread_getattr_np": {
+   "abs": false,
+   "size": 170,
+   "type": "FUNC"
+  },
+  "pthread_getconcurrency": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "pthread_getcpuclockid": {
+   "abs": false,
+   "size": 17,
+   "type": "FUNC"
+  },
+  "pthread_getname_np": {
+   "abs": false,
+   "size": 226,
+   "type": "FUNC"
+  },
+  "pthread_getschedparam": {
+   "abs": false,
+   "size": 132,
+   "type": "FUNC"
+  },
+  "pthread_getspecific": {
+   "abs": false,
+   "size": 23,
+   "type": "FUNC"
+  },
+  "pthread_join": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "pthread_key_create": {
+   "abs": false,
+   "size": 173,
+   "type": "FUNC"
+  },
+  "pthread_key_delete": {
+   "abs": false,
+   "size": 172,
+   "type": "FUNC"
+  },
+  "pthread_kill": {
+   "abs": false,
+   "size": 113,
+   "type": "FUNC"
+  },
+  "pthread_mutex_consistent": {
+   "abs": false,
+   "size": 65,
+   "type": "FUNC"
+  },
+  "pthread_mutex_destroy": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "pthread_mutex_getprioceiling": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "pthread_mutex_init": {
+   "abs": false,
+   "size": 31,
+   "type": "FUNC"
+  },
+  "pthread_mutex_lock": {
+   "abs": false,
+   "size": 29,
+   "type": "FUNC"
+  },
+  "pthread_mutex_setprioceiling": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "pthread_mutex_timedlock": {
+   "abs": false,
+   "size": 498,
+   "type": "FUNC"
+  },
+  "pthread_mutex_trylock": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "pthread_mutex_unlock": {
+   "abs": false,
+   "size": 428,
+   "type": "FUNC"
+  },
+  "pthread_mutexattr_destroy": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "pthread_mutexattr_getprotocol": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "pthread_mutexattr_getpshared": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "pthread_mutexattr_getrobust": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "pthread_mutexattr_gettype": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "pthread_mutexattr_init": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "pthread_mutexattr_setprotocol": {
+   "abs": false,
+   "size": 97,
+   "type": "FUNC"
+  },
+  "pthread_mutexattr_setpshared": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "pthread_mutexattr_setrobust": {
+   "abs": false,
+   "size": 76,
+   "type": "FUNC"
+  },
+  "pthread_mutexattr_settype": {
+   "abs": false,
+   "size": 22,
+   "type": "FUNC"
+  },
+  "pthread_once": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "pthread_rwlock_destroy": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "pthread_rwlock_init": {
+   "abs": false,
+   "size": 39,
+   "type": "FUNC"
+  },
+  "pthread_rwlock_rdlock": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "pthread_rwlock_timedrdlock": {
+   "abs": false,
+   "size": 135,
+   "type": "FUNC"
+  },
+  "pthread_rwlock_timedwrlock": {
+   "abs": false,
+   "size": 123,
+   "type": "FUNC"
+  },
+  "pthread_rwlock_tryrdlock": {
+   "abs": false,
+   "size": 51,
+   "type": "FUNC"
+  },
+  "pthread_rwlock_trywrlock": {
+   "abs": false,
+   "size": 23,
+   "type": "FUNC"
+  },
+  "pthread_rwlock_unlock": {
+   "abs": false,
+   "size": 114,
+   "type": "FUNC"
+  },
+  "pthread_rwlock_wrlock": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "pthread_rwlockattr_destroy": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "pthread_rwlockattr_getpshared": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "pthread_rwlockattr_init": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "pthread_rwlockattr_setpshared": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "pthread_self": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "pthread_setaffinity_np": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "pthread_setattr_default_np": {
+   "abs": false,
+   "size": 199,
+   "type": "FUNC"
+  },
+  "pthread_setcancelstate": {
+   "abs": false,
+   "size": 37,
+   "type": "FUNC"
+  },
+  "pthread_setcanceltype": {
+   "abs": false,
+   "size": 58,
+   "type": "FUNC"
+  },
+  "pthread_setconcurrency": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "pthread_setname_np": {
+   "abs": false,
+   "size": 225,
+   "type": "FUNC"
+  },
+  "pthread_setschedparam": {
+   "abs": false,
+   "size": 107,
+   "type": "FUNC"
+  },
+  "pthread_setschedprio": {
+   "abs": false,
+   "size": 105,
+   "type": "FUNC"
+  },
+  "pthread_setspecific": {
+   "abs": false,
+   "size": 37,
+   "type": "FUNC"
+  },
+  "pthread_sigmask": {
+   "abs": false,
+   "size": 54,
+   "type": "FUNC"
+  },
+  "pthread_spin_destroy": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "pthread_spin_init": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "pthread_spin_lock": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "pthread_spin_trylock": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "pthread_spin_unlock": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "pthread_testcancel": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "pthread_timedjoin_np": {
+   "abs": false,
+   "size": 190,
+   "type": "FUNC"
+  },
+  "pthread_tryjoin_np": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "ptrace": {
+   "abs": false,
+   "size": 106,
+   "type": "FUNC"
+  },
+  "ptsname": {
+   "abs": false,
+   "size": 53,
+   "type": "FUNC"
+  },
+  "ptsname_r": {
+   "abs": false,
+   "size": 97,
+   "type": "FUNC"
+  },
+  "putc": {
+   "abs": false,
+   "size": 87,
+   "type": "FUNC"
+  },
+  "putc_unlocked": {
+   "abs": false,
+   "size": 44,
+   "type": "FUNC"
+  },
+  "putchar": {
+   "abs": false,
+   "size": 93,
+   "type": "FUNC"
+  },
+  "putchar_unlocked": {
+   "abs": false,
+   "size": 57,
+   "type": "FUNC"
+  },
+  "putenv": {
+   "abs": false,
+   "size": 47,
+   "type": "FUNC"
+  },
+  "putgrent": {
+   "abs": false,
+   "size": 189,
+   "type": "FUNC"
+  },
+  "putpwent": {
+   "abs": false,
+   "size": 56,
+   "type": "FUNC"
+  },
+  "puts": {
+   "abs": false,
+   "size": 160,
+   "type": "FUNC"
+  },
+  "putspent": {
+   "abs": false,
+   "size": 353,
+   "type": "FUNC"
+  },
+  "pututline": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "pututxline": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "putw": {
+   "abs": false,
+   "size": 39,
+   "type": "FUNC"
+  },
+  "putwc": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "putwc_unlocked": {
+   "abs": false,
+   "size": 242,
+   "type": "FUNC"
+  },
+  "putwchar": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "putwchar_unlocked": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "pwrite": {
+   "abs": false,
+   "size": 46,
+   "type": "FUNC"
+  },
+  "pwritev": {
+   "abs": false,
+   "size": 50,
+   "type": "FUNC"
+  },
+  "pwritev2": {
+   "abs": false,
+   "size": 127,
+   "type": "FUNC"
+  },
+  "qsort": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "qsort_r": {
+   "abs": false,
+   "size": 1052,
+   "type": "FUNC"
+  },
+  "quick_exit": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "quotactl": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "raise": {
+   "abs": false,
+   "size": 73,
+   "type": "FUNC"
+  },
+  "rand": {
+   "abs": false,
+   "size": 34,
+   "type": "FUNC"
+  },
+  "rand_r": {
+   "abs": false,
+   "size": 57,
+   "type": "FUNC"
+  },
+  "random": {
+   "abs": false,
+   "size": 146,
+   "type": "FUNC"
+  },
+  "read": {
+   "abs": false,
+   "size": 43,
+   "type": "FUNC"
+  },
+  "readahead": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "readdir": {
+   "abs": false,
+   "size": 107,
+   "type": "FUNC"
+  },
+  "readdir_r": {
+   "abs": false,
+   "size": 141,
+   "type": "FUNC"
+  },
+  "readlink": {
+   "abs": false,
+   "size": 60,
+   "type": "FUNC"
+  },
+  "readlinkat": {
+   "abs": false,
+   "size": 69,
+   "type": "FUNC"
+  },
+  "readv": {
+   "abs": false,
+   "size": 46,
+   "type": "FUNC"
+  },
+  "realloc": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "reallocarray": {
+   "abs": false,
+   "size": 41,
+   "type": "FUNC"
+  },
+  "realpath": {
+   "abs": false,
+   "size": 1180,
+   "type": "FUNC"
+  },
+  "reboot": {
+   "abs": false,
+   "size": 37,
+   "type": "FUNC"
+  },
+  "recv": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "recvfrom": {
+   "abs": false,
+   "size": 46,
+   "type": "FUNC"
+  },
+  "recvmmsg": {
+   "abs": false,
+   "size": 93,
+   "type": "FUNC"
+  },
+  "recvmsg": {
+   "abs": false,
+   "size": 145,
+   "type": "FUNC"
+  },
+  "regcomp": {
+   "abs": false,
+   "size": 6952,
+   "type": "FUNC"
+  },
+  "regerror": {
+   "abs": false,
+   "size": 116,
+   "type": "FUNC"
+  },
+  "regexec": {
+   "abs": false,
+   "size": 7432,
+   "type": "FUNC"
+  },
+  "regfree": {
+   "abs": false,
+   "size": 311,
+   "type": "FUNC"
+  },
+  "remainder": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "remainderf": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "remainderl": {
+   "abs": false,
+   "size": 20,
+   "type": "FUNC"
+  },
+  "remap_file_pages": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "remove": {
+   "abs": false,
+   "size": 42,
+   "type": "FUNC"
+  },
+  "removexattr": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "remque": {
+   "abs": false,
+   "size": 32,
+   "type": "FUNC"
+  },
+  "remquo": {
+   "abs": false,
+   "size": 692,
+   "type": "FUNC"
+  },
+  "remquof": {
+   "abs": false,
+   "size": 658,
+   "type": "FUNC"
+  },
+  "remquol": {
+   "abs": false,
+   "size": 65,
+   "type": "FUNC"
+  },
+  "rename": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "renameat": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "res_init": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "res_mkquery": {
+   "abs": false,
+   "size": 408,
+   "type": "FUNC"
+  },
+  "res_query": {
+   "abs": false,
+   "size": 162,
+   "type": "FUNC"
+  },
+  "res_querydomain": {
+   "abs": false,
+   "size": 170,
+   "type": "FUNC"
+  },
+  "res_search": {
+   "abs": false,
+   "size": 162,
+   "type": "FUNC"
+  },
+  "res_send": {
+   "abs": false,
+   "size": 203,
+   "type": "FUNC"
+  },
+  "rewind": {
+   "abs": false,
+   "size": 78,
+   "type": "FUNC"
+  },
+  "rewinddir": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "rindex": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "rint": {
+   "abs": false,
+   "size": 112,
+   "type": "FUNC"
+  },
+  "rintf": {
+   "abs": false,
+   "size": 92,
+   "type": "FUNC"
+  },
+  "rintl": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "rmdir": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "round": {
+   "abs": false,
+   "size": 154,
+   "type": "FUNC"
+  },
+  "roundf": {
+   "abs": false,
+   "size": 136,
+   "type": "FUNC"
+  },
+  "roundl": {
+   "abs": false,
+   "size": 144,
+   "type": "FUNC"
+  },
+  "sbrk": {
+   "abs": false,
+   "size": 25,
+   "type": "FUNC"
+  },
+  "scalb": {
+   "abs": false,
+   "size": 228,
+   "type": "FUNC"
+  },
+  "scalbf": {
+   "abs": false,
+   "size": 200,
+   "type": "FUNC"
+  },
+  "scalbln": {
+   "abs": false,
+   "size": 31,
+   "type": "FUNC"
+  },
+  "scalblnf": {
+   "abs": false,
+   "size": 31,
+   "type": "FUNC"
+  },
+  "scalblnl": {
+   "abs": false,
+   "size": 31,
+   "type": "FUNC"
+  },
+  "scalbn": {
+   "abs": false,
+   "size": 139,
+   "type": "FUNC"
+  },
+  "scalbnf": {
+   "abs": false,
+   "size": 120,
+   "type": "FUNC"
+  },
+  "scalbnl": {
+   "abs": false,
+   "size": 131,
+   "type": "FUNC"
+  },
+  "scandir": {
+   "abs": false,
+   "size": 381,
+   "type": "FUNC"
+  },
+  "scanf": {
+   "abs": false,
+   "size": 148,
+   "type": "FUNC"
+  },
+  "sched_get_priority_max": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "sched_get_priority_min": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "sched_getaffinity": {
+   "abs": false,
+   "size": 58,
+   "type": "FUNC"
+  },
+  "sched_getcpu": {
+   "abs": false,
+   "size": 79,
+   "type": "FUNC"
+  },
+  "sched_getparam": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "sched_getscheduler": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "sched_rr_get_interval": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "sched_setaffinity": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "sched_setparam": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "sched_setscheduler": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "sched_yield": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "secure_getenv": {
+   "abs": false,
+   "size": 17,
+   "type": "FUNC"
+  },
+  "seed48": {
+   "abs": false,
+   "size": 61,
+   "type": "FUNC"
+  },
+  "seekdir": {
+   "abs": false,
+   "size": 58,
+   "type": "FUNC"
+  },
+  "select": {
+   "abs": false,
+   "size": 183,
+   "type": "FUNC"
+  },
+  "sem_close": {
+   "abs": false,
+   "size": 146,
+   "type": "FUNC"
+  },
+  "sem_destroy": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "sem_getvalue": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "sem_init": {
+   "abs": false,
+   "size": 54,
+   "type": "FUNC"
+  },
+  "sem_open": {
+   "abs": false,
+   "size": 1133,
+   "type": "FUNC"
+  },
+  "sem_post": {
+   "abs": false,
+   "size": 142,
+   "type": "FUNC"
+  },
+  "sem_timedwait": {
+   "abs": false,
+   "size": 193,
+   "type": "FUNC"
+  },
+  "sem_trywait": {
+   "abs": false,
+   "size": 51,
+   "type": "FUNC"
+  },
+  "sem_unlink": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "sem_wait": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "semctl": {
+   "abs": false,
+   "size": 90,
+   "type": "FUNC"
+  },
+  "semget": {
+   "abs": false,
+   "size": 55,
+   "type": "FUNC"
+  },
+  "semop": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "semtimedop": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "send": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "sendfile": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "sendmmsg": {
+   "abs": false,
+   "size": 96,
+   "type": "FUNC"
+  },
+  "sendmsg": {
+   "abs": false,
+   "size": 258,
+   "type": "FUNC"
+  },
+  "sendto": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "setbuf": {
+   "abs": false,
+   "size": 20,
+   "type": "FUNC"
+  },
+  "setbuffer": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "setdomainname": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "setegid": {
+   "abs": false,
+   "size": 22,
+   "type": "FUNC"
+  },
+  "setenv": {
+   "abs": false,
+   "size": 180,
+   "type": "FUNC"
+  },
+  "seteuid": {
+   "abs": false,
+   "size": 22,
+   "type": "FUNC"
+  },
+  "setfsgid": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "setfsuid": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "setgid": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "setgrent": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "setgroups": {
+   "abs": false,
+   "size": 51,
+   "type": "FUNC"
+  },
+  "sethostent": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "sethostname": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "setitimer": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "setjmp": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "setkey": {
+   "abs": false,
+   "size": 139,
+   "type": "FUNC"
+  },
+  "setlinebuf": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "setlocale": {
+   "abs": false,
+   "size": 498,
+   "type": "FUNC"
+  },
+  "setlogmask": {
+   "abs": false,
+   "size": 54,
+   "type": "FUNC"
+  },
+  "setmntent": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "setnetent": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "setns": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "setpgid": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "setpgrp": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "setpriority": {
+   "abs": false,
+   "size": 32,
+   "type": "FUNC"
+  },
+  "setprotoent": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "setpwent": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "setregid": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "setresgid": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "setresuid": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "setreuid": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "setrlimit": {
+   "abs": false,
+   "size": 109,
+   "type": "FUNC"
+  },
+  "setservent": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "setsid": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "setsockopt": {
+   "abs": false,
+   "size": 42,
+   "type": "FUNC"
+  },
+  "setspent": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "setstate": {
+   "abs": false,
+   "size": 121,
+   "type": "FUNC"
+  },
+  "settimeofday": {
+   "abs": false,
+   "size": 77,
+   "type": "FUNC"
+  },
+  "setuid": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "setusershell": {
+   "abs": false,
+   "size": 82,
+   "type": "FUNC"
+  },
+  "setutent": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "setutxent": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "setvbuf": {
+   "abs": false,
+   "size": 93,
+   "type": "FUNC"
+  },
+  "setxattr": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "shm_open": {
+   "abs": false,
+   "size": 104,
+   "type": "FUNC"
+  },
+  "shm_unlink": {
+   "abs": false,
+   "size": 43,
+   "type": "FUNC"
+  },
+  "shmat": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "shmctl": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "shmdt": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "shmget": {
+   "abs": false,
+   "size": 44,
+   "type": "FUNC"
+  },
+  "shutdown": {
+   "abs": false,
+   "size": 41,
+   "type": "FUNC"
+  },
+  "sigaction": {
+   "abs": false,
+   "size": 145,
+   "type": "FUNC"
+  },
+  "sigaddset": {
+   "abs": false,
+   "size": 55,
+   "type": "FUNC"
+  },
+  "sigaltstack": {
+   "abs": false,
+   "size": 81,
+   "type": "FUNC"
+  },
+  "sigandset": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "sigdelset": {
+   "abs": false,
+   "size": 57,
+   "type": "FUNC"
+  },
+  "sigemptyset": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "sigfillset": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "sighold": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "sigignore": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "siginterrupt": {
+   "abs": false,
+   "size": 81,
+   "type": "FUNC"
+  },
+  "sigisemptyset": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "sigismember": {
+   "abs": false,
+   "size": 20,
+   "type": "FUNC"
+  },
+  "siglongjmp": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "signal": {
+   "abs": false,
+   "size": 91,
+   "type": "FUNC"
+  },
+  "signalfd": {
+   "abs": false,
+   "size": 119,
+   "type": "FUNC"
+  },
+  "signgam": {
+   "abs": false,
+   "size": 4,
+   "type": "OBJECT"
+  },
+  "significand": {
+   "abs": false,
+   "size": 34,
+   "type": "FUNC"
+  },
+  "significandf": {
+   "abs": false,
+   "size": 34,
+   "type": "FUNC"
+  },
+  "sigorset": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "sigpause": {
+   "abs": false,
+   "size": 51,
+   "type": "FUNC"
+  },
+  "sigpending": {
+   "abs": false,
+   "size": 29,
+   "type": "FUNC"
+  },
+  "sigprocmask": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "sigqueue": {
+   "abs": false,
+   "size": 136,
+   "type": "FUNC"
+  },
+  "sigrelse": {
+   "abs": false,
+   "size": 65,
+   "type": "FUNC"
+  },
+  "sigset": {
+   "abs": false,
+   "size": 234,
+   "type": "FUNC"
+  },
+  "sigsetjmp": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "sigsuspend": {
+   "abs": false,
+   "size": 45,
+   "type": "FUNC"
+  },
+  "sigtimedwait": {
+   "abs": false,
+   "size": 67,
+   "type": "FUNC"
+  },
+  "sigwait": {
+   "abs": false,
+   "size": 42,
+   "type": "FUNC"
+  },
+  "sigwaitinfo": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "sin": {
+   "abs": false,
+   "size": 195,
+   "type": "FUNC"
+  },
+  "sincos": {
+   "abs": false,
+   "size": 344,
+   "type": "FUNC"
+  },
+  "sincosf": {
+   "abs": false,
+   "size": 690,
+   "type": "FUNC"
+  },
+  "sincosl": {
+   "abs": false,
+   "size": 330,
+   "type": "FUNC"
+  },
+  "sinf": {
+   "abs": false,
+   "size": 376,
+   "type": "FUNC"
+  },
+  "sinh": {
+   "abs": false,
+   "size": 195,
+   "type": "FUNC"
+  },
+  "sinhf": {
+   "abs": false,
+   "size": 181,
+   "type": "FUNC"
+  },
+  "sinhl": {
+   "abs": false,
+   "size": 240,
+   "type": "FUNC"
+  },
+  "sinl": {
+   "abs": false,
+   "size": 279,
+   "type": "FUNC"
+  },
+  "sleep": {
+   "abs": false,
+   "size": 46,
+   "type": "FUNC"
+  },
+  "snprintf": {
+   "abs": false,
+   "size": 138,
+   "type": "FUNC"
+  },
+  "sockatmark": {
+   "abs": false,
+   "size": 41,
+   "type": "FUNC"
+  },
+  "socket": {
+   "abs": false,
+   "size": 168,
+   "type": "FUNC"
+  },
+  "socketpair": {
+   "abs": false,
+   "size": 235,
+   "type": "FUNC"
+  },
+  "splice": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "sprintf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "sqrt": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "sqrtf": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "sqrtl": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "srand": {
+   "abs": false,
+   "size": 11,
+   "type": "FUNC"
+  },
+  "srand48": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "srandom": {
+   "abs": false,
+   "size": 44,
+   "type": "FUNC"
+  },
+  "sscanf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "stat": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "statfs": {
+   "abs": false,
+   "size": 43,
+   "type": "FUNC"
+  },
+  "statvfs": {
+   "abs": false,
+   "size": 203,
+   "type": "FUNC"
+  },
+  "statx": {
+   "abs": false,
+   "size": 264,
+   "type": "FUNC"
+  },
+  "stderr": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "stdin": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "stdout": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "stime": {
+   "abs": false,
+   "size": 35,
+   "type": "FUNC"
+  },
+  "stpcpy": {
+   "abs": false,
+   "size": 146,
+   "type": "FUNC"
+  },
+  "stpncpy": {
+   "abs": false,
+   "size": 238,
+   "type": "FUNC"
+  },
+  "strcasecmp": {
+   "abs": false,
+   "size": 92,
+   "type": "FUNC"
+  },
+  "strcasecmp_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "strcasestr": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "strcat": {
+   "abs": false,
+   "size": 39,
+   "type": "FUNC"
+  },
+  "strchr": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "strchrnul": {
+   "abs": false,
+   "size": 200,
+   "type": "FUNC"
+  },
+  "strcmp": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "strcoll": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "strcoll_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "strcpy": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "strcspn": {
+   "abs": false,
+   "size": 135,
+   "type": "FUNC"
+  },
+  "strdup": {
+   "abs": false,
+   "size": 60,
+   "type": "FUNC"
+  },
+  "strerror": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "strerror_l": {
+   "abs": false,
+   "size": 44,
+   "type": "FUNC"
+  },
+  "strerror_r": {
+   "abs": false,
+   "size": 89,
+   "type": "FUNC"
+  },
+  "strfmon": {
+   "abs": false,
+   "size": 138,
+   "type": "FUNC"
+  },
+  "strfmon_l": {
+   "abs": false,
+   "size": 136,
+   "type": "FUNC"
+  },
+  "strftime": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "strftime_l": {
+   "abs": false,
+   "size": 940,
+   "type": "FUNC"
+  },
+  "strlcat": {
+   "abs": false,
+   "size": 81,
+   "type": "FUNC"
+  },
+  "strlcpy": {
+   "abs": false,
+   "size": 268,
+   "type": "FUNC"
+  },
+  "strlen": {
+   "abs": false,
+   "size": 109,
+   "type": "FUNC"
+  },
+  "strncasecmp": {
+   "abs": false,
+   "size": 123,
+   "type": "FUNC"
+  },
+  "strncasecmp_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "strncat": {
+   "abs": false,
+   "size": 65,
+   "type": "FUNC"
+  },
+  "strncmp": {
+   "abs": false,
+   "size": 119,
+   "type": "FUNC"
+  },
+  "strncpy": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "strndup": {
+   "abs": false,
+   "size": 58,
+   "type": "FUNC"
+  },
+  "strnlen": {
+   "abs": false,
+   "size": 45,
+   "type": "FUNC"
+  },
+  "strpbrk": {
+   "abs": false,
+   "size": 23,
+   "type": "FUNC"
+  },
+  "strptime": {
+   "abs": false,
+   "size": 1438,
+   "type": "FUNC"
+  },
+  "strrchr": {
+   "abs": false,
+   "size": 36,
+   "type": "FUNC"
+  },
+  "strsep": {
+   "abs": false,
+   "size": 55,
+   "type": "FUNC"
+  },
+  "strsignal": {
+   "abs": false,
+   "size": 53,
+   "type": "FUNC"
+  },
+  "strspn": {
+   "abs": false,
+   "size": 166,
+   "type": "FUNC"
+  },
+  "strstr": {
+   "abs": false,
+   "size": 326,
+   "type": "FUNC"
+  },
+  "strtod": {
+   "abs": false,
+   "size": 29,
+   "type": "FUNC"
+  },
+  "strtod_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "strtof": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "strtof_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "strtoimax": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "strtok": {
+   "abs": false,
+   "size": 121,
+   "type": "FUNC"
+  },
+  "strtok_r": {
+   "abs": false,
+   "size": 107,
+   "type": "FUNC"
+  },
+  "strtol": {
+   "abs": false,
+   "size": 121,
+   "type": "FUNC"
+  },
+  "strtold": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "strtold_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "strtoll": {
+   "abs": false,
+   "size": 121,
+   "type": "FUNC"
+  },
+  "strtoul": {
+   "abs": false,
+   "size": 118,
+   "type": "FUNC"
+  },
+  "strtoull": {
+   "abs": false,
+   "size": 118,
+   "type": "FUNC"
+  },
+  "strtoumax": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "strverscmp": {
+   "abs": false,
+   "size": 213,
+   "type": "FUNC"
+  },
+  "strxfrm": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "strxfrm_l": {
+   "abs": false,
+   "size": 62,
+   "type": "FUNC"
+  },
+  "swab": {
+   "abs": false,
+   "size": 99,
+   "type": "FUNC"
+  },
+  "swapoff": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "swapon": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "swprintf": {
+   "abs": false,
+   "size": 138,
+   "type": "FUNC"
+  },
+  "swscanf": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "symlink": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "symlinkat": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "sync": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "sync_file_range": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "syncfs": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "syscall": {
+   "abs": false,
+   "size": 101,
+   "type": "FUNC"
+  },
+  "sysconf": {
+   "abs": false,
+   "size": 456,
+   "type": "FUNC"
+  },
+  "sysinfo": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "syslog": {
+   "abs": false,
+   "size": 143,
+   "type": "FUNC"
+  },
+  "system": {
+   "abs": false,
+   "size": 533,
+   "type": "FUNC"
+  },
+  "tan": {
+   "abs": false,
+   "size": 133,
+   "type": "FUNC"
+  },
+  "tanf": {
+   "abs": false,
+   "size": 287,
+   "type": "FUNC"
+  },
+  "tanh": {
+   "abs": false,
+   "size": 226,
+   "type": "FUNC"
+  },
+  "tanhf": {
+   "abs": false,
+   "size": 214,
+   "type": "FUNC"
+  },
+  "tanhl": {
+   "abs": false,
+   "size": 225,
+   "type": "FUNC"
+  },
+  "tanl": {
+   "abs": false,
+   "size": 173,
+   "type": "FUNC"
+  },
+  "tcdrain": {
+   "abs": false,
+   "size": 48,
+   "type": "FUNC"
+  },
+  "tcflow": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "tcflush": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "tcgetattr": {
+   "abs": false,
+   "size": 28,
+   "type": "FUNC"
+  },
+  "tcgetpgrp": {
+   "abs": false,
+   "size": 41,
+   "type": "FUNC"
+  },
+  "tcgetsid": {
+   "abs": false,
+   "size": 41,
+   "type": "FUNC"
+  },
+  "tcgetwinsize": {
+   "abs": false,
+   "size": 35,
+   "type": "FUNC"
+  },
+  "tcsendbreak": {
+   "abs": false,
+   "size": 14,
+   "type": "FUNC"
+  },
+  "tcsetattr": {
+   "abs": false,
+   "size": 43,
+   "type": "FUNC"
+  },
+  "tcsetpgrp": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "tcsetwinsize": {
+   "abs": false,
+   "size": 35,
+   "type": "FUNC"
+  },
+  "tdelete": {
+   "abs": false,
+   "size": 296,
+   "type": "FUNC"
+  },
+  "tdestroy": {
+   "abs": false,
+   "size": 63,
+   "type": "FUNC"
+  },
+  "tee": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "telldir": {
+   "abs": false,
+   "size": 4,
+   "type": "FUNC"
+  },
+  "tempnam": {
+   "abs": false,
+   "size": 249,
+   "type": "FUNC"
+  },
+  "textdomain": {
+   "abs": false,
+   "size": 117,
+   "type": "FUNC"
+  },
+  "tfind": {
+   "abs": false,
+   "size": 59,
+   "type": "FUNC"
+  },
+  "tgamma": {
+   "abs": false,
+   "size": 1174,
+   "type": "FUNC"
+  },
+  "tgammaf": {
+   "abs": false,
+   "size": 22,
+   "type": "FUNC"
+  },
+  "tgammal": {
+   "abs": false,
+   "size": 829,
+   "type": "FUNC"
+  },
+  "thrd_create": {
+   "abs": false,
+   "size": 43,
+   "type": "FUNC"
+  },
+  "thrd_current": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "thrd_detach": {
+   "abs": false,
+   "size": 75,
+   "type": "FUNC"
+  },
+  "thrd_equal": {
+   "abs": false,
+   "size": 9,
+   "type": "FUNC"
+  },
+  "thrd_exit": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "thrd_join": {
+   "abs": false,
+   "size": 38,
+   "type": "FUNC"
+  },
+  "thrd_sleep": {
+   "abs": false,
+   "size": 43,
+   "type": "FUNC"
+  },
+  "thrd_yield": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "time": {
+   "abs": false,
+   "size": 36,
+   "type": "FUNC"
+  },
+  "timegm": {
+   "abs": false,
+   "size": 116,
+   "type": "FUNC"
+  },
+  "timer_create": {
+   "abs": false,
+   "size": 660,
+   "type": "FUNC"
+  },
+  "timer_delete": {
+   "abs": false,
+   "size": 57,
+   "type": "FUNC"
+  },
+  "timer_getoverrun": {
+   "abs": false,
+   "size": 46,
+   "type": "FUNC"
+  },
+  "timer_gettime": {
+   "abs": false,
+   "size": 46,
+   "type": "FUNC"
+  },
+  "timer_settime": {
+   "abs": false,
+   "size": 52,
+   "type": "FUNC"
+  },
+  "timerfd_create": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "timerfd_gettime": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "timerfd_settime": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "times": {
+   "abs": false,
+   "size": 8,
+   "type": "FUNC"
+  },
+  "timespec_get": {
+   "abs": false,
+   "size": 32,
+   "type": "FUNC"
+  },
+  "timezone": {
+   "abs": false,
+   "size": 8,
+   "type": "OBJECT"
+  },
+  "tmpfile": {
+   "abs": false,
+   "size": 146,
+   "type": "FUNC"
+  },
+  "tmpnam": {
+   "abs": false,
+   "size": 125,
+   "type": "FUNC"
+  },
+  "toascii": {
+   "abs": false,
+   "size": 6,
+   "type": "FUNC"
+  },
+  "tolower": {
+   "abs": false,
+   "size": 17,
+   "type": "FUNC"
+  },
+  "tolower_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "toupper": {
+   "abs": false,
+   "size": 17,
+   "type": "FUNC"
+  },
+  "toupper_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "towctrans": {
+   "abs": false,
+   "size": 25,
+   "type": "FUNC"
+  },
+  "towctrans_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "towlower": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "towlower_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "towupper": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "towupper_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "trunc": {
+   "abs": false,
+   "size": 87,
+   "type": "FUNC"
+  },
+  "truncate": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "truncf": {
+   "abs": false,
+   "size": 65,
+   "type": "FUNC"
+  },
+  "truncl": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "tsearch": {
+   "abs": false,
+   "size": 214,
+   "type": "FUNC"
+  },
+  "tss_create": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "tss_delete": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "tss_get": {
+   "abs": false,
+   "size": 23,
+   "type": "FUNC"
+  },
+  "tss_set": {
+   "abs": false,
+   "size": 37,
+   "type": "FUNC"
+  },
+  "ttyname": {
+   "abs": false,
+   "size": 53,
+   "type": "FUNC"
+  },
+  "ttyname_r": {
+   "abs": false,
+   "size": 174,
+   "type": "FUNC"
+  },
+  "twalk": {
+   "abs": false,
+   "size": 7,
+   "type": "FUNC"
+  },
+  "tzname": {
+   "abs": false,
+   "size": 16,
+   "type": "OBJECT"
+  },
+  "tzset": {
+   "abs": false,
+   "size": 32,
+   "type": "FUNC"
+  },
+  "ualarm": {
+   "abs": false,
+   "size": 67,
+   "type": "FUNC"
+  },
+  "ulckpwdf": {
+   "abs": false,
+   "size": 3,
+   "type": "FUNC"
+  },
+  "ulimit": {
+   "abs": false,
+   "size": 116,
+   "type": "FUNC"
+  },
+  "umask": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "umount": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "umount2": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "uname": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "ungetc": {
+   "abs": false,
+   "size": 201,
+   "type": "FUNC"
+  },
+  "ungetwc": {
+   "abs": false,
+   "size": 279,
+   "type": "FUNC"
+  },
+  "unlink": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "unlinkat": {
+   "abs": false,
+   "size": 30,
+   "type": "FUNC"
+  },
+  "unlockpt": {
+   "abs": false,
+   "size": 34,
+   "type": "FUNC"
+  },
+  "unsetenv": {
+   "abs": false,
+   "size": 162,
+   "type": "FUNC"
+  },
+  "unshare": {
+   "abs": false,
+   "size": 27,
+   "type": "FUNC"
+  },
+  "updwtmp": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "updwtmpx": {
+   "abs": false,
+   "size": 1,
+   "type": "FUNC"
+  },
+  "uselocale": {
+   "abs": false,
+   "size": 58,
+   "type": "FUNC"
+  },
+  "usleep": {
+   "abs": false,
+   "size": 71,
+   "type": "FUNC"
+  },
+  "utime": {
+   "abs": false,
+   "size": 69,
+   "type": "FUNC"
+  },
+  "utimensat": {
+   "abs": false,
+   "size": 343,
+   "type": "FUNC"
+  },
+  "utimes": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "utmpname": {
+   "abs": false,
+   "size": 25,
+   "type": "FUNC"
+  },
+  "utmpxname": {
+   "abs": false,
+   "size": 25,
+   "type": "FUNC"
+  },
+  "valloc": {
+   "abs": false,
+   "size": 13,
+   "type": "FUNC"
+  },
+  "vasprintf": {
+   "abs": false,
+   "size": 114,
+   "type": "FUNC"
+  },
+  "vdprintf": {
+   "abs": false,
+   "size": 76,
+   "type": "FUNC"
+  },
+  "verr": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "verrx": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "versionsort": {
+   "abs": false,
+   "size": 19,
+   "type": "FUNC"
+  },
+  "vfork": {
+   "abs": false,
+   "size": 0,
+   "type": "FUNC"
+  },
+  "vfprintf": {
+   "abs": false,
+   "size": 440,
+   "type": "FUNC"
+  },
+  "vfscanf": {
+   "abs": false,
+   "size": 3670,
+   "type": "FUNC"
+  },
+  "vfwprintf": {
+   "abs": false,
+   "size": 302,
+   "type": "FUNC"
+  },
+  "vfwscanf": {
+   "abs": false,
+   "size": 3624,
+   "type": "FUNC"
+  },
+  "vhangup": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "vmsplice": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "vprintf": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "vscanf": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "vsnprintf": {
+   "abs": false,
+   "size": 130,
+   "type": "FUNC"
+  },
+  "vsprintf": {
+   "abs": false,
+   "size": 16,
+   "type": "FUNC"
+  },
+  "vsscanf": {
+   "abs": false,
+   "size": 75,
+   "type": "FUNC"
+  },
+  "vswprintf": {
+   "abs": false,
+   "size": 167,
+   "type": "FUNC"
+  },
+  "vswscanf": {
+   "abs": false,
+   "size": 92,
+   "type": "FUNC"
+  },
+  "vsyslog": {
+   "abs": false,
+   "size": 117,
+   "type": "FUNC"
+  },
+  "vwarn": {
+   "abs": false,
+   "size": 89,
+   "type": "FUNC"
+  },
+  "vwarnx": {
+   "abs": false,
+   "size": 80,
+   "type": "FUNC"
+  },
+  "vwprintf": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "vwscanf": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "wait": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "wait3": {
+   "abs": false,
+   "size": 18,
+   "type": "FUNC"
+  },
+  "wait4": {
+   "abs": false,
+   "size": 33,
+   "type": "FUNC"
+  },
+  "waitid": {
+   "abs": false,
+   "size": 45,
+   "type": "FUNC"
+  },
+  "waitpid": {
+   "abs": false,
+   "size": 47,
+   "type": "FUNC"
+  },
+  "warn": {
+   "abs": false,
+   "size": 148,
+   "type": "FUNC"
+  },
+  "warnx": {
+   "abs": false,
+   "size": 148,
+   "type": "FUNC"
+  },
+  "wcpcpy": {
+   "abs": false,
+   "size": 37,
+   "type": "FUNC"
+  },
+  "wcpncpy": {
+   "abs": false,
+   "size": 38,
+   "type": "FUNC"
+  },
+  "wcrtomb": {
+   "abs": false,
+   "size": 268,
+   "type": "FUNC"
+  },
+  "wcscasecmp": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "wcscasecmp_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "wcscat": {
+   "abs": false,
+   "size": 39,
+   "type": "FUNC"
+  },
+  "wcschr": {
+   "abs": false,
+   "size": 55,
+   "type": "FUNC"
+  },
+  "wcscmp": {
+   "abs": false,
+   "size": 66,
+   "type": "FUNC"
+  },
+  "wcscoll": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "wcscoll_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "wcscpy": {
+   "abs": false,
+   "size": 31,
+   "type": "FUNC"
+  },
+  "wcscspn": {
+   "abs": false,
+   "size": 90,
+   "type": "FUNC"
+  },
+  "wcsdup": {
+   "abs": false,
+   "size": 65,
+   "type": "FUNC"
+  },
+  "wcsftime": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "wcsftime_l": {
+   "abs": false,
+   "size": 640,
+   "type": "FUNC"
+  },
+  "wcslen": {
+   "abs": false,
+   "size": 34,
+   "type": "FUNC"
+  },
+  "wcsncasecmp": {
+   "abs": false,
+   "size": 120,
+   "type": "FUNC"
+  },
+  "wcsncasecmp_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "wcsncat": {
+   "abs": false,
+   "size": 72,
+   "type": "FUNC"
+  },
+  "wcsncmp": {
+   "abs": false,
+   "size": 51,
+   "type": "FUNC"
+  },
+  "wcsncpy": {
+   "abs": false,
+   "size": 69,
+   "type": "FUNC"
+  },
+  "wcsnlen": {
+   "abs": false,
+   "size": 52,
+   "type": "FUNC"
+  },
+  "wcsnrtombs": {
+   "abs": false,
+   "size": 194,
+   "type": "FUNC"
+  },
+  "wcspbrk": {
+   "abs": false,
+   "size": 25,
+   "type": "FUNC"
+  },
+  "wcsrchr": {
+   "abs": false,
+   "size": 56,
+   "type": "FUNC"
+  },
+  "wcsrtombs": {
+   "abs": false,
+   "size": 423,
+   "type": "FUNC"
+  },
+  "wcsspn": {
+   "abs": false,
+   "size": 53,
+   "type": "FUNC"
+  },
+  "wcsstr": {
+   "abs": false,
+   "size": 620,
+   "type": "FUNC"
+  },
+  "wcstod": {
+   "abs": false,
+   "size": 29,
+   "type": "FUNC"
+  },
+  "wcstof": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "wcstoimax": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "wcstok": {
+   "abs": false,
+   "size": 114,
+   "type": "FUNC"
+  },
+  "wcstol": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "wcstold": {
+   "abs": false,
+   "size": 10,
+   "type": "FUNC"
+  },
+  "wcstoll": {
+   "abs": false,
+   "size": 15,
+   "type": "FUNC"
+  },
+  "wcstombs": {
+   "abs": false,
+   "size": 26,
+   "type": "FUNC"
+  },
+  "wcstoul": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "wcstoull": {
+   "abs": false,
+   "size": 12,
+   "type": "FUNC"
+  },
+  "wcstoumax": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "wcswcs": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "wcswidth": {
+   "abs": false,
+   "size": 58,
+   "type": "FUNC"
+  },
+  "wcsxfrm": {
+   "abs": false,
+   "size": 21,
+   "type": "FUNC"
+  },
+  "wcsxfrm_l": {
+   "abs": false,
+   "size": 97,
+   "type": "FUNC"
+  },
+  "wctob": {
+   "abs": false,
+   "size": 60,
+   "type": "FUNC"
+  },
+  "wctomb": {
+   "abs": false,
+   "size": 24,
+   "type": "FUNC"
+  },
+  "wctrans": {
+   "abs": false,
+   "size": 57,
+   "type": "FUNC"
+  },
+  "wctrans_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "wctype": {
+   "abs": false,
+   "size": 79,
+   "type": "FUNC"
+  },
+  "wctype_l": {
+   "abs": false,
+   "size": 5,
+   "type": "FUNC"
+  },
+  "wcwidth": {
+   "abs": false,
+   "size": 204,
+   "type": "FUNC"
+  },
+  "wmemchr": {
+   "abs": false,
+   "size": 56,
+   "type": "FUNC"
+  },
+  "wmemcmp": {
+   "abs": false,
+   "size": 75,
+   "type": "FUNC"
+  },
+  "wmemcpy": {
+   "abs": false,
+   "size": 50,
+   "type": "FUNC"
+  },
+  "wmemmove": {
+   "abs": false,
+   "size": 64,
+   "type": "FUNC"
+  },
+  "wmemset": {
+   "abs": false,
+   "size": 49,
+   "type": "FUNC"
+  },
+  "wordexp": {
+   "abs": false,
+   "size": 1267,
+   "type": "FUNC"
+  },
+  "wordfree": {
+   "abs": false,
+   "size": 80,
+   "type": "FUNC"
+  },
+  "wprintf": {
+   "abs": false,
+   "size": 148,
+   "type": "FUNC"
+  },
+  "write": {
+   "abs": false,
+   "size": 46,
+   "type": "FUNC"
+  },
+  "writev": {
+   "abs": false,
+   "size": 46,
+   "type": "FUNC"
+  },
+  "wscanf": {
+   "abs": false,
+   "size": 148,
+   "type": "FUNC"
+  },
+  "y0": {
+   "abs": false,
+   "size": 346,
+   "type": "FUNC"
+  },
+  "y0f": {
+   "abs": false,
+   "size": 332,
+   "type": "FUNC"
+  },
+  "y1": {
+   "abs": false,
+   "size": 349,
+   "type": "FUNC"
+  },
+  "y1f": {
+   "abs": false,
+   "size": 335,
+   "type": "FUNC"
+  },
+  "yn": {
+   "abs": false,
+   "size": 697,
+   "type": "FUNC"
+  },
+  "ynf": {
+   "abs": false,
+   "size": 263,
+   "type": "FUNC"
+  }
+ },
+ "members": [
+  "ld-musl-x86_64.so.1",
+  "libc.musl-x86_64.so.1"
+ ],
+ "meta": {
+  "family": [
+   "musl"
+  ],
+  "uname": [
+   "Linux 7.2.0-WSL2-STABLE x86_64"
+  ],
+  "version": [
+   "1.2.5"
+  ]
+ },
+ "missing": [],
+ "name": "musl-1.2.5",
+ "release": "1.2.5",
+ "symbols": {
+  "_Exit": null,
+  "_Fork": null,
+  "_IO_feof_unlocked": null,
+  "_IO_ferror_unlocked": null,
+  "_IO_getc": null,
+  "_IO_getc_unlocked": null,
+  "_IO_putc": null,
+  "_IO_putc_unlocked": null,
+  "___environ": null,
+  "__assert_fail": null,
+  "__ctype_b_loc": null,
+  "__ctype_get_mb_cur_max": null,
+  "__ctype_tolower_loc": null,
+  "__ctype_toupper_loc": null,
+  "__cxa_atexit": null,
+  "__cxa_finalize": null,
+  "__daylight": null,
+  "__dls2b": null,
+  "__dls3": null,
+  "__duplocale": null,
+  "__environ": null,
+  "__errno_location": null,
+  "__fbufsize": null,
+  "__fgetwc_unlocked": null,
+  "__flbf": null,
+  "__flt_rounds": null,
+  "__fpclassify": null,
+  "__fpclassifyf": null,
+  "__fpclassifyl": null,
+  "__fpending": null,
+  "__fpurge": null,
+  "__fputwc_unlocked": null,
+  "__freadable": null,
+  "__freadahead": null,
+  "__freading": null,
+  "__freadptr": null,
+  "__freadptrinc": null,
+  "__freelocale": null,
+  "__fseterr": null,
+  "__fsetlocking": null,
+  "__fwritable": null,
+  "__fwriting": null,
+  "__fxstat": null,
+  "__fxstatat": null,
+  "__getdelim": null,
+  "__h_errno_location": null,
+  "__isalnum_l": null,
+  "__isalpha_l": null,
+  "__isblank_l": null,
+  "__iscntrl_l": null,
+  "__isdigit_l": null,
+  "__isgraph_l": null,
+  "__islower_l": null,
+  "__isoc99_fscanf": null,
+  "__isoc99_fwscanf": null,
+  "__isoc99_scanf": null,
+  "__isoc99_sscanf": null,
+  "__isoc99_swscanf": null,
+  "__isoc99_vfscanf": null,
+  "__isoc99_vfwscanf": null,
+  "__isoc99_vscanf": null,
+  "__isoc99_vsscanf": null,
+  "__isoc99_vswscanf": null,
+  "__isoc99_vwscanf": null,
+  "__isoc99_wscanf": null,
+  "__isprint_l": null,
+  "__ispunct_l": null,
+  "__isspace_l": null,
+  "__isupper_l": null,
+  "__iswalnum_l": null,
+  "__iswalpha_l": null,
+  "__iswblank_l": null,
+  "__iswcntrl_l": null,
+  "__iswctype_l": null,
+  "__iswdigit_l": null,
+  "__iswgraph_l": null,
+  "__iswlower_l": null,
+  "__iswprint_l": null,
+  "__iswpunct_l": null,
+  "__iswspace_l": null,
+  "__iswupper_l": null,
+  "__iswxdigit_l": null,
+  "__isxdigit_l": null,
+  "__lgammal_r": null,
+  "__libc_current_sigrtmax": null,
+  "__libc_current_sigrtmin": null,
+  "__libc_start_main": null,
+  "__lxstat": null,
+  "__newlocale": null,
+  "__nl_langinfo": null,
+  "__nl_langinfo_l": null,
+  "__optpos": null,
+  "__optreset": null,
+  "__posix_getopt": null,
+  "__progname": null,
+  "__progname_full": null,
+  "__res_state": null,
+  "__sched_cpucount": null,
+  "__setjmp": null,
+  "__signbit": null,
+  "__signbitf": null,
+  "__signbitl": null,
+  "__signgam": null,
+  "__sigsetjmp": null,
+  "__stack_chk_fail": null,
+  "__stack_chk_guard": null,
+  "__strcasecmp_l": null,
+  "__strcoll_l": null,
+  "__strerror_l": null,
+  "__strncasecmp_l": null,
+  "__strtod_l": null,
+  "__strtof_l": null,
+  "__strtoimax_internal": null,
+  "__strtol_internal": null,
+  "__strtold_l": null,
+  "__strtoll_internal": null,
+  "__strtoul_internal": null,
+  "__strtoull_internal": null,
+  "__strtoumax_internal": null,
+  "__strxfrm_l": null,
+  "__sysv_signal": null,
+  "__timezone": null,
+  "__tls_get_addr": null,
+  "__tolower_l": null,
+  "__toupper_l": null,
+  "__towctrans_l": null,
+  "__towlower_l": null,
+  "__towupper_l": null,
+  "__tzname": null,
+  "__uselocale": null,
+  "__wcscoll_l": null,
+  "__wcsftime_l": null,
+  "__wcsxfrm_l": null,
+  "__wctrans_l": null,
+  "__wctype_l": null,
+  "__xmknod": null,
+  "__xmknodat": null,
+  "__xpg_basename": null,
+  "__xpg_strerror_r": null,
+  "__xstat": null,
+  "_dl_debug_addr": null,
+  "_dl_debug_state": null,
+  "_dlstart": null,
+  "_environ": null,
+  "_exit": null,
+  "_fini": null,
+  "_flushlbf": null,
+  "_init": null,
+  "_longjmp": null,
+  "_ns_flagdata": null,
+  "_pthread_cleanup_pop": null,
+  "_pthread_cleanup_push": null,
+  "_setjmp": null,
+  "a64l": null,
+  "abort": null,
+  "abs": null,
+  "accept": null,
+  "accept4": null,
+  "access": null,
+  "acct": null,
+  "acos": null,
+  "acosf": null,
+  "acosh": null,
+  "acoshf": null,
+  "acoshl": null,
+  "acosl": null,
+  "addmntent": null,
+  "adjtime": null,
+  "adjtimex": null,
+  "aio_cancel": null,
+  "aio_error": null,
+  "aio_fsync": null,
+  "aio_read": null,
+  "aio_return": null,
+  "aio_suspend": null,
+  "aio_write": null,
+  "alarm": null,
+  "aligned_alloc": null,
+  "alphasort": null,
+  "arch_prctl": null,
+  "asctime": null,
+  "asctime_r": null,
+  "asin": null,
+  "asinf": null,
+  "asinh": null,
+  "asinhf": null,
+  "asinhl": null,
+  "asinl": null,
+  "asprintf": null,
+  "at_quick_exit": null,
+  "atan": null,
+  "atan2": null,
+  "atan2f": null,
+  "atan2l": null,
+  "atanf": null,
+  "atanh": null,
+  "atanhf": null,
+  "atanhl": null,
+  "atanl": null,
+  "atexit": null,
+  "atof": null,
+  "atoi": null,
+  "atol": null,
+  "atoll": null,
+  "basename": null,
+  "bcmp": null,
+  "bcopy": null,
+  "bind": null,
+  "bind_textdomain_codeset": null,
+  "bindtextdomain": null,
+  "brk": null,
+  "bsd_signal": null,
+  "bsearch": null,
+  "btowc": null,
+  "bzero": null,
+  "c16rtomb": null,
+  "c32rtomb": null,
+  "cabs": null,
+  "cabsf": null,
+  "cabsl": null,
+  "cacos": null,
+  "cacosf": null,
+  "cacosh": null,
+  "cacoshf": null,
+  "cacoshl": null,
+  "cacosl": null,
+  "call_once": null,
+  "calloc": null,
+  "capget": null,
+  "capset": null,
+  "carg": null,
+  "cargf": null,
+  "cargl": null,
+  "casin": null,
+  "casinf": null,
+  "casinh": null,
+  "casinhf": null,
+  "casinhl": null,
+  "casinl": null,
+  "catan": null,
+  "catanf": null,
+  "catanh": null,
+  "catanhf": null,
+  "catanhl": null,
+  "catanl": null,
+  "catclose": null,
+  "catgets": null,
+  "catopen": null,
+  "cbrt": null,
+  "cbrtf": null,
+  "cbrtl": null,
+  "ccos": null,
+  "ccosf": null,
+  "ccosh": null,
+  "ccoshf": null,
+  "ccoshl": null,
+  "ccosl": null,
+  "ceil": null,
+  "ceilf": null,
+  "ceill": null,
+  "cexp": null,
+  "cexpf": null,
+  "cexpl": null,
+  "cfgetispeed": null,
+  "cfgetospeed": null,
+  "cfmakeraw": null,
+  "cfsetispeed": null,
+  "cfsetospeed": null,
+  "cfsetspeed": null,
+  "chdir": null,
+  "chmod": null,
+  "chown": null,
+  "chroot": null,
+  "cimag": null,
+  "cimagf": null,
+  "cimagl": null,
+  "clearenv": null,
+  "clearerr": null,
+  "clearerr_unlocked": null,
+  "clock": null,
+  "clock_adjtime": null,
+  "clock_getcpuclockid": null,
+  "clock_getres": null,
+  "clock_gettime": null,
+  "clock_nanosleep": null,
+  "clock_settime": null,
+  "clog": null,
+  "clogf": null,
+  "clogl": null,
+  "clone": null,
+  "close": null,
+  "closedir": null,
+  "closelog": null,
+  "cnd_broadcast": null,
+  "cnd_destroy": null,
+  "cnd_init": null,
+  "cnd_signal": null,
+  "cnd_timedwait": null,
+  "cnd_wait": null,
+  "confstr": null,
+  "conj": null,
+  "conjf": null,
+  "conjl": null,
+  "connect": null,
+  "copy_file_range": null,
+  "copysign": null,
+  "copysignf": null,
+  "copysignl": null,
+  "cos": null,
+  "cosf": null,
+  "cosh": null,
+  "coshf": null,
+  "coshl": null,
+  "cosl": null,
+  "cpow": null,
+  "cpowf": null,
+  "cpowl": null,
+  "cproj": null,
+  "cprojf": null,
+  "cprojl": null,
+  "creal": null,
+  "crealf": null,
+  "creall": null,
+  "creat": null,
+  "crypt": null,
+  "crypt_r": null,
+  "csin": null,
+  "csinf": null,
+  "csinh": null,
+  "csinhf": null,
+  "csinhl": null,
+  "csinl": null,
+  "csqrt": null,
+  "csqrtf": null,
+  "csqrtl": null,
+  "ctan": null,
+  "ctanf": null,
+  "ctanh": null,
+  "ctanhf": null,
+  "ctanhl": null,
+  "ctanl": null,
+  "ctermid": null,
+  "ctime": null,
+  "ctime_r": null,
+  "cuserid": null,
+  "daemon": null,
+  "daylight": null,
+  "dcgettext": null,
+  "dcngettext": null,
+  "delete_module": null,
+  "dgettext": null,
+  "difftime": null,
+  "dirfd": null,
+  "dirname": null,
+  "div": null,
+  "dl_iterate_phdr": null,
+  "dladdr": null,
+  "dlclose": null,
+  "dlerror": null,
+  "dlinfo": null,
+  "dlopen": null,
+  "dlsym": null,
+  "dn_comp": null,
+  "dn_expand": null,
+  "dn_skipname": null,
+  "dngettext": null,
+  "dprintf": null,
+  "drand48": null,
+  "drem": null,
+  "dremf": null,
+  "dup": null,
+  "dup2": null,
+  "dup3": null,
+  "duplocale": null,
+  "eaccess": null,
+  "ecvt": null,
+  "encrypt": null,
+  "endgrent": null,
+  "endhostent": null,
+  "endmntent": null,
+  "endnetent": null,
+  "endprotoent": null,
+  "endpwent": null,
+  "endservent": null,
+  "endspent": null,
+  "endusershell": null,
+  "endutent": null,
+  "endutxent": null,
+  "environ": null,
+  "epoll_create": null,
+  "epoll_create1": null,
+  "epoll_ctl": null,
+  "epoll_pwait": null,
+  "epoll_wait": null,
+  "erand48": null,
+  "erf": null,
+  "erfc": null,
+  "erfcf": null,
+  "erfcl": null,
+  "erff": null,
+  "erfl": null,
+  "err": null,
+  "errx": null,
+  "ether_aton": null,
+  "ether_aton_r": null,
+  "ether_hostton": null,
+  "ether_line": null,
+  "ether_ntoa": null,
+  "ether_ntoa_r": null,
+  "ether_ntohost": null,
+  "euidaccess": null,
+  "eventfd": null,
+  "eventfd_read": null,
+  "eventfd_write": null,
+  "execl": null,
+  "execle": null,
+  "execlp": null,
+  "execv": null,
+  "execve": null,
+  "execvp": null,
+  "execvpe": null,
+  "exit": null,
+  "exp": null,
+  "exp10": null,
+  "exp10f": null,
+  "exp10l": null,
+  "exp2": null,
+  "exp2f": null,
+  "exp2l": null,
+  "expf": null,
+  "expl": null,
+  "explicit_bzero": null,
+  "expm1": null,
+  "expm1f": null,
+  "expm1l": null,
+  "fabs": null,
+  "fabsf": null,
+  "fabsl": null,
+  "faccessat": null,
+  "fallocate": null,
+  "fanotify_init": null,
+  "fanotify_mark": null,
+  "fchdir": null,
+  "fchmod": null,
+  "fchmodat": null,
+  "fchown": null,
+  "fchownat": null,
+  "fclose": null,
+  "fcntl": null,
+  "fcvt": null,
+  "fdatasync": null,
+  "fdim": null,
+  "fdimf": null,
+  "fdiml": null,
+  "fdopen": null,
+  "fdopendir": null,
+  "feclearexcept": null,
+  "fegetenv": null,
+  "fegetexceptflag": null,
+  "fegetround": null,
+  "feholdexcept": null,
+  "feof": null,
+  "feof_unlocked": null,
+  "feraiseexcept": null,
+  "ferror": null,
+  "ferror_unlocked": null,
+  "fesetenv": null,
+  "fesetexceptflag": null,
+  "fesetround": null,
+  "fetestexcept": null,
+  "feupdateenv": null,
+  "fexecve": null,
+  "fflush": null,
+  "fflush_unlocked": null,
+  "ffs": null,
+  "ffsl": null,
+  "ffsll": null,
+  "fgetc": null,
+  "fgetc_unlocked": null,
+  "fgetgrent": null,
+  "fgetln": null,
+  "fgetpos": null,
+  "fgetpwent": null,
+  "fgets": null,
+  "fgets_unlocked": null,
+  "fgetspent": null,
+  "fgetwc": null,
+  "fgetwc_unlocked": null,
+  "fgetws": null,
+  "fgetws_unlocked": null,
+  "fgetxattr": null,
+  "fileno": null,
+  "fileno_unlocked": null,
+  "finite": null,
+  "finitef": null,
+  "flistxattr": null,
+  "flock": null,
+  "flockfile": null,
+  "floor": null,
+  "floorf": null,
+  "floorl": null,
+  "fma": null,
+  "fmaf": null,
+  "fmal": null,
+  "fmax": null,
+  "fmaxf": null,
+  "fmaxl": null,
+  "fmemopen": null,
+  "fmin": null,
+  "fminf": null,
+  "fminl": null,
+  "fmod": null,
+  "fmodf": null,
+  "fmodl": null,
+  "fmtmsg": null,
+  "fnmatch": null,
+  "fopen": null,
+  "fopencookie": null,
+  "fork": null,
+  "forkpty": null,
+  "fpathconf": null,
+  "fprintf": null,
+  "fpurge": null,
+  "fputc": null,
+  "fputc_unlocked": null,
+  "fputs": null,
+  "fputs_unlocked": null,
+  "fputwc": null,
+  "fputwc_unlocked": null,
+  "fputws": null,
+  "fputws_unlocked": null,
+  "fread": null,
+  "fread_unlocked": null,
+  "free": null,
+  "freeaddrinfo": null,
+  "freeifaddrs": null,
+  "freelocale": null,
+  "fremovexattr": null,
+  "freopen": null,
+  "frexp": null,
+  "frexpf": null,
+  "frexpl": null,
+  "fscanf": null,
+  "fseek": null,
+  "fseeko": null,
+  "fsetpos": null,
+  "fsetxattr": null,
+  "fstat": null,
+  "fstatat": null,
+  "fstatfs": null,
+  "fstatvfs": null,
+  "fsync": null,
+  "ftell": null,
+  "ftello": null,
+  "ftime": null,
+  "ftok": null,
+  "ftruncate": null,
+  "ftrylockfile": null,
+  "ftw": null,
+  "funlockfile": null,
+  "futimens": null,
+  "futimes": null,
+  "futimesat": null,
+  "fwide": null,
+  "fwprintf": null,
+  "fwrite": null,
+  "fwrite_unlocked": null,
+  "fwscanf": null,
+  "gai_strerror": null,
+  "gcvt": null,
+  "get_avphys_pages": null,
+  "get_current_dir_name": null,
+  "get_nprocs": null,
+  "get_nprocs_conf": null,
+  "get_phys_pages": null,
+  "getaddrinfo": null,
+  "getauxval": null,
+  "getc": null,
+  "getc_unlocked": null,
+  "getchar": null,
+  "getchar_unlocked": null,
+  "getcwd": null,
+  "getdate": null,
+  "getdate_err": null,
+  "getdelim": null,
+  "getdents": null,
+  "getdomainname": null,
+  "getdtablesize": null,
+  "getegid": null,
+  "getentropy": null,
+  "getenv": null,
+  "geteuid": null,
+  "getgid": null,
+  "getgrent": null,
+  "getgrgid": null,
+  "getgrgid_r": null,
+  "getgrnam": null,
+  "getgrnam_r": null,
+  "getgrouplist": null,
+  "getgroups": null,
+  "gethostbyaddr": null,
+  "gethostbyaddr_r": null,
+  "gethostbyname": null,
+  "gethostbyname2": null,
+  "gethostbyname2_r": null,
+  "gethostbyname_r": null,
+  "gethostent": null,
+  "gethostid": null,
+  "gethostname": null,
+  "getifaddrs": null,
+  "getitimer": null,
+  "getline": null,
+  "getloadavg": null,
+  "getlogin": null,
+  "getlogin_r": null,
+  "getmntent": null,
+  "getmntent_r": null,
+  "getnameinfo": null,
+  "getnetbyaddr": null,
+  "getnetbyname": null,
+  "getnetent": null,
+  "getopt": null,
+  "getopt_long": null,
+  "getopt_long_only": null,
+  "getpagesize": null,
+  "getpass": null,
+  "getpeername": null,
+  "getpgid": null,
+  "getpgrp": null,
+  "getpid": null,
+  "getppid": null,
+  "getpriority": null,
+  "getprotobyname": null,
+  "getprotobynumber": null,
+  "getprotoent": null,
+  "getpwent": null,
+  "getpwnam": null,
+  "getpwnam_r": null,
+  "getpwuid": null,
+  "getpwuid_r": null,
+  "getrandom": null,
+  "getresgid": null,
+  "getresuid": null,
+  "getrlimit": null,
+  "getrusage": null,
+  "gets": null,
+  "getservbyname": null,
+  "getservbyname_r": null,
+  "getservbyport": null,
+  "getservbyport_r": null,
+  "getservent": null,
+  "getsid": null,
+  "getsockname": null,
+  "getsockopt": null,
+  "getspent": null,
+  "getspnam": null,
+  "getspnam_r": null,
+  "getsubopt": null,
+  "gettext": null,
+  "gettid": null,
+  "gettimeofday": null,
+  "getuid": null,
+  "getusershell": null,
+  "getutent": null,
+  "getutid": null,
+  "getutline": null,
+  "getutxent": null,
+  "getutxid": null,
+  "getutxline": null,
+  "getw": null,
+  "getwc": null,
+  "getwc_unlocked": null,
+  "getwchar": null,
+  "getwchar_unlocked": null,
+  "getxattr": null,
+  "glob": null,
+  "globfree": null,
+  "gmtime": null,
+  "gmtime_r": null,
+  "grantpt": null,
+  "h_errno": null,
+  "hasmntopt": null,
+  "hcreate": null,
+  "hcreate_r": null,
+  "hdestroy": null,
+  "hdestroy_r": null,
+  "herror": null,
+  "hsearch": null,
+  "hsearch_r": null,
+  "hstrerror": null,
+  "htonl": null,
+  "htons": null,
+  "hypot": null,
+  "hypotf": null,
+  "hypotl": null,
+  "iconv": null,
+  "iconv_close": null,
+  "iconv_open": null,
+  "if_freenameindex": null,
+  "if_indextoname": null,
+  "if_nameindex": null,
+  "if_nametoindex": null,
+  "ilogb": null,
+  "ilogbf": null,
+  "ilogbl": null,
+  "imaxabs": null,
+  "imaxdiv": null,
+  "in6addr_any": null,
+  "in6addr_loopback": null,
+  "index": null,
+  "inet_addr": null,
+  "inet_aton": null,
+  "inet_lnaof": null,
+  "inet_makeaddr": null,
+  "inet_netof": null,
+  "inet_network": null,
+  "inet_ntoa": null,
+  "inet_ntop": null,
+  "inet_pton": null,
+  "init_module": null,
+  "initgroups": null,
+  "initstate": null,
+  "inotify_add_watch": null,
+  "inotify_init": null,
+  "inotify_init1": null,
+  "inotify_rm_watch": null,
+  "insque": null,
+  "ioctl": null,
+  "ioperm": null,
+  "iopl": null,
+  "isalnum": null,
+  "isalnum_l": null,
+  "isalpha": null,
+  "isalpha_l": null,
+  "isascii": null,
+  "isastream": null,
+  "isatty": null,
+  "isblank": null,
+  "isblank_l": null,
+  "iscntrl": null,
+  "iscntrl_l": null,
+  "isdigit": null,
+  "isdigit_l": null,
+  "isgraph": null,
+  "isgraph_l": null,
+  "islower": null,
+  "islower_l": null,
+  "isprint": null,
+  "isprint_l": null,
+  "ispunct": null,
+  "ispunct_l": null,
+  "issetugid": null,
+  "isspace": null,
+  "isspace_l": null,
+  "isupper": null,
+  "isupper_l": null,
+  "iswalnum": null,
+  "iswalnum_l": null,
+  "iswalpha": null,
+  "iswalpha_l": null,
+  "iswblank": null,
+  "iswblank_l": null,
+  "iswcntrl": null,
+  "iswcntrl_l": null,
+  "iswctype": null,
+  "iswctype_l": null,
+  "iswdigit": null,
+  "iswdigit_l": null,
+  "iswgraph": null,
+  "iswgraph_l": null,
+  "iswlower": null,
+  "iswlower_l": null,
+  "iswprint": null,
+  "iswprint_l": null,
+  "iswpunct": null,
+  "iswpunct_l": null,
+  "iswspace": null,
+  "iswspace_l": null,
+  "iswupper": null,
+  "iswupper_l": null,
+  "iswxdigit": null,
+  "iswxdigit_l": null,
+  "isxdigit": null,
+  "isxdigit_l": null,
+  "j0": null,
+  "j0f": null,
+  "j1": null,
+  "j1f": null,
+  "jn": null,
+  "jnf": null,
+  "jrand48": null,
+  "kill": null,
+  "killpg": null,
+  "klogctl": null,
+  "l64a": null,
+  "labs": null,
+  "lchmod": null,
+  "lchown": null,
+  "lckpwdf": null,
+  "lcong48": null,
+  "ldexp": null,
+  "ldexpf": null,
+  "ldexpl": null,
+  "ldiv": null,
+  "lfind": null,
+  "lgamma": null,
+  "lgamma_r": null,
+  "lgammaf": null,
+  "lgammaf_r": null,
+  "lgammal": null,
+  "lgammal_r": null,
+  "lgetxattr": null,
+  "link": null,
+  "linkat": null,
+  "lio_listio": null,
+  "listen": null,
+  "listxattr": null,
+  "llabs": null,
+  "lldiv": null,
+  "llistxattr": null,
+  "llrint": null,
+  "llrintf": null,
+  "llrintl": null,
+  "llround": null,
+  "llroundf": null,
+  "llroundl": null,
+  "localeconv": null,
+  "localtime": null,
+  "localtime_r": null,
+  "lockf": null,
+  "log": null,
+  "log10": null,
+  "log10f": null,
+  "log10l": null,
+  "log1p": null,
+  "log1pf": null,
+  "log1pl": null,
+  "log2": null,
+  "log2f": null,
+  "log2l": null,
+  "logb": null,
+  "logbf": null,
+  "logbl": null,
+  "logf": null,
+  "login_tty": null,
+  "logl": null,
+  "longjmp": null,
+  "lrand48": null,
+  "lremovexattr": null,
+  "lrint": null,
+  "lrintf": null,
+  "lrintl": null,
+  "lround": null,
+  "lroundf": null,
+  "lroundl": null,
+  "lsearch": null,
+  "lseek": null,
+  "lsetxattr": null,
+  "lstat": null,
+  "lutimes": null,
+  "madvise": null,
+  "malloc": null,
+  "malloc_usable_size": null,
+  "mblen": null,
+  "mbrlen": null,
+  "mbrtoc16": null,
+  "mbrtoc32": null,
+  "mbrtowc": null,
+  "mbsinit": null,
+  "mbsnrtowcs": null,
+  "mbsrtowcs": null,
+  "mbstowcs": null,
+  "mbtowc": null,
+  "memalign": null,
+  "membarrier": null,
+  "memccpy": null,
+  "memchr": null,
+  "memcmp": null,
+  "memcpy": null,
+  "memfd_create": null,
+  "memmem": null,
+  "memmove": null,
+  "mempcpy": null,
+  "memrchr": null,
+  "memset": null,
+  "mincore": null,
+  "mkdir": null,
+  "mkdirat": null,
+  "mkdtemp": null,
+  "mkfifo": null,
+  "mkfifoat": null,
+  "mknod": null,
+  "mknodat": null,
+  "mkostemp": null,
+  "mkostemps": null,
+  "mkstemp": null,
+  "mkstemps": null,
+  "mktemp": null,
+  "mktime": null,
+  "mlock": null,
+  "mlock2": null,
+  "mlockall": null,
+  "mmap": null,
+  "modf": null,
+  "modff": null,
+  "modfl": null,
+  "mount": null,
+  "mprotect": null,
+  "mq_close": null,
+  "mq_getattr": null,
+  "mq_notify": null,
+  "mq_open": null,
+  "mq_receive": null,
+  "mq_send": null,
+  "mq_setattr": null,
+  "mq_timedreceive": null,
+  "mq_timedsend": null,
+  "mq_unlink": null,
+  "mrand48": null,
+  "mremap": null,
+  "msgctl": null,
+  "msgget": null,
+  "msgrcv": null,
+  "msgsnd": null,
+  "msync": null,
+  "mtx_destroy": null,
+  "mtx_init": null,
+  "mtx_lock": null,
+  "mtx_timedlock": null,
+  "mtx_trylock": null,
+  "mtx_unlock": null,
+  "munlock": null,
+  "munlockall": null,
+  "munmap": null,
+  "name_to_handle_at": null,
+  "nan": null,
+  "nanf": null,
+  "nanl": null,
+  "nanosleep": null,
+  "nearbyint": null,
+  "nearbyintf": null,
+  "nearbyintl": null,
+  "newlocale": null,
+  "nextafter": null,
+  "nextafterf": null,
+  "nextafterl": null,
+  "nexttoward": null,
+  "nexttowardf": null,
+  "nexttowardl": null,
+  "nftw": null,
+  "ngettext": null,
+  "nice": null,
+  "nl_langinfo": null,
+  "nl_langinfo_l": null,
+  "nrand48": null,
+  "ns_get16": null,
+  "ns_get32": null,
+  "ns_initparse": null,
+  "ns_name_uncompress": null,
+  "ns_parserr": null,
+  "ns_put16": null,
+  "ns_put32": null,
+  "ns_skiprr": null,
+  "ntohl": null,
+  "ntohs": null,
+  "open": null,
+  "open_by_handle_at": null,
+  "open_memstream": null,
+  "open_wmemstream": null,
+  "openat": null,
+  "opendir": null,
+  "openlog": null,
+  "openpty": null,
+  "optarg": null,
+  "opterr": null,
+  "optind": null,
+  "optopt": null,
+  "optreset": null,
+  "pathconf": null,
+  "pause": null,
+  "pclose": null,
+  "perror": null,
+  "personality": null,
+  "pipe": null,
+  "pipe2": null,
+  "pivot_root": null,
+  "poll": null,
+  "popen": null,
+  "posix_close": null,
+  "posix_fadvise": null,
+  "posix_fallocate": null,
+  "posix_madvise": null,
+  "posix_memalign": null,
+  "posix_openpt": null,
+  "posix_spawn": null,
+  "posix_spawn_file_actions_addchdir_np": null,
+  "posix_spawn_file_actions_addclose": null,
+  "posix_spawn_file_actions_adddup2": null,
+  "posix_spawn_file_actions_addfchdir_np": null,
+  "posix_spawn_file_actions_addopen": null,
+  "posix_spawn_file_actions_destroy": null,
+  "posix_spawn_file_actions_init": null,
+  "posix_spawnattr_destroy": null,
+  "posix_spawnattr_getflags": null,
+  "posix_spawnattr_getpgroup": null,
+  "posix_spawnattr_getschedparam": null,
+  "posix_spawnattr_getschedpolicy": null,
+  "posix_spawnattr_getsigdefault": null,
+  "posix_spawnattr_getsigmask": null,
+  "posix_spawnattr_init": null,
+  "posix_spawnattr_setflags": null,
+  "posix_spawnattr_setpgroup": null,
+  "posix_spawnattr_setschedparam": null,
+  "posix_spawnattr_setschedpolicy": null,
+  "posix_spawnattr_setsigdefault": null,
+  "posix_spawnattr_setsigmask": null,
+  "posix_spawnp": null,
+  "pow": null,
+  "pow10": null,
+  "pow10f": null,
+  "pow10l": null,
+  "powf": null,
+  "powl": null,
+  "ppoll": null,
+  "prctl": null,
+  "pread": null,
+  "preadv": null,
+  "preadv2": null,
+  "printf": null,
+  "prlimit": null,
+  "process_vm_readv": null,
+  "process_vm_writev": null,
+  "program_invocation_name": null,
+  "program_invocation_short_name": null,
+  "pselect": null,
+  "psiginfo": null,
+  "psignal": null,
+  "pthread_atfork": null,
+  "pthread_attr_destroy": null,
+  "pthread_attr_getdetachstate": null,
+  "pthread_attr_getguardsize": null,
+  "pthread_attr_getinheritsched": null,
+  "pthread_attr_getschedparam": null,
+  "pthread_attr_getschedpolicy": null,
+  "pthread_attr_getscope": null,
+  "pthread_attr_getstack": null,
+  "pthread_attr_getstacksize": null,
+  "pthread_attr_init": null,
+  "pthread_attr_setdetachstate": null,
+  "pthread_attr_setguardsize": null,
+  "pthread_attr_setinheritsched": null,
+  "pthread_attr_setschedparam": null,
+  "pthread_attr_setschedpolicy": null,
+  "pthread_attr_setscope": null,
+  "pthread_attr_setstack": null,
+  "pthread_attr_setstacksize": null,
+  "pthread_barrier_destroy": null,
+  "pthread_barrier_init": null,
+  "pthread_barrier_wait": null,
+  "pthread_barrierattr_destroy": null,
+  "pthread_barrierattr_getpshared": null,
+  "pthread_barrierattr_init": null,
+  "pthread_barrierattr_setpshared": null,
+  "pthread_cancel": null,
+  "pthread_cond_broadcast": null,
+  "pthread_cond_destroy": null,
+  "pthread_cond_init": null,
+  "pthread_cond_signal": null,
+  "pthread_cond_timedwait": null,
+  "pthread_cond_wait": null,
+  "pthread_condattr_destroy": null,
+  "pthread_condattr_getclock": null,
+  "pthread_condattr_getpshared": null,
+  "pthread_condattr_init": null,
+  "pthread_condattr_setclock": null,
+  "pthread_condattr_setpshared": null,
+  "pthread_create": null,
+  "pthread_detach": null,
+  "pthread_equal": null,
+  "pthread_exit": null,
+  "pthread_getaffinity_np": null,
+  "pthread_getattr_default_np": null,
+  "pthread_getattr_np": null,
+  "pthread_getconcurrency": null,
+  "pthread_getcpuclockid": null,
+  "pthread_getname_np": null,
+  "pthread_getschedparam": null,
+  "pthread_getspecific": null,
+  "pthread_join": null,
+  "pthread_key_create": null,
+  "pthread_key_delete": null,
+  "pthread_kill": null,
+  "pthread_mutex_consistent": null,
+  "pthread_mutex_destroy": null,
+  "pthread_mutex_getprioceiling": null,
+  "pthread_mutex_init": null,
+  "pthread_mutex_lock": null,
+  "pthread_mutex_setprioceiling": null,
+  "pthread_mutex_timedlock": null,
+  "pthread_mutex_trylock": null,
+  "pthread_mutex_unlock": null,
+  "pthread_mutexattr_destroy": null,
+  "pthread_mutexattr_getprotocol": null,
+  "pthread_mutexattr_getpshared": null,
+  "pthread_mutexattr_getrobust": null,
+  "pthread_mutexattr_gettype": null,
+  "pthread_mutexattr_init": null,
+  "pthread_mutexattr_setprotocol": null,
+  "pthread_mutexattr_setpshared": null,
+  "pthread_mutexattr_setrobust": null,
+  "pthread_mutexattr_settype": null,
+  "pthread_once": null,
+  "pthread_rwlock_destroy": null,
+  "pthread_rwlock_init": null,
+  "pthread_rwlock_rdlock": null,
+  "pthread_rwlock_timedrdlock": null,
+  "pthread_rwlock_timedwrlock": null,
+  "pthread_rwlock_tryrdlock": null,
+  "pthread_rwlock_trywrlock": null,
+  "pthread_rwlock_unlock": null,
+  "pthread_rwlock_wrlock": null,
+  "pthread_rwlockattr_destroy": null,
+  "pthread_rwlockattr_getpshared": null,
+  "pthread_rwlockattr_init": null,
+  "pthread_rwlockattr_setpshared": null,
+  "pthread_self": null,
+  "pthread_setaffinity_np": null,
+  "pthread_setattr_default_np": null,
+  "pthread_setcancelstate": null,
+  "pthread_setcanceltype": null,
+  "pthread_setconcurrency": null,
+  "pthread_setname_np": null,
+  "pthread_setschedparam": null,
+  "pthread_setschedprio": null,
+  "pthread_setspecific": null,
+  "pthread_sigmask": null,
+  "pthread_spin_destroy": null,
+  "pthread_spin_init": null,
+  "pthread_spin_lock": null,
+  "pthread_spin_trylock": null,
+  "pthread_spin_unlock": null,
+  "pthread_testcancel": null,
+  "pthread_timedjoin_np": null,
+  "pthread_tryjoin_np": null,
+  "ptrace": null,
+  "ptsname": null,
+  "ptsname_r": null,
+  "putc": null,
+  "putc_unlocked": null,
+  "putchar": null,
+  "putchar_unlocked": null,
+  "putenv": null,
+  "putgrent": null,
+  "putpwent": null,
+  "puts": null,
+  "putspent": null,
+  "pututline": null,
+  "pututxline": null,
+  "putw": null,
+  "putwc": null,
+  "putwc_unlocked": null,
+  "putwchar": null,
+  "putwchar_unlocked": null,
+  "pwrite": null,
+  "pwritev": null,
+  "pwritev2": null,
+  "qsort": null,
+  "qsort_r": null,
+  "quick_exit": null,
+  "quotactl": null,
+  "raise": null,
+  "rand": null,
+  "rand_r": null,
+  "random": null,
+  "read": null,
+  "readahead": null,
+  "readdir": null,
+  "readdir_r": null,
+  "readlink": null,
+  "readlinkat": null,
+  "readv": null,
+  "realloc": null,
+  "reallocarray": null,
+  "realpath": null,
+  "reboot": null,
+  "recv": null,
+  "recvfrom": null,
+  "recvmmsg": null,
+  "recvmsg": null,
+  "regcomp": null,
+  "regerror": null,
+  "regexec": null,
+  "regfree": null,
+  "remainder": null,
+  "remainderf": null,
+  "remainderl": null,
+  "remap_file_pages": null,
+  "remove": null,
+  "removexattr": null,
+  "remque": null,
+  "remquo": null,
+  "remquof": null,
+  "remquol": null,
+  "rename": null,
+  "renameat": null,
+  "res_init": null,
+  "res_mkquery": null,
+  "res_query": null,
+  "res_querydomain": null,
+  "res_search": null,
+  "res_send": null,
+  "rewind": null,
+  "rewinddir": null,
+  "rindex": null,
+  "rint": null,
+  "rintf": null,
+  "rintl": null,
+  "rmdir": null,
+  "round": null,
+  "roundf": null,
+  "roundl": null,
+  "sbrk": null,
+  "scalb": null,
+  "scalbf": null,
+  "scalbln": null,
+  "scalblnf": null,
+  "scalblnl": null,
+  "scalbn": null,
+  "scalbnf": null,
+  "scalbnl": null,
+  "scandir": null,
+  "scanf": null,
+  "sched_get_priority_max": null,
+  "sched_get_priority_min": null,
+  "sched_getaffinity": null,
+  "sched_getcpu": null,
+  "sched_getparam": null,
+  "sched_getscheduler": null,
+  "sched_rr_get_interval": null,
+  "sched_setaffinity": null,
+  "sched_setparam": null,
+  "sched_setscheduler": null,
+  "sched_yield": null,
+  "secure_getenv": null,
+  "seed48": null,
+  "seekdir": null,
+  "select": null,
+  "sem_close": null,
+  "sem_destroy": null,
+  "sem_getvalue": null,
+  "sem_init": null,
+  "sem_open": null,
+  "sem_post": null,
+  "sem_timedwait": null,
+  "sem_trywait": null,
+  "sem_unlink": null,
+  "sem_wait": null,
+  "semctl": null,
+  "semget": null,
+  "semop": null,
+  "semtimedop": null,
+  "send": null,
+  "sendfile": null,
+  "sendmmsg": null,
+  "sendmsg": null,
+  "sendto": null,
+  "setbuf": null,
+  "setbuffer": null,
+  "setdomainname": null,
+  "setegid": null,
+  "setenv": null,
+  "seteuid": null,
+  "setfsgid": null,
+  "setfsuid": null,
+  "setgid": null,
+  "setgrent": null,
+  "setgroups": null,
+  "sethostent": null,
+  "sethostname": null,
+  "setitimer": null,
+  "setjmp": null,
+  "setkey": null,
+  "setlinebuf": null,
+  "setlocale": null,
+  "setlogmask": null,
+  "setmntent": null,
+  "setnetent": null,
+  "setns": null,
+  "setpgid": null,
+  "setpgrp": null,
+  "setpriority": null,
+  "setprotoent": null,
+  "setpwent": null,
+  "setregid": null,
+  "setresgid": null,
+  "setresuid": null,
+  "setreuid": null,
+  "setrlimit": null,
+  "setservent": null,
+  "setsid": null,
+  "setsockopt": null,
+  "setspent": null,
+  "setstate": null,
+  "settimeofday": null,
+  "setuid": null,
+  "setusershell": null,
+  "setutent": null,
+  "setutxent": null,
+  "setvbuf": null,
+  "setxattr": null,
+  "shm_open": null,
+  "shm_unlink": null,
+  "shmat": null,
+  "shmctl": null,
+  "shmdt": null,
+  "shmget": null,
+  "shutdown": null,
+  "sigaction": null,
+  "sigaddset": null,
+  "sigaltstack": null,
+  "sigandset": null,
+  "sigdelset": null,
+  "sigemptyset": null,
+  "sigfillset": null,
+  "sighold": null,
+  "sigignore": null,
+  "siginterrupt": null,
+  "sigisemptyset": null,
+  "sigismember": null,
+  "siglongjmp": null,
+  "signal": null,
+  "signalfd": null,
+  "signgam": null,
+  "significand": null,
+  "significandf": null,
+  "sigorset": null,
+  "sigpause": null,
+  "sigpending": null,
+  "sigprocmask": null,
+  "sigqueue": null,
+  "sigrelse": null,
+  "sigset": null,
+  "sigsetjmp": null,
+  "sigsuspend": null,
+  "sigtimedwait": null,
+  "sigwait": null,
+  "sigwaitinfo": null,
+  "sin": null,
+  "sincos": null,
+  "sincosf": null,
+  "sincosl": null,
+  "sinf": null,
+  "sinh": null,
+  "sinhf": null,
+  "sinhl": null,
+  "sinl": null,
+  "sleep": null,
+  "snprintf": null,
+  "sockatmark": null,
+  "socket": null,
+  "socketpair": null,
+  "splice": null,
+  "sprintf": null,
+  "sqrt": null,
+  "sqrtf": null,
+  "sqrtl": null,
+  "srand": null,
+  "srand48": null,
+  "srandom": null,
+  "sscanf": null,
+  "stat": null,
+  "statfs": null,
+  "statvfs": null,
+  "statx": null,
+  "stderr": null,
+  "stdin": null,
+  "stdout": null,
+  "stime": null,
+  "stpcpy": null,
+  "stpncpy": null,
+  "strcasecmp": null,
+  "strcasecmp_l": null,
+  "strcasestr": null,
+  "strcat": null,
+  "strchr": null,
+  "strchrnul": null,
+  "strcmp": null,
+  "strcoll": null,
+  "strcoll_l": null,
+  "strcpy": null,
+  "strcspn": null,
+  "strdup": null,
+  "strerror": null,
+  "strerror_l": null,
+  "strerror_r": null,
+  "strfmon": null,
+  "strfmon_l": null,
+  "strftime": null,
+  "strftime_l": null,
+  "strlcat": null,
+  "strlcpy": null,
+  "strlen": null,
+  "strncasecmp": null,
+  "strncasecmp_l": null,
+  "strncat": null,
+  "strncmp": null,
+  "strncpy": null,
+  "strndup": null,
+  "strnlen": null,
+  "strpbrk": null,
+  "strptime": null,
+  "strrchr": null,
+  "strsep": null,
+  "strsignal": null,
+  "strspn": null,
+  "strstr": null,
+  "strtod": null,
+  "strtod_l": null,
+  "strtof": null,
+  "strtof_l": null,
+  "strtoimax": null,
+  "strtok": null,
+  "strtok_r": null,
+  "strtol": null,
+  "strtold": null,
+  "strtold_l": null,
+  "strtoll": null,
+  "strtoul": null,
+  "strtoull": null,
+  "strtoumax": null,
+  "strverscmp": null,
+  "strxfrm": null,
+  "strxfrm_l": null,
+  "swab": null,
+  "swapoff": null,
+  "swapon": null,
+  "swprintf": null,
+  "swscanf": null,
+  "symlink": null,
+  "symlinkat": null,
+  "sync": null,
+  "sync_file_range": null,
+  "syncfs": null,
+  "syscall": null,
+  "sysconf": null,
+  "sysinfo": null,
+  "syslog": null,
+  "system": null,
+  "tan": null,
+  "tanf": null,
+  "tanh": null,
+  "tanhf": null,
+  "tanhl": null,
+  "tanl": null,
+  "tcdrain": null,
+  "tcflow": null,
+  "tcflush": null,
+  "tcgetattr": null,
+  "tcgetpgrp": null,
+  "tcgetsid": null,
+  "tcgetwinsize": null,
+  "tcsendbreak": null,
+  "tcsetattr": null,
+  "tcsetpgrp": null,
+  "tcsetwinsize": null,
+  "tdelete": null,
+  "tdestroy": null,
+  "tee": null,
+  "telldir": null,
+  "tempnam": null,
+  "textdomain": null,
+  "tfind": null,
+  "tgamma": null,
+  "tgammaf": null,
+  "tgammal": null,
+  "thrd_create": null,
+  "thrd_current": null,
+  "thrd_detach": null,
+  "thrd_equal": null,
+  "thrd_exit": null,
+  "thrd_join": null,
+  "thrd_sleep": null,
+  "thrd_yield": null,
+  "time": null,
+  "timegm": null,
+  "timer_create": null,
+  "timer_delete": null,
+  "timer_getoverrun": null,
+  "timer_gettime": null,
+  "timer_settime": null,
+  "timerfd_create": null,
+  "timerfd_gettime": null,
+  "timerfd_settime": null,
+  "times": null,
+  "timespec_get": null,
+  "timezone": null,
+  "tmpfile": null,
+  "tmpnam": null,
+  "toascii": null,
+  "tolower": null,
+  "tolower_l": null,
+  "toupper": null,
+  "toupper_l": null,
+  "towctrans": null,
+  "towctrans_l": null,
+  "towlower": null,
+  "towlower_l": null,
+  "towupper": null,
+  "towupper_l": null,
+  "trunc": null,
+  "truncate": null,
+  "truncf": null,
+  "truncl": null,
+  "tsearch": null,
+  "tss_create": null,
+  "tss_delete": null,
+  "tss_get": null,
+  "tss_set": null,
+  "ttyname": null,
+  "ttyname_r": null,
+  "twalk": null,
+  "tzname": null,
+  "tzset": null,
+  "ualarm": null,
+  "ulckpwdf": null,
+  "ulimit": null,
+  "umask": null,
+  "umount": null,
+  "umount2": null,
+  "uname": null,
+  "ungetc": null,
+  "ungetwc": null,
+  "unlink": null,
+  "unlinkat": null,
+  "unlockpt": null,
+  "unsetenv": null,
+  "unshare": null,
+  "updwtmp": null,
+  "updwtmpx": null,
+  "uselocale": null,
+  "usleep": null,
+  "utime": null,
+  "utimensat": null,
+  "utimes": null,
+  "utmpname": null,
+  "utmpxname": null,
+  "valloc": null,
+  "vasprintf": null,
+  "vdprintf": null,
+  "verr": null,
+  "verrx": null,
+  "versionsort": null,
+  "vfork": null,
+  "vfprintf": null,
+  "vfscanf": null,
+  "vfwprintf": null,
+  "vfwscanf": null,
+  "vhangup": null,
+  "vmsplice": null,
+  "vprintf": null,
+  "vscanf": null,
+  "vsnprintf": null,
+  "vsprintf": null,
+  "vsscanf": null,
+  "vswprintf": null,
+  "vswscanf": null,
+  "vsyslog": null,
+  "vwarn": null,
+  "vwarnx": null,
+  "vwprintf": null,
+  "vwscanf": null,
+  "wait": null,
+  "wait3": null,
+  "wait4": null,
+  "waitid": null,
+  "waitpid": null,
+  "warn": null,
+  "warnx": null,
+  "wcpcpy": null,
+  "wcpncpy": null,
+  "wcrtomb": null,
+  "wcscasecmp": null,
+  "wcscasecmp_l": null,
+  "wcscat": null,
+  "wcschr": null,
+  "wcscmp": null,
+  "wcscoll": null,
+  "wcscoll_l": null,
+  "wcscpy": null,
+  "wcscspn": null,
+  "wcsdup": null,
+  "wcsftime": null,
+  "wcsftime_l": null,
+  "wcslen": null,
+  "wcsncasecmp": null,
+  "wcsncasecmp_l": null,
+  "wcsncat": null,
+  "wcsncmp": null,
+  "wcsncpy": null,
+  "wcsnlen": null,
+  "wcsnrtombs": null,
+  "wcspbrk": null,
+  "wcsrchr": null,
+  "wcsrtombs": null,
+  "wcsspn": null,
+  "wcsstr": null,
+  "wcstod": null,
+  "wcstof": null,
+  "wcstoimax": null,
+  "wcstok": null,
+  "wcstol": null,
+  "wcstold": null,
+  "wcstoll": null,
+  "wcstombs": null,
+  "wcstoul": null,
+  "wcstoull": null,
+  "wcstoumax": null,
+  "wcswcs": null,
+  "wcswidth": null,
+  "wcsxfrm": null,
+  "wcsxfrm_l": null,
+  "wctob": null,
+  "wctomb": null,
+  "wctrans": null,
+  "wctrans_l": null,
+  "wctype": null,
+  "wctype_l": null,
+  "wcwidth": null,
+  "wmemchr": null,
+  "wmemcmp": null,
+  "wmemcpy": null,
+  "wmemmove": null,
+  "wmemset": null,
+  "wordexp": null,
+  "wordfree": null,
+  "wprintf": null,
+  "write": null,
+  "writev": null,
+  "wscanf": null,
+  "y0": null,
+  "y0f": null,
+  "y1": null,
+  "y1f": null,
+  "yn": null,
+  "ynf": null
+ }
+}

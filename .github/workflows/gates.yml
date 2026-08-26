@@ -1,0 +1,320 @@
+# The fast gate. Everything here finishes in minutes and runs on every push.
+#
+# The slow half -- two AppImage downloads and apt/apk on four distributions,
+# two of them from 2014 and 2016 -- is appimage-suite.yml, on a schedule.
+# Splitting them is what keeps this one worth having.
+#
+# PIN EVERY THIRD-PARTY ACTION TO A COMMIT, NOT A TAG. A tag moves, and a moved
+# tag runs code nobody reviewed with the permissions this workflow granted.
+#
+#   gh api repos/actions/checkout/git/ref/tags/v5 --jq .object.sha
+
+name: gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # ---------------------------------------------------------------- hygiene --
+  hygiene:
+    name: hygiene (shell, endings, docs, secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 1
+
+      # Each gate on its own step, so the log says WHICH failed: one combined
+      # step reports a single failure for six checks. And each unpiped: a check
+      # piped into anything reports the PIPELINE's status, so a guard that
+      # refused reads as green.
+      - name: shell scripts parse
+        run: |
+          fail=0
+          for f in $(git ls-files '*.sh'); do
+            sh -n "$f" || { echo "parse error: $f"; fail=1; }
+          done
+          exit $fail
+
+      # A CR in a .sh turns every command in it into a $'...\r' "not found"
+      # error that names the wrong thing. .gitattributes enforces LF; this
+      # asks git whether the index actually agrees.
+      - name: line endings match .gitattributes
+        run: |
+          bad=$(git ls-files --eol | grep -v 'i/lf' | grep -v 'i/-text' || true)
+          if [ -n "$bad" ]; then
+            echo "$bad"
+            echo "index endings disagree with .gitattributes"
+            exit 1
+          fi
+          echo clean
+
+      # ⚠ tr and cmp, NOT grep. Measured: a CR pattern built with $(printf '\r')
+      # matches nothing, because the command substitution and the pattern's own
+      # handling conspire to leave it empty. The grep form of this check reads
+      # GREEN over a file that demonstrably contains a CR, which is the worst
+      # available outcome for a guard. This form asks a different question: if
+      # deleting every CR changes the file, the file had one.
+      - name: no CR in any stage script
+        run: |
+          fail=0
+          for f in $(git ls-files '*.sh'); do
+            if ! tr -d '\r' < "$f" | cmp -s - "$f"; then
+              echo "CR in $f"; fail=1
+            fi
+          done
+          exit $fail
+
+      - name: the old name is gone
+        run: |
+          # Task 2 of the port. A reference to the old repository is a link
+          # that does not resolve and a citation nobody can check.
+          # ⚠ The character classes are why this gate does not fail on its own
+          # source. A pattern spelled plainly here matches the line it is
+          # written on, and the gate then refuses every build -- which is how
+          # this was found: the planted-defect pass ran it against a CLEAN tree
+          # too, and it already said no.
+          #
+          # dlope[n] matches "dlopen" and is not itself "dlopen". The second
+          # pattern's dot is still "any character", which is the point of it:
+          # it catches a hyphen that became an underscore or a space.
+          if git grep -nIi -e 'dlope[n]-experiment' -e 'dlope[n].experiment' -- . ; then
+            echo "a reference to the pre-move repository survives"
+            exit 1
+          fi
+          echo clean
+
+      # ⛔ Every commit is attributed to the operator alone. Several agent
+      # harnesses instruct a model to append a co-author trailer; that
+      # instruction does not apply here, and this is the check rather than the
+      # hope. A rule nobody checks is a preference.
+      - name: no tool is credited
+        run: |
+          fail=0
+          # ⚠ Same character-class trick as the gate above, and for the same
+          # measured reason: spelled plainly, each pattern matches the line it
+          # is written on and the gate refuses every build.
+          tool='clau[d]e|copilo[t]|gp[t]|gemin[i]|anthropi[c]|opena[i]'
+          # The tree.
+          if git grep -nIiE "co-authored-by:.*($tool)" -- . ; then
+            fail=1
+          fi
+          if git grep -nIiE "generated with \[?($tool)" -- . ; then
+            fail=1
+          fi
+          # The history reachable here. On a pull request that is the branch;
+          # on a push it is what arrived.
+          range=origin/${{ github.event.repository.default_branch }}..HEAD
+          git rev-list "$range" >/dev/null 2>&1 || range=HEAD~1..HEAD
+          if git log --format='%B' "$range" |
+             grep -inE "co-authored-by:.*($tool)|generated with \[?($tool)"; then
+            echo "a commit message credits a tool; see docs/conventions"
+            fail=1
+          fi
+          exit $fail
+
+      # ⭐ One fact, one home. A count in two documents agrees on the day it is
+      # written and disagrees within a month, and a reader has no way to tell
+      # which is stale. HISTORY/ is excluded ON PURPOSE: it records what was
+      # true when it was written and says so.
+      - name: every headline number has exactly one home
+        run: |
+          fail=0
+          for n in 3470 358 46/46 45/45 40/40 26/26; do
+            homes=$(git grep -lF "$n" -- '*.md' ':(exclude)HISTORY/*' | tr '\n' ' ')
+            count=$(printf '%s' "$homes" | wc -w)
+            if [ "$count" -gt 1 ]; then
+              echo "$n appears in $count files: $homes"
+              fail=1
+            fi
+          done
+          [ $fail -eq 0 ] && echo "each headline number has one home"
+          exit $fail
+
+      - name: template checks
+        run: |
+          T=https://raw.githubusercontent.com/Azathothas/TEMPLATE/main
+          fail=0
+          for c in check-docs check-control-bytes; do
+            curl -fsSL -o "/tmp/$c.sh" "$T/scripts/common/$c.sh"
+            sh "/tmp/$c.sh" || fail=1
+          done
+          exit $fail
+
+  # -------------------------------------------------- generated, not stale --
+  # make gl-syms-check, gles-syms-check and traps all exist and all fail the
+  # build on drift. ⚠ gles-syms-check SKIPS with exit 0 when there is no AppDir
+  # bundling libGLESv2.so.2, so putting it in a job without one makes the gate
+  # decorative. It lives in appimage-suite.yml, which has extracted one.
+  generated:
+    name: generated artefacts are not stale
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: version traps still cover this libc
+        run: make -C src traps
+
+      - name: the shim regenerates byte-identically
+        run: |
+          cp src/forward-shim.c /tmp/shipped.c
+          make -C src shim
+          diff -u /tmp/shipped.c src/forward-shim.c && echo "shim is current"
+
+  # ------------------------------------------------------------ the build ---
+  # Task 3's matrix: every host/target combination the scripts claim to
+  # support. A build script that is only ever run one way is a build script
+  # that works one way.
+  build:
+    name: build ${{ matrix.arch }} (${{ matrix.engine }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            engine: docker
+            runner: ubuntu-latest
+          # aarch64 is CROSS-COMPILED inside the x86-64 floor image. ⛔ Not via
+          # `--platform linux/arm64`: pulling a tag for another platform
+          # REPLACES the cached image for that tag, and the next x86-64 job
+          # using it dies with "Exec format error".
+          - arch: aarch64
+            engine: docker
+            runner: ubuntu-latest
+          # A real ARM runner. This is the row where CI is STRONGER than the
+          # machine this project was built on: the aarch64 trampolines have
+          # only ever run under qemu-user, which emulates the instructions and
+          # not a memory model.
+          - arch: aarch64
+            engine: native
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: what is available
+        run: sh scripts/build.sh --check --arch ${{ matrix.arch }}
+
+      # The native ARM runner is not on the 2.31 floor, so the floor it is
+      # allowed to assert is its own. The artefacts it makes are for testing
+      # the trampolines on real silicon, not for release.
+      - name: build
+        run: |
+          if [ "${{ matrix.engine }}" = native ]; then
+            floor=$(getconf GNU_LIBC_VERSION | awk '{print $2}')
+            sh scripts/build.sh --engine native --arch ${{ matrix.arch }} \
+              --floor-glibc "$floor"
+          else
+            sh scripts/build.sh --engine docker --arch ${{ matrix.arch }}
+          fi
+
+      - name: the manifest
+        run: cat build/${{ matrix.arch }}/build-manifest.json
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: artefacts-${{ matrix.arch }}-${{ matrix.engine }}
+          path: build/${{ matrix.arch }}/
+          if-no-files-found: error
+
+  # ------------------------------------------------- the fast evidence gate --
+  evidence:
+    name: evidence table (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      # ⚠ The timeouts inside the stages are wall-clock and were tuned on one
+      # machine. A slow shared runner exceeding one scores a FAILURE, not a
+      # skip. If this job starts flaking, measure on the runner and RAISE
+      # them; shortening hides the problem.
+      - name: run the evidence table
+        run: sh scripts/run-evidence.sh
+        env:
+          CLD_ENGINE: docker
+
+  # ---------------------------------------------- the four files nothing runs --
+  # PORTING 0.1 listed four files that no script built or invoked. A test no
+  # runner runs is a test that has already stopped working and nobody has
+  # noticed, so each one either has a job or is moved to tools/manual/.
+  orphans:
+    name: the probes nothing else runs
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: build and exercise allocprobe and icd-harness
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends gcc libc6-dev
+
+          # ⚠ allocprobe is an LD_PRELOAD INTERPOSER, not a program. It has no
+          # main(); it has a destructor that prints the counters. Building it
+          # as an executable fails at link with "undefined reference to main",
+          # which is how this step was written the first time.
+          gcc -shared -fPIC -O2 -o /tmp/allocprobe.so tests/allocprobe.c -ldl
+
+          # And exercise it, because compiling proves nothing about a probe
+          # whose whole job is to interpose. Preload it over a program that
+          # allocates, and require a non-zero TOTAL: "0 NULL allocations" on
+          # its own reads identically to "this interposed nothing at all",
+          # which is the exact confusion the probe's own header is about.
+          # ⚠ volatile, and the buffer written to. At -O2 gcc elides an unused
+          # malloc/free pair outright, so the obvious version of this program
+          # never calls malloc and the probe correctly reports interposing
+          # nothing -- which reads as a failure of the probe rather than of the
+          # test. That happened.
+          cat > /tmp/u.c <<'ALLOCEOF'
+          #include <stdlib.h>
+          static void * volatile sink;
+          int main(void) {
+                  for (int i = 0; i < 1000; i++) {
+                          char *p = malloc(64);
+                          if (!p) return 1;
+                          p[0] = (char)i; sink = p; free(p);
+                  }
+                  return 0;
+          }
+          ALLOCEOF
+          gcc -O2 -o /tmp/alloc_user /tmp/u.c
+          LD_PRELOAD=/tmp/allocprobe.so /tmp/alloc_user 2>/tmp/a.out
+          cat /tmp/a.out
+          grep -qE '[1-9][0-9]* allocator calls interposed' /tmp/a.out || {
+            echo "allocprobe interposed nothing; the probe cannot see what it claims to"
+            exit 1
+          }
+
+          # icd-harness IS a program, and it takes a library argument. With a
+          # real software ICD present it must load it and call through it.
+          gcc -O2 -o /tmp/icd-harness tests/icd-harness.c -ldl
+          sudo apt-get install -y -qq --no-install-recommends mesa-vulkan-drivers
+          icd=$(ls /usr/lib/*/libvulkan_lvp.so 2>/dev/null | head -1)
+          if [ -n "$icd" ]; then
+            /tmp/icd-harness "$icd"
+          else
+            echo "no lavapipe ICD on this runner; icd-harness built but not driven"
+            exit 1
+          fi
