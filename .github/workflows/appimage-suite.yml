@@ -60,7 +60,7 @@ jobs:
           - arch: aarch64
             runner: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Both AppImages are sha256-verified by the driver, so a cache hit is
       # exactly as trustworthy as a fresh download -- a poisoned cache fails
