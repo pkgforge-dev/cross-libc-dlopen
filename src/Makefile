@@ -76,12 +76,9 @@ cross-libc-dlopen.so: cross-libc-dlopen.c forward-shim.c version-compat.c cld-en
 
 # The OpenGL and EGL forwarding shims. Each is built with the SONAME of the
 # bundled dispatcher it replaces, so preloading it makes ld.so bind an
-# application's DT_NEEDED to it instead. -fcf-protection so the object carries
-# the IBT property note that matches the endbr64 the trampolines start with:
-# without the note a CET-enforcing host turns indirect-branch tracking off for
-# the whole process, which is a silent loss of a mitigation rather than a crash.
+# application's DT_NEEDED to it instead.
 gl-fwd.so: gl-fwd.c gl-fwd-gl.h ld-conf.h cld-env.h
-	$(CC) $(SOFLAGS) $(CFLAGS) -fcf-protection=full \
+	$(CC) $(SOFLAGS) $(CFLAGS) \
 		-DGLFWD_TABLE='"gl-fwd-gl.h"' -DGLFWD_TAG='"gl-fwd.so"' \
 		-Wl,-soname,libGL.so.1 gl-fwd.c -o $@ -ldl
 	@$(MAKE) --no-print-directory gl-fwd-verify SO=$@ TBL=gl-fwd-gl.h
@@ -89,7 +86,7 @@ gl-fwd.so: gl-fwd.c gl-fwd-gl.h ld-conf.h cld-env.h
 # EGL's dispatcher finds its vendor through a JSON directory rather than a
 # libGLX_*.so.0, so the marker differs; everything else is the same object.
 egl-fwd.so: gl-fwd.c gl-fwd-egl.h ld-conf.h cld-env.h
-	$(CC) $(SOFLAGS) $(CFLAGS) -fcf-protection=full \
+	$(CC) $(SOFLAGS) $(CFLAGS) \
 		-DGLFWD_TABLE='"gl-fwd-egl.h"' -DGLFWD_TAG='"egl-fwd.so"' \
 		-DGLFWD_VENDOR_PREFIX='"libEGL_"' \
 		-DGLFWD_VENDOR_DIR='"/usr/share/glvnd/egl_vendor.d"' \
@@ -124,7 +121,7 @@ gl-fwd-verify:
 # turned up -- the generator's one rule is that the list comes out of the object
 # being replaced, and there was no object.
 gles-fwd.so: gl-fwd.c gl-fwd-gles2.h ld-conf.h cld-env.h
-	$(CC) $(SOFLAGS) $(CFLAGS) -fcf-protection=full \
+	$(CC) $(SOFLAGS) $(CFLAGS) \
 		-DGLFWD_TABLE='"gl-fwd-gles2.h"' -DGLFWD_TAG='"gles-fwd.so"' \
 		-DGLFWD_VENDOR_PREFIX='"libEGL_"' \
 		-DGLFWD_VENDOR_DIR='"/usr/share/glvnd/egl_vendor.d"' \
