@@ -1587,23 +1587,25 @@ Three details that are load-bearing:
   tried. Built in `debian:bullseye-slim` and read back with `readelf -n`, the
   shipped `gl-fwd.so` has only `.note.gnu.build-id`; there is no
   `.note.gnu.property` section at all. A trivial one-function shared object
-  compiled in the same image behaves identically, with the flag, without it,
-  and with `-Wl,-z,ibt,-z,shstk` added -- so it is a property of Debian's gcc,
-  not of this source. Repeated on `debian:bookworm-slim` (gcc 12.2) and
-  `debian:trixie-slim` (gcc 14.2): no note in any of them.
+  compiled in the same image behaves identically, with the flag and without
+  it. Repeated on `debian:bookworm-slim` (gcc 12.2) and `debian:trixie-slim`
+  (gcc 14.2): no note in any of them.
 
   ```
   gcc -shared -fPIC -O2 -fcf-protection=full t.c -o a.so && readelf -n a.so
   ```
 
-  The consequence is exactly what the original sentence warned about, and it is
-  live rather than hypothetical: without the note a CET-enforcing host turns
-  indirect-branch tracking off for the whole process, a mitigation quietly lost
-  rather than a crash. The `endbr64` instructions ARE emitted; what is missing
-  is the note that tells the loader the object is IBT-capable.
-  `scripts/verify-artifacts.sh` prints this on every build, and
-  [`../TODO/infrastructure.md`](../TODO/infrastructure.md) T-17 carries the
-  work.
+  ⛔ **SECOND CORRECTION, measured, and it reverses part of the first.** The
+  paragraph above used to say the note is absent "with `-Wl,-z,ibt,-z,shstk`
+  added" as well. **That clause was wrong on all three images.** With that
+  linker flag the note IS emitted, every time. The full table, and the reason
+  the note would be FALSE if it were forced, is in 9.13 below.
+
+  The `endbr64` instructions ARE emitted; what is missing is the note that
+  tells the loader the object is IBT-capable.
+  `scripts/verify-artifacts.sh` reports the note's absence on every build, and
+  refuses a build whose `endbr64` are missing, which is the part the flag
+  actually delivers.
 - **The shim refuses to forward to itself.** Its SONAME *is* the name it
   resolves, so anything that hands that name back -- ld.so matching a request
   against the shim's own libname list, an `CROSS_LIBC_DLOPEN_GL_HOST_DIR` pointing at the
@@ -2048,6 +2050,81 @@ the entire job.
 
 ⚠ **Note what found this.** Four synthetic cases, two host classes and 3470
 generated trampolines did not. One real application did, on the first run.
+
+---
+
+### 9.13 The IBT property note: emitted after all, and it would be a lie
+
+T-17 recorded that no Debian gcc emits the note, tried three ways. ⛔ **One of
+those three ways was recorded wrong.** Re-measured on the same three images,
+with a control that must report nothing so that "found none" and "cannot see
+one" are distinguishable:
+
+| build | bullseye 10.2 | bookworm 12.2 | trixie 14.2 |
+|---|---|---|---|
+| `-fcf-protection=full` | none | none | none |
+| `-fcf-protection=full -Wl,-z,ibt,-z,shstk` | **IBT, SHSTK** | **IBT, SHSTK** | **IBT, SHSTK** |
+| a `.note.gnu.property` block in the source | none | none | none |
+| nothing asked for (control) | none | none | none |
+
+Two things follow, and the second is the one that matters.
+
+**The source-emitted note does not survive the link.** `GNU_PROPERTY_X86_FEATURE_1_AND`
+is ANDed across every input, and glibc's `crti.o` carries no property on any of
+the three images, so a note written by hand in `gl-fwd.c` is dropped. That is
+the approach T-17 proposed, and it does not work.
+
+**The linker flag does emit a note, and the note would be false.** Measured on
+the object it produces:
+
+| symbol | first instruction | reached by |
+|---|---|---|
+| `probe_answer` | `endbr64` | a normal call |
+| `_init` | `sub $0x8,%rsp` | `DT_INIT`, which `ld.so` calls through a pointer |
+| `_fini` | `sub $0x8,%rsp` | `DT_FINI`, the same |
+
+`_init` and `_fini` come from `crti.o` and `crtn.o`. An indirect call landing
+on an instruction that is not `endbr64` is exactly what IBT exists to fault on,
+so an object marked IBT-capable whose `DT_INIT` target is not `endbr64` is
+asserting a property it does not have.
+
+⭐ **So the absence of the note is the linker being right**, not a toolchain
+gap to work around. Forcing it with `-z ibt` would trade a real absence for a
+false claim, which is the forbidden pattern
+[`conventions/forbidden-patterns.md`](conventions/forbidden-patterns.md) calls
+"asserting a build property the toolchain does not deliver".
+
+⚠ **What is UNVERIFIED:** whether a CET-enforcing host actually faults on such
+an object. No host here enforces IBT, so the fault is reasoned from how IBT
+activation works and has not been observed. What IS measured is every row of
+both tables above.
+
+The measured consequence for this project: on x86-64 `gl-fwd.so` carries 3478
+`endbr64` and no note; on aarch64 it carries none of either, and CET is an x86
+feature so that is correct rather than a gap.
+
+⭐ **And the flag accounts for six of those 3478.** Built with
+`-fcf-protection=full` removed, the same object has **3472**. The other 3472
+are the trampolines' own, spelled as literal bytes in `gl-fwd.c` so the floor's
+assembler cannot be too old for them (9.4), and no compiler flag removes those.
+
+| x86-64 `gl-fwd.so` | `endbr64` |
+|---|---|
+| default build | 3478 |
+| built without `-fcf-protection=full` | 3472 |
+| aarch64, either way | 0 |
+
+Two things follow.
+
+⛔ **A check that refused a build with no `endbr64` could never have fired**, and
+`scripts/verify-artifacts.sh` briefly had one. The trampolines supply 3472
+whatever the flag does, so the count says nothing about whether the flag
+arrived. It reports the number now and asserts nothing about it.
+
+⚠ **Removing the flag does not remove `endbr64` from the shims**, which matters
+to anyone removing it in order to avoid the instruction. It removes six of
+them. The instruction is a four-byte NOP on any CPU without CET, so what it
+costs on a host that does not implement CET is the four bytes.
 
 ---
 

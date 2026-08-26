@@ -55,14 +55,14 @@ CROSS_LIBC_DLOPEN_LIBDIR=lib               # default; the directory under the ro
 not own: an AppImage runtime exports it into every process it starts, before
 anything here runs. `CROSS_LIBC_DLOPEN_ROOT` wins when both are set.
 
-⭐ **If you want one spelling and no interop, take the `strictenv` build.**
+⭐ **If you want one spelling and no interop, take the `portable` build.**
 Every release ships it beside the default, as
-`cross-libc-dlopen-strictenv-<arch>.tar` and `.zip`. Those objects read
+`cross-libc-dlopen-portable-<arch>.tar` and `.zip`. Those objects read
 `CROSS_LIBC_DLOPEN_ROOT` and never look at `APPDIR`; the string is not even in
 the binary. To build it yourself:
 
 ```bash
-sh scripts/build.sh --strict-env
+sh scripts/build.sh --portable
 ```
 
 ⛔ **Every control has exactly one name.** The `ANYLINUX_*` spellings this

@@ -87,14 +87,14 @@ jobs:
     timeout-minutes: 30
     # ⭐ Two variants, so nobody has to build one by hand. `default` reads
     # APPDIR as well as CROSS_LIBC_DLOPEN_ROOT, because an AppImage runtime
-    # exports APPDIR on its own. `strictenv` reads only this project's name,
+    # exports APPDIR on its own. `portable` reads only this project's name,
     # which is what a consumer who wants one spelling asked for.
     # src/cld-env.h has the argument; E87 and E88 measure both arms.
     strategy:
       fail-fast: false
       matrix:
         arch: [x86_64, aarch64]
-        variant: [default, strictenv]
+        variant: [default, portable]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -108,9 +108,9 @@ jobs:
       - name: build on the floor
         run: |
           set -eu
-          if [ "${{ matrix.variant }}" = strictenv ]; then
-            sh scripts/build.sh --engine docker --arch ${{ matrix.arch }} --strict-env
-            echo "BUILD_DIR=${{ matrix.arch }}-strictenv" >> "$GITHUB_ENV"
+          if [ "${{ matrix.variant }}" = portable ]; then
+            sh scripts/build.sh --engine docker --arch ${{ matrix.arch }} --portable
+            echo "BUILD_DIR=${{ matrix.arch }}-portable" >> "$GITHUB_ENV"
           else
             sh scripts/build.sh --engine docker --arch ${{ matrix.arch }}
             echo "BUILD_DIR=${{ matrix.arch }}" >> "$GITHUB_ENV"
@@ -186,7 +186,7 @@ jobs:
           set -eu
           mkdir -p dist build
           for a in x86_64 aarch64; do
-            for v in default strictenv; do
+            for v in default portable; do
               src=staged/release-$a-$v
               [ -d "$src/dist" ] || { echo "no dist/ for $a/$v"; exit 1; }
               cp -a "$src/dist/." dist/
@@ -208,7 +208,7 @@ jobs:
           set -eu
           fail=0
           # ⚠ Only the DEFAULT variant ships loose files to check this way.
-          # The strictenv set ships as archives, and package-release.sh already
+          # The portable set ships as archives, and package-release.sh already
           # checked every object in it against its manifest before archiving.
           for a in x86_64 aarch64; do
             man=build/$a/build-manifest.json

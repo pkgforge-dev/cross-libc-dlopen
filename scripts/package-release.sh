@@ -50,7 +50,7 @@ man_arch=$(jq -r '.arch' "$MAN")
 # name, so a directory somebody renamed cannot mislabel an asset.
 #
 #   default    reads APPDIR as well as CROSS_LIBC_DLOPEN_ROOT
-#   strictenv  reads only CROSS_LIBC_DLOPEN_ROOT
+#   portable  reads only CROSS_LIBC_DLOPEN_ROOT
 #
 # ⚠ The variant ships as ARCHIVES ONLY, and the default ships loose as well.
 # All five objects differ between the two, so the whole set is the unit
@@ -59,7 +59,7 @@ man_arch=$(jq -r '.arch' "$MAN")
 VARIANT=$(jq -r '.variant // "default"' "$MAN")
 case "$VARIANT" in
 	default)   BASE=cross-libc-dlopen-$ARCH;         LOOSE=1 ;;
-	strictenv) BASE=cross-libc-dlopen-strictenv-$ARCH; LOOSE=0 ;;
+	portable) BASE=cross-libc-dlopen-portable-$ARCH; LOOSE=0 ;;
 	*) die "unknown build variant '$VARIANT' in $MAN" ;;
 esac
 floor=$(jq -r '.floor_glibc' "$MAN")

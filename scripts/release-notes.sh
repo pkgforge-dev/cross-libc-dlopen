@@ -31,7 +31,7 @@ sha_of() {
 	fi
 }
 
-# ⚠ The build DIRECTORIES are not the architectures: build/x86_64-strictenv is
+# ⚠ The build DIRECTORIES are not the architectures: build/x86_64-portable is
 # a variant of x86_64, not a third architecture. Every label below comes out of
 # the manifest, so a directory somebody renamed cannot mislabel a section.
 dirs=""
@@ -122,10 +122,14 @@ printf 'Each artefact ships three ways: loose, in the `.tar`, and in the `.zip`.
 printf '⛔ No archive contains a directory, so an extract drops the files where\n'
 printf 'you are standing.\n\n'
 printf '⭐ **Two variants.** The default reads `CROSS_LIBC_DLOPEN_ROOT` and also\n'
-printf '`APPDIR`, which an AppImage runtime exports on its own. The `strictenv`\n'
-printf 'assets read `CROSS_LIBC_DLOPEN_ROOT` and nothing else: take those if you\n'
-printf 'want one spelling and no interop. All five objects differ between the\n'
-printf 'two, so the variant ships as archives rather than loose files.\n\n'
+printf '`APPDIR`, which an AppImage runtime exports on its own, and is built\n'
+printf 'with `-fcf-protection=full`. The `portable` assets read\n'
+printf '`CROSS_LIBC_DLOPEN_ROOT` and nothing else, and are built without that\n'
+printf 'flag. Take those if you want one spelling and no CET instrumentation.\n'
+printf '⚠ The flag accounts for six of the shim`s 3478 endbr64; the rest are the\n'
+printf 'trampolines`, spelled as literal bytes, and no flag removes them.\n'
+printf 'All five objects differ between the two variants, so the variant ships\n'
+printf 'as archives rather than loose files.\n\n'
 printf '| asset | sha256 |\n|---|---|\n'
 for f in "$DIST"/*; do
 	[ -f "$f" ] || continue

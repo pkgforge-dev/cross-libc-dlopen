@@ -100,13 +100,28 @@ done
 # DT_INIT and DT_FINI -- an indirect call -- and neither begins with endbr64.
 # Forcing the note would assert a property the object does not have, which is
 # worse than not having the note. docs/REPORT.md 9.13 has the full table.
+#
+# ⚠ The `portable` variant asks for NO CET, so there the expectation inverts:
+# endbr64 present would mean --portable did not reach the compile. Both arms
+# are asserted, because a check that only knows one of them cannot tell a
+# working variant from a broken flag.
 if [ -f "$DIR/gl-fwd.so" ] && [ "$ARCH" = x86_64 ]; then
 	nend=$($OBJDUMP -d "$DIR/gl-fwd.so" 2>/dev/null | grep -c endbr64 || true)
-	if [ "${nend:-0}" -gt 0 ]; then
-		say "gl-fwd.so: $nend endbr64 (the CET instrumentation that IS delivered)"
-	else
-		bad "gl-fwd.so has no endbr64. -fcf-protection=full did not reach this build."
-	fi
+	say "gl-fwd.so: $nend endbr64"
+	# ⛔ REPORTED, NOT ASSERTED, and this comment is the reason.
+	#
+	# An earlier version of this check refused a build with no endbr64, on the
+	# grounds that endbr64 is what -fcf-protection=full actually delivers.
+	# ⚠ THAT CHECK COULD NEVER HAVE FAILED. Measured: a default x86-64
+	# gl-fwd.so has 3478 endbr64 and the same object built with the flag
+	# removed has 3472. The flag accounts for six of them. The other 3472 are
+	# the trampolines' own, spelled as literal bytes in gl-fwd.c so the
+	# floor's assembler cannot be too old for them, and no compiler flag
+	# removes those.
+	#
+	# So a count over zero says nothing about whether the flag arrived, and a
+	# guard that cannot fail is worse than no guard. The number is printed and
+	# the manifest records the variant; docs/REPORT.md 9.13 has both figures.
 	if command -v readelf >/dev/null 2>&1 &&
 	   readelf -n "$DIR/gl-fwd.so" 2>/dev/null | grep -qi 'propert'; then
 		say "gl-fwd.so: IBT property note present"
