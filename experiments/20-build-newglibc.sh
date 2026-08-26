@@ -1,5 +1,5 @@
 #!/bin/sh
-# Stage 2 -- runs in Debian trixie (glibc 2.41). Produces:
+# Stage 2, running in Debian trixie (glibc 2.41). Produces:
 #   libnew.so  : needs GENUINELY NEW symbols (arc4random 2.36, strlcpy 2.38)
 #   libthr.so  : needs a RE-HOMED symbol (pthread_create@GLIBC_2.34, moved into libc at 2.34)
 #   newglibc/  : the newer runtime, for the "load a second libc" experiment
@@ -11,7 +11,7 @@ cd /work
 # ⚠ Three things in this stage carry the architecture: the loader name, the
 # multiarch directory, and musl's soname. Hardcoded to x86-64 they made this
 # stage die on aarch64 at `cp /lib64/libc.so.6`, and they would have made E1
-# report MISMATCH -- its needle is "undefined symbol: atexit", so a probe that
+# report MISMATCH, because its needle is "undefined symbol: atexit", so a probe that
 # still NEEDs musl fails for a different reason and does not match.
 #
 # Derived from uname -m, which is the mechanism already used for the asset
@@ -29,7 +29,7 @@ case "$(uname -m)" in
         exit 1 ;;
 esac
 
-# Drop the musl libc dependency from the Alpine probe -- this is precisely what
+# Drop the musl libc dependency from the Alpine probe. This is precisely what
 # cross-libc-dlopen.c does today (it refuses to let a second libc into the process).
 cp libprobe.so libprobe_nomusl.so
 patchelf --remove-needed "$MUSL_SO" libprobe_nomusl.so

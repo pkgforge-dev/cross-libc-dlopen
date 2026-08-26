@@ -1,4 +1,4 @@
-/* T5 -- does it keep working?
+/* T5: does it keep working?
  *
  * N dlopen/dlsym/dlclose cycles over a host driver, reporting RSS and open file
  * descriptors so a leak shows up as a trend rather than a feeling.

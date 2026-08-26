@@ -1,7 +1,7 @@
 # It did not work. Which layer?
 
 A rung-by-rung procedure. Start at the top and stop at the first rung that
-answers wrong -- that is the layer, and the rungs below it are noise until
+answers wrong. That is the layer, and the rungs below it are noise until
 it is fixed.
 
 ## 6. Diagnostic ladder
@@ -22,24 +22,24 @@ When something fails, report **which rung caught it**.
    first GL CALL**, because that is when the host stack loads. Read the lines
    in this order:
 
-   - `N entry points, none resolved yet` -- the shim is present and the
+   - `N entry points, none resolved yet`: the shim is present and the
      program has not called GL yet. On a Vulkan-only run this is the LAST line
      you will see and it is correct (E74).
-   - `target <path> -- <why>` -- which library it chose, and whether the reason
+   - `target <path> -- <why>`: which library it chose, and whether the reason
      was the bundle's own vendor library, the host's, or neither.
-   - `N of M entry points resolved` -- how much of the dispatcher this host can
+   - `N of M entry points resolved`: how much of the dispatcher this host can
      stand behind.
-   - `no target; all M entry points return zero` -- it found NOTHING, and every
+   - `no target; all M entry points return zero`: it found NOTHING, and every
      GL call in the process is returning zero. This replaces what used to
      appear as `0 of M`; that line is now only printed when a target loaded and
      provided none of the names, which says something different.
-   - `ABSENT entry point called: <name>` -- the application called something
+   - `ABSENT entry point called: <name>`: the application called something
      this host does not implement. One line per name, at its first call.
 
    `CROSS_LIBC_DLOPEN_GL_TRACE=1` adds one line per entry point at its first call,
    which is what to reach for when the question is *what does this application
-   use* rather than *what did the shim do* -- and the only form that survives
-   the program being killed, which most GL programs are.
+   use* rather than *what did the shim do*. It is also the only form that
+   survives the program being killed, which most GL programs are.
 1. **Host driver sane?** `vulkaninfo --summary` natively. If this fails, stop.
 2. **Display, not libc?** Re-run under
    `xvfb-run -a -s '-screen 0 1024x768x24 +extension GLX +render'`. WSI errors
@@ -52,7 +52,7 @@ When something fails, report **which rung caught it**.
    `LD_DEBUG=libs,bindings`. An `undefined symbol: X` names the next candidate.
 5. **Is the library findable at all?** The failure most likely to send you the
    wrong way. A driver that `dlopen`s the rest of its own stack by BARE SONAME
-   -- `libdxcore.so` from CUDA, `libd3d12.so` from Mesa's d3d12 -- is not
+   (`libdxcore.so` from CUDA, `libd3d12.so` from Mesa's d3d12) is not
    intercepted, so `ld.so` searches `--library-path` and nothing else, because
    the cache is inhibited. What you see when it misses is
    `CUDA_ERROR_NO_DEVICE` or `glXCreateContext failed`, neither of which
@@ -85,8 +85,8 @@ When something fails, report **which rung caught it**.
     guest built by the other libc covers the allocator, `errno`, `FILE*`,
     mutexes, condition variables and the divergent structs (E47-E50); if a
     crossing there is red, that is your answer. If they all pass, the remaining
-    shapes are the two live hazards in 4.2 -- a musl-built object reading back a
+    shapes are the two live hazards in 4.2: a musl-built object reading back a
     glibc-filled struct at its own stride, or comparing against its own `FTW_*`.
     Otherwise bisect with gdb: breakpoint the failing library call, `finish`,
-    read the return value, and `info symbol $pc` at entry -- that last step is
+    read the return value, and `info symbol $pc` at entry. That last step is
     what found the version trap.

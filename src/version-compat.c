@@ -32,7 +32,7 @@
  * returns the OBSOLETE definition on glibc 2.31 and the default one on 2.41,
  * because the RTLD_NEXT path did not always carry DL_LOOKUP_RETURN_NEWEST.
  * So the version NAME is read out of the defining object's own
- * .gnu.version_d -- the entry without the hidden bit -- and handed to dlvsym,
+ * .gnu.version_d, the entry without the hidden bit, and handed to dlvsym,
  * which is correct on every glibc measured.  No version string is hardcoded
  * anywhere, so this stays right across releases.
  *
@@ -40,7 +40,7 @@
  * -------------
  * tools/version_traps.py computes the set mechanically from a libc: a name
  * defined at two or more versions whose st_value DIFFERS.  Same address at
- * several versions is re-versioning, not an ABI change -- the glibc 2.34
+ * several versions is re-versioning, not an ABI change. The glibc 2.34
  * libpthread merge does that to 191 symbols and none of them matter.
  *
  *     python3 tools/version_traps.py /lib/x86_64-linux-gnu/libc.so.6
@@ -58,7 +58,7 @@
  * LD_PRELOAD interposition has always worked).  It then forwards to the same
  * default version it would have reached directly, so behaviour is unchanged
  * and the cost is one indirect call.  The one case this would get wrong is an
- * object that genuinely wants an obsolete version -- glibc 2.2.5-era condition
+ * object that genuinely wants an obsolete version, such as glibc 2.2.5-era condition
  * variables, 2003 and earlier.  Nothing that ships in an AppImage does.
  */
 
@@ -140,8 +140,8 @@ static void *vc_resolve(const char *sym) {
 	/* cld_default_version_of() opens and parses a file, so it allocates. If
 	 * anything on that path ever calls a symbol forwarded from this file, the
 	 * second call would resolve through here again and recurse until the stack
-	 * is gone. Nothing does today -- glibc's allocator uses mutexes, not
-	 * condition variables, and does not reach these through the PLT -- but a
+	 * is gone. Nothing does today, because glibc's allocator uses mutexes, not
+	 * condition variables, and does not reach these through the PLT. But a
 	 * guard costs one thread-local byte and turns an unbounded recursion into
 	 * a slightly worse answer. */
 	static __thread int busy;
@@ -363,7 +363,7 @@ VC_VISIBLE int lio_listio64(int mode, struct aiocb64 *const list[], int n,
  * definitions speak the old Bnnn-encoded speed_t and the 2.42 ones take a real
  * number of bits per second. Nothing in a graphics driver closure calls these,
  * which is exactly why an audit that enumerates rather than guesses is worth
- * having -- the set grew under a glibc newer than any this was developed on.
+ * having: the set grew under a glibc newer than any this was developed on.
  */
 
 VC_SLOT(cfgetispeed)

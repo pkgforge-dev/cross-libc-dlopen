@@ -2,8 +2,8 @@
 # Extract the gtk4 demo AppImage, into its OWN directory.
 #
 # Separate from 41-extract.sh and separate from .tmp/AppDir on purpose: the two
-# AppDirs are different shapes -- one bundles a dispatcher and no Mesa, the
-# other bundles all of Mesa -- and mixing them is not a hypothetical. An
+# AppDirs are different shapes, since one bundles a dispatcher and no Mesa and the
+# other bundles all of Mesa, and mixing them is not a hypothetical. An
 # earlier attempt here shared the working directory and ended with vkcube's
 # binaries inside the gtk4 tree and gtk4's inside the demo AppDir, which took a
 # suite run and a wrong diagnosis to notice.

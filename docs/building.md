@@ -25,8 +25,9 @@ MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' sh scripts/build.sh
 Everything else here follows from this, and it is the one that looks like a
 detail. A build on glibc 2.41 emits references to `GLIBC_2.34` symbols. The
 artefact loads perfectly on the machine that built it, and then fails to load
-inside a bundle whose glibc is older -- at `dlopen` time, in somebody else's
-application, with a message about a symbol version rather than about a build.
+inside a bundle whose glibc is older. That happens at `dlopen` time, in
+somebody else's application, with a message about a symbol version rather
+than about a build.
 
 The floor is a **property of the build environment**, which is why the default
 is a container: it is the only portable way to pin one. The shipped builds use
@@ -65,7 +66,7 @@ properties that all fail *silently* rather than loudly:
   loads. `ld.so` never binds anything to it, so it forwards nothing and
   nothing says why.
 - **the export count.** A shim exporting fewer entry points than its table
-  declares hands some application `undefined symbol` -- not at load, but at
+  declares hands some application `undefined symbol`, not at load, but at
   whichever call the missing one turns out to be.
 - **the maximum `GLIBC_*` requirement.** The floor rule, measured rather than
   assumed.
@@ -94,9 +95,9 @@ one.
 ## aarch64
 
 A first-class target, not a check. It is cross-compiled inside the x86-64 floor
-image, which needs `gcc-aarch64-linux-gnu` **and** `libc6-dev-arm64-cross` -- the
-compiler alone has no headers and the build dies on `dirent.h`, which reads like
-a source bug.
+image, which needs `gcc-aarch64-linux-gnu` **and** `libc6-dev-arm64-cross`.
+The compiler alone has no headers and the build dies on `dirent.h`, which
+reads like a source bug.
 
 ⛔ **Do not reach for `podman run --platform linux/arm64` to get there.** Pulling
 a tag for another platform **replaces the cached image for that tag**, and the
@@ -110,8 +111,8 @@ make -C src gl-fwd-qemu-check   # do they RUN, under qemu-user
 ```
 
 ⚠ qemu emulates the instructions, not a memory model. Real ARM silicon is what
-closes that, and CI's `ubuntu-24.04-arm` runner is where it happens -- the one
-place CI is stronger than the machine this project was measured on.
+closes that, and CI's `ubuntu-24.04-arm` runner is where it happens. It is
+the one place CI is stronger than the machine this project was measured on.
 
 ---
 
@@ -126,7 +127,7 @@ make -C src gles-syms GLES="$APPDIR/lib"     # the GLES table
 make -C src traps AUDIT_LIBC=/path/to/libc.so.6
 ```
 
-⚠ `make shim` must be passed a musl inventory -- omitting it drops most of the
+⚠ `make shim` must be passed a musl inventory. Omitting it drops most of the
 definitions and silently disarms the entire musl bridge. That is why `MUSL` has
 a default in the Makefile rather than being something the caller must remember;
 it was reported from outside by @QaidVoid after the documented command produced
@@ -134,6 +135,6 @@ a different artefact from the shipped one.
 
 The `-check` variants fail the build on drift and run in CI. ⚠ `gles-syms-check`
 **skips with exit 0** when there is no AppDir bundling `libGLESv2.so.2`, so it
-only means anything in a job that has extracted one -- which is why it lives in
+only means anything in a job that has extracted one. That is why it lives in
 [`appimage-suite.yml`](../.github/workflows/appimage-suite.yml) and not in the
 fast gate.

@@ -32,7 +32,7 @@ Rules, not preferences. Each one is here because the opposite was tried.
   one, which is done here. Adding a directory to a path is not searching it; the
   shim still never opens a library it was not handed by name.
   **`src/gl-fwd.c` is the one deliberate exception, and it is bounded.** It
-  resolves exactly ONE soname -- the one it is impersonating -- because ld.so
+  resolves exactly ONE soname, the one it is impersonating, because ld.so
   cannot: that name is taken by the shim itself, so `dlopen("libGL.so.1")` would
   hand back the shim's own handle and every forward would recurse. A closed,
   single-name lookup over a fixed directory list plus `CROSS_LIBC_DLOPEN_GL_HOST_DIR` is
@@ -90,25 +90,25 @@ the tree and the commit messages, because a rule nobody checks is a preference.
 - ⛔ **Never single-sided.** Run the feature off and on. "It worked" cannot tell
   a fix from a fallback that was already happening.
 - ⛔ **A premise a measurement disproves keeps its title and gets the correction
-  written underneath it.** Never a silent edit -- the title is how the item has
+  written underneath it.** Never a silent edit: the title is how the item has
   been referred to everywhere else.
 
 ## Before you finish a session
 
 1. **Both suites green**, with their skips named:
    `sh scripts/run-evidence.sh` and `sh scripts/run-appimage.sh`.
-   The expected totals are in [`../docs/REPORT.md`](../docs/REPORT.md) §8.
+   The expected totals are in [`../docs/REPORT.md`](../docs/REPORT.md) section 8.
 2. **Write the closure where the item is written**, with the command that proves
    it and the output it produced.
 3. **Rewrite [`PROGRESS.md`](PROGRESS.md)** so the next reader does not redo what
    you did. ⭐ It is the only file written FOR the next session rather than about
-   this one, and what is worth spending words on is not what you built -- it is
+   this one, and what is worth spending words on is not what you built: it is
    which of your assumptions turned out to be wrong, and what you would look at
    first if you had the session again.
 4. **Update [`INDEX.md`](INDEX.md)'s counts.** Closing one entry moves several
    numbers.
 5. **Check nothing now says something wrongly.** ⚠ If you changed a headline
-   count, it lives in one file by design -- `git grep` for it and confirm it
+   count, it lives in one file by design: `git grep` for it and confirm it
    still does.
 
 ## Repository permissions
@@ -128,7 +128,7 @@ membership.
 
 Read-only elsewhere is fine, and is how the reference sweeps in
 [`../HISTORY/references/`](../HISTORY/references/) were done. Upstream projects
--- `Anylinux-AppImages`, `Anylinux-sharun`, `solo`, `onelf`, `runimage` -- are
+(`Anylinux-AppImages`, `Anylinux-sharun`, `solo`, `onelf`, `runimage`) are
 **read-only**: study them, never file anything on them. ⛔ If a task seems to
 need a write outside this repository, stop and ask.
 

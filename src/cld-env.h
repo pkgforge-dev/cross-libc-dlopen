@@ -1,4 +1,4 @@
-/* cld-env.h -- the project's environment interface.
+/* cld-env.h: the project's environment interface.
  *
  * WHY THIS FILE EXISTS
  * --------------------

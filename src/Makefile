@@ -33,7 +33,7 @@ SOFLAGS  = -shared -fPIC
 EXTRA_CFLAGS ?=
 
 # CET is an x86 feature. On aarch64 gcc, -fcf-protection=full is not a warning
-# but a hard error -- "not supported for this target" -- so both aarch64 builds
+# but a hard error, "not supported for this target", so both aarch64 builds
 # failed at the first shim before anything else could be measured.
 #
 # ⚠ Selected by what the COMPILER TARGETS, not by uname: the aarch64 artefacts
@@ -99,8 +99,8 @@ cross-libc-dlopen.so: cross-libc-dlopen.c forward-shim.c version-compat.c cld-en
 # Measured on bullseye, bookworm and trixie: the note is absent because glibc's
 # crti.o carries no property, and the linker ANDs that absence across the link.
 # ⚠ -Wl,-z,ibt DOES emit a note, and the note is FALSE: _init and _fini come
-# from crti.o/crtn.o, ld.so reaches them through DT_INIT/DT_FINI -- an indirect
-# call -- and neither begins with endbr64. docs/REPORT.md 9.13 has the table.
+# from crti.o/crtn.o, ld.so reaches them through DT_INIT/DT_FINI, an indirect
+# call, and neither begins with endbr64. docs/REPORT.md 9.13 has the table.
 gl-fwd.so: gl-fwd.c gl-fwd-gl.h ld-conf.h cld-env.h
 	$(CC) $(SOFLAGS) $(CFLAGS) $(CET_CFLAGS) $(EXTRA_CFLAGS) \
 		-DGLFWD_TABLE='"gl-fwd-gl.h"' -DGLFWD_TAG='"gl-fwd.so"' \
@@ -121,7 +121,7 @@ egl-fwd.so: gl-fwd.c gl-fwd-egl.h ld-conf.h cld-env.h
 # A shim that exports fewer entry points than its table has is a shim that will
 # hand some application `undefined symbol`, and the table is 3470 lines long, so
 # the count is checked rather than eyeballed. The SONAME is checked too: without
-# it the object is inert -- it loads, forwards nothing, and nothing says why.
+# it the object is inert: it loads, forwards nothing, and nothing says why.
 gl-fwd-verify:
 	@want=$$(sed -n 's/^#define GLFWD_COUNT *//p' $(TBL)); \
 	 have=$$(nm -D --defined-only $(SO) | grep -cE ' (T|i) (gl|egl)'); \
@@ -135,14 +135,14 @@ gl-fwd-verify:
 
 # GLES is the same shape a third time. libGLESv2.so.2 is a glvnd dispatcher
 # like libGL.so.1 and libEGL.so.1, it finds its implementation the way EGL does
-# -- a JSON file under /usr/share/glvnd/egl_vendor.d, because a GLES context
-# comes from EGL -- and on a classic-Mesa host there is no such file, so it has
+# (a JSON file under /usr/share/glvnd/egl_vendor.d, because a GLES context
+# comes from EGL), and on a classic-Mesa host there is no such file, so it has
 # nothing to dispatch to and every GLES entry point is a silent zero.
 #
 # The table is read out of the libGLESv2.so.2 bundled by the gtk4 demo AppImage
 # (358 entry points). The demo AppDir the rest of this suite uses bundles no
 # GLES at all, which is why this shim did not exist until an AppDir that does
-# turned up -- the generator's one rule is that the list comes out of the object
+# turned up, because the generator's one rule is that the list comes out of the object
 # being replaced, and there was no object.
 gles-fwd.so: gl-fwd.c gl-fwd-gles2.h ld-conf.h cld-env.h
 	$(CC) $(SOFLAGS) $(CFLAGS) $(CET_CFLAGS) $(EXTRA_CFLAGS) \
@@ -179,7 +179,7 @@ gl-syms-check:
 		--prefix egl --prefix EGL --soname libEGL.so.1 --check gl-fwd-egl.h
 
 # GLES gets its own pair, because its table is read out of a DIFFERENT AppImage
-# -- the host-drivers demo bundles no GLES at all -- and a missing one must not
+# (the host-drivers demo bundles no GLES at all) and a missing one must not
 # fail the GL/EGL check, which has nothing to do with it.
 gles-syms:
 	$(PYTHON) $(ROOT)/tools/gen_gl_fwd.py $(GLES)/libGLESv2.so.2 \
@@ -212,8 +212,8 @@ gl-fwd-asm-check:
 	@echo "ok: the aarch64 trampolines assemble (see gl-fwd-qemu-check for run)"
 
 # And do they RUN? qemu-user executes an aarch64 binary on an x86_64 kernel in
-# userspace, and everything under test -- trampoline, resolver, ld.so binding a
-# DT_NEEDED to a preloaded object with the same SONAME, dlopen -- is userspace.
+# userspace, and everything under test (trampoline, resolver, ld.so binding a
+# DT_NEEDED to a preloaded object with the same SONAME, dlopen) is userspace.
 #
 # The emulator is named rather than reached through binfmt_misc: a binfmt
 # handler is a kernel registration that outlives the container and changes how

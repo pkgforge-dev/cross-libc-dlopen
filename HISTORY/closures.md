@@ -328,7 +328,7 @@ alpine:3.22  /usr/lib/dri: crocus i915 iris kms_swrast libdril nouveau r300
 ```
 
 The only GPU route here is Mesa's `d3d12` Gallium driver over `/dev/dxg`, which
-needs Mesa ≥ 21. Every glibc distro shipping Mesa ≥ 21 uses libglvnd, and the
+needs Mesa >= 21. Every glibc distro shipping Mesa >= 21 uses libglvnd, and the
 classic-Mesa holdouts are the musl distros, which do not build `d3d12`. The two
 properties are anti-correlated, so this is not "wait for a package".
 

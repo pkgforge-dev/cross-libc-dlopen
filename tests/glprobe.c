@@ -1,4 +1,4 @@
-/* glprobe.c -- the OpenGL analogue of vkprobe.
+/* glprobe.c: the OpenGL analogue of vkprobe.
  *
  * Two questions, and the second is the one that is easy to get wrong.
  *
@@ -15,8 +15,8 @@
  *      returns zero leaves black, and the two are distinguishable.
  *
  * The calls used past the visual are deliberately outside the set glxgears
- * links -- glClearColor, glGetIntegerv, glPixelStorei, glReadPixels, the
- * texture-object family -- because a shim written to make glxgears run is
+ * links: glClearColor, glGetIntegerv, glPixelStorei, glReadPixels, the
+ * texture-object family, because a shim written to make glxgears run is
  * exactly the shim that passes a glxgears-shaped test and nothing else.
  *
  * Exit 0 on success, 1 on a failure that names itself. Needs an X display;

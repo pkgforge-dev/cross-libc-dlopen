@@ -12,14 +12,14 @@ interposer in the process.** That is the requirement. It is not advice about a
 particular launcher.
 
 ⚠ And it is *not* the same as "list it last". Preload **constructors run in
-REVERSE of the list** (measured -- E56, E57), so listing this object last runs
+REVERSE of the list** (measured in E56 and E57), so listing this object last runs
 its constructor *first*. Rather than depend on a loader ordering nobody
 documents, the GL shims **ask**: they `dlsym` for
 `cross_libc_dlopen_init_now` and call it if it is there.
 
 Since the loader went lazy this handshake is belt-and-braces rather than
-load-bearing -- by the first GL call every constructor has long since run
-([`REPORT.md`](REPORT.md) §9.6) -- but it costs nothing and it removes an
+load-bearing, because by the first GL call every constructor has long since
+run ([`REPORT.md`](REPORT.md) section 9.6). It costs nothing and it removes an
 ordering question from every integration.
 
 ---
@@ -80,8 +80,8 @@ root and it stays accepted.
 
 ### An AppImage laid out by `quick-sharun`
 
-The hardest consumer, because it supplies its own loader -- and the one every
-measured result in [`REPORT.md`](REPORT.md) was obtained through.
+The hardest consumer, because it supplies its own loader. It is also the one
+every measured result in [`REPORT.md`](REPORT.md) was obtained through.
 
 Add the artefacts to the AppDir's `lib/` and name them in `.preload`:
 

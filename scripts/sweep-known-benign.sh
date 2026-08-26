@@ -2,7 +2,7 @@
 # Run the template's secret sweep and decide what its findings mean HERE.
 #
 # ⛔ The check ships from Azathothas/TEMPLATE, so it cannot be narrowed at
-# source. This is the call site, and it narrows by NAME -- two categories, both
+# source. This is the call site, and it narrows by NAME, in two categories, both
 # measured false positives, neither of them a credential:
 #
 #   an email address       one deliberate fixture, on a reserved non-routable

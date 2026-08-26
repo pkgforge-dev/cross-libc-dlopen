@@ -1,15 +1,15 @@
-/* gl-fwd.c -- stand in for one bundled dispatcher whose plugin the host lacks.
+/* gl-fwd.c: stand in for one bundled dispatcher whose plugin the host lacks.
  *
  * THE SHAPE OF THE BUG. Vulkan survives a foreign-libc host because its
  * loader/driver boundary is thin and universal: the bundled libvulkan.so.1
  * dlopens the host's ICD, which exposes one entry point, and cross-libc-dlopen.so
  * carries that one object across the libc gap. OpenGL has no such boundary on
  * every host. The AppImage bundles libglvnd, whose libGL.so.1 is a DISPATCHER
- * that dlopens a VENDOR library (libGLX_mesa.so.0) -- and a host whose Mesa was
+ * that dlopens a VENDOR library (libGLX_mesa.so.0), and a host whose Mesa was
  * built without glvnd ships no vendor library at all. That is every musl distro
  * and every pre-glvnd glibc distro (Ubuntu 14.04, Debian 8). There the bundled
  * dispatcher has nothing to dispatch to, glXChooseVisual returns NULL, and the
- * application prints "couldn't get an RGB, Double-buffered visual" -- a message
+ * application prints "couldn't get an RGB, Double-buffered visual", a message
  * about visuals, for a fault that is about neither visuals nor libc.
  *
  * THE REPAIR. Replace the dispatcher rather than supply the missing plugin.
@@ -35,7 +35,7 @@
  * WHY TRAMPOLINES AND NOT WRAPPERS. Each entry point is a tail jump through a
  * table slot, not a C function with a hand-written prototype. A tail jump
  * preserves every argument register, the return value and the varargs count in
- * %al, so it forwards ANY signature correctly -- including the ones nobody
+ * %al, so it forwards ANY signature correctly, including the ones nobody
  * typed out. A hand-written prototype that disagrees with the real one corrupts
  * arguments silently, and with 3470 entry points that class of bug is not worth
  * carrying. The cost is that a trampoline forwards a CALL: exported data
@@ -48,8 +48,8 @@
  * and the reason an entry point the host cannot provide is a line rather than
  * a silent zero.
  *
- * THE SAME SOURCE FILE IS BUILT THREE TIMES -- gl-fwd.so, egl-fwd.so and
- * gles-fwd.so -- differing only in the generated table and the vendor marker
+ * THE SAME SOURCE FILE IS BUILT THREE TIMES, as gl-fwd.so, egl-fwd.so and
+ * gles-fwd.so, differing only in the generated table and the vendor marker
  * its dispatcher looks for. See src/Makefile.
  */
 
@@ -141,7 +141,7 @@ static void glfwd_log(const char *fmt, ...) {
 /*
  * glfwd_absent is where an entry point the target does not provide lands. It
  * returns zero in both return registers, which is the right shape for the void,
- * integer and pointer cases and wrong only for a float return -- a case that
+ * integer and pointer cases and wrong only for a float return, a case that
  * cannot arise without the target also being wrong. Jumping through a NULL slot
  * instead would be a crash inside a GL call with no explanation, so every slot
  * is initialised to this before anything is resolved.
@@ -155,8 +155,8 @@ extern void glfwd_absent(void) __attribute__((visibility("hidden")));
  *
  * The problem it solves. A table slot is an address; whoever jumps through it
  * arrives with no idea WHICH slot they came from, so the old design had to
- * decide every entry point's fate in a constructor -- a real address or a
- * silent zero-returning stub -- before the application had asked for anything.
+ * decide every entry point's fate in a constructor, either a real address or a
+ * silent zero-returning stub, before the application had asked for anything.
  * That forced two things this file used to carry as defects: the host GL stack
  * was loaded in every process whether or not it would ever be used, and an
  * entry point the host does not implement was indistinguishable, from outside,
@@ -164,8 +164,8 @@ extern void glfwd_absent(void) __attribute__((visibility("hidden")));
  *
  * The repair is the index. Each trampoline knows its own index at ASSEMBLY
  * time, so it loads it into a register the ABI already allows a call to
- * destroy -- %r11 on x86-64, the register the PLT itself clobbers; x17/IP1 on
- * aarch64, which is reserved for exactly this class of veneer -- and then
+ * destroy: %r11 on x86-64, the register the PLT itself clobbers; x17/IP1 on
+ * aarch64, which is reserved for exactly this class of veneer. It then
  * jumps through the slot as before. A resolved slot ignores it. An unresolved
  * slot points here, and here the index is the whole message.
  *
@@ -267,7 +267,7 @@ __asm__(".text\n"
 	        "	jmp *glfwd_tab+8*" #i "(%rip)\n"                              \
 	        ".size " #n ", .-" #n "\n");
 #elif defined(__aarch64__)
-/* Assembled here, and RUN under qemu-user on an aarch64 image -- see
+/* Assembled here, and RUN under qemu-user on an aarch64 image. See
  * `make gl-fwd-qemu-check` and REPORT.md 10. Not run on aarch64 silicon. */
 __asm__(".text\n"
         ".globl  glfwd_absent\n"
@@ -353,7 +353,7 @@ __attribute__((visibility("hidden"))) void *glfwd_tab[GLFWD_COUNT] = {
  * this host do X at all", asked once for all GLFWD_COUNT names in a single
  * pass; glfwd_tab is "has anything called X yet", which is what makes the
  * absent case observable (B1) and the call count measurable (B6). Keeping the
- * pass single is also what keeps the dlerror() damage to one moment -- see
+ * pass single is also what keeps the dlerror() damage to one moment. See
  * glfwd_fill_addr. */
 static void **glfwd_addr;
 
@@ -373,14 +373,14 @@ static const char *const glfwd_names[GLFWD_COUNT] = {
 /* ------------------------------------------------------------- discovery */
 /*
  * This is a SINGLE-SONAME lookup, not a library search. ld.so cannot answer it
- * -- the name is taken by this object -- so it is answered here, for exactly
+ * because the name is taken by this object, so it is answered here, for exactly
  * one name. Nothing here ever opens a library it was not handed by name, which
  * is the rule cross-libc-dlopen.c keeps.
  *
  * WHERE IT LOOKS, IN ORDER, AND WHY THE ORDER CHANGED.
  *
  *   1. CROSS_LIBC_DLOPEN_GL_HOST_DIR. The explicit handoff. A launcher that has already
- *      assembled the host library path -- sharun does, from the ld.so cache --
+ *      assembled the host library path, as sharun does from the ld.so cache,
  *      can hand it straight here and nothing below is consulted for the answer
  *      it gives.
  *   2. every directory /etc/ld.so.conf and its includes name (ld-conf.h).
@@ -394,8 +394,8 @@ static const char *const glfwd_names[GLFWD_COUNT] = {
  *      hosts nobody has. The host writes the answer down in
  *      /etc/ld.so.conf.d/x86_64-linux-gnu_EGL.conf; reading it is the fix.
  *   3. the conventional directories, below. Still needed, and not a fallback
- *      in name only: musl distros have no /etc/ld.so.conf at all -- Alpine
- *      uses /etc/ld-musl-<arch>.path -- so on the very host class this shim
+ *      in name only: musl distros have no /etc/ld.so.conf at all, and Alpine
+ *      uses /etc/ld-musl-<arch>.path, so on the very host class this shim
  *      exists for, list 3 is the only one of the three that answers.
  *
  * PR #4's mesa-egl entries are kept in list 3 for the same reason: a host with
@@ -498,7 +498,7 @@ static int glfwd_vendor_in(const char *libdir, const char *vendordir) {
  *
  * ⚠ THIS QUESTION WAS MISSING, and a real application is what found it. The
  * check used to ask only about the HOST, which is right for an AppImage built
- * to use host drivers -- it bundles a dispatcher and no vendor, so if the host
+ * to use host drivers, which bundles a dispatcher and no vendor, so if the host
  * has no vendor either there is nothing to dispatch to and the host's own
  * libGL is the only way forward. It is wrong for a SELF-CONTAINED AppImage,
  * which bundles its whole Mesa: gtk4-demo ships libEGL_mesa.so.0 and 271 other
@@ -544,7 +544,7 @@ static void *glfwd_open_target(const char **how) {
 	/* cross-libc-dlopen.so preloads the bundled libc runtime set into the global
 	 * scope, and a host object whose musl libc edge was dropped needs that set
 	 * to be there BEFORE it is loaded. Preload constructors run in REVERSE of
-	 * the .preload order (measured -- E56), so this object's constructor runs
+	 * the .preload order (measured in E56), so this object's constructor runs
 	 * FIRST when it is listed last, which is the wrong way round. Rather than
 	 * depend on a loader ordering nobody documents, ask for it. */
 	void (*ready)(void) =
@@ -638,8 +638,8 @@ static void *glfwd_open_target(const char **how) {
 /* ------------------------------------------------- resolution, on first call */
 /*
  * B4: nothing below here runs until the application calls a GL entry point.
- * A process that links this shim and never draws -- every Vulkan-only binary
- * in an AppDir that also ships a GL one -- pays for the mapping of this object
+ * A process that links this shim and never draws, such as a Vulkan-only binary
+ * in an AppDir that also ships a GL one, pays for the mapping of this object
  * and nothing else. Measured cost of the old eager constructor, and therefore
  * of what this removes, is in REPORT.md 9.9.
  */
@@ -677,10 +677,10 @@ static void glfwd_load_target(void) {
 	/* REFUSE TO FORWARD TO OURSELVES.
 	 *
 	 * This object's SONAME is the one it is impersonating, so if anything ever
-	 * resolves that name back to this object -- ld.so matching a request
+	 * resolves that name back to this object, whether ld.so matching a request
 	 * against our own libname list, an CROSS_LIBC_DLOPEN_GL_HOST_DIR pointing at the
-	 * preload's own directory, a future glibc that dedups by SONAME after load
-	 * -- every trampoline would jump to itself. That is an unbounded recursion
+	 * preload's own directory, or a future glibc that dedups by SONAME after
+	 * load, every trampoline would jump to itself. That is an unbounded recursion
 	 * inside the first GL call, with no message and a stack overflow for a
 	 * diagnostic. It costs one dladdr to make it a sentence instead.
 	 *
@@ -705,14 +705,14 @@ static void glfwd_load_target(void) {
 }
 
 /*
- * One pass, once, over every name -- and the reason it is one pass rather than
+ * One pass, once, over every name. The reason it is one pass rather than
  * a dlsym per first call is dlerror().
  *
  * dlsym leaves a message behind on every miss, and reading dlerror() to clear
  * it is destructive: whatever the APPLICATION had pending is gone. Resolving
  * lazily per name would put that theft inside an arbitrary GL call, once per
  * absent name. Doing the whole table in one pass confines it to a single
- * moment -- the first GL call in the process -- and says so under debug when
+ * moment, the first GL call in the process, and says so under debug when
  * something was actually taken.
  */
 static void glfwd_fill_addr(void) {
@@ -734,7 +734,7 @@ static void glfwd_fill_addr(void) {
 	 * After the pass, dlerror() returns OUR last dlsym miss, and reporting
 	 * that as "the message we consumed" is a diagnostic that lies: it names a
 	 * symbol the application never asked for. Read first and the string is
-	 * genuinely whatever the application had outstanding -- reading it is what
+	 * genuinely whatever the application had outstanding, and reading it is what
 	 * destroys it, and there is no API to put it back, so the only honest
 	 * thing left is to say what was taken. */
 	const char *stolen = dlerror();
@@ -810,7 +810,7 @@ static int glfwd_ensure_target(void) {
  *
  * They are only a call count when the slots were lazy. Eager mode writes the
  * resolved addresses straight into the table, so a call through one of those
- * never reaches the resolver and cannot be counted -- glfwd_was_eager exists so
+ * never reaches the resolver and cannot be counted, so glfwd_was_eager exists so
  * the report says that rather than printing a number that means something else. */
 static int glfwd_called_fwd, glfwd_called_absent;
 static int glfwd_was_eager;
@@ -824,7 +824,7 @@ __attribute__((visibility("hidden")))
 void *glfwd_resolve_one(int index) {
 	void *absent = (void *)(uintptr_t)glfwd_absent;
 
-	/* Cannot happen -- the index is assembled into the trampoline -- so if it
+	/* Cannot happen, because the index is assembled into the trampoline, so if it
 	 * ever does, the interesting thing is that it did. */
 	if (index < 0 || index >= (int)GLFWD_COUNT) {
 		glfwd_log("%s: resolver called with index %d, outside 0..%d; this is a "
@@ -849,7 +849,7 @@ void *glfwd_resolve_one(int index) {
 	 * COUNT AND REPORT ONLY IF WE ARE THE ONE THAT PATCHED THE SLOT.
 	 *
 	 * Two threads can reach this for the SAME index before either has written
-	 * the table -- an ordinary shape in a threaded renderer -- and both would
+	 * the table, an ordinary shape in a threaded renderer, and both would
 	 * then count the call and print the line. The counters are labelled "N of
 	 * M entry points were CALLED", which is a count of distinct NAMES, so a
 	 * double count is not a rounding error, it is the number meaning something
@@ -869,8 +869,8 @@ void *glfwd_resolve_one(int index) {
 	if (forwarded) {
 		__atomic_fetch_add(&glfwd_called_fwd, 1, __ATOMIC_RELAXED);
 		/* One line per entry point the first time it is called. Separate from
-		 * CROSS_LIBC_DLOPEN_DEBUG because it is a different question -- not "what
-		 * did the shim do" but "what does this application USE" -- and because
+		 * CROSS_LIBC_DLOPEN_DEBUG because it is a different question, not "what
+		 * did the shim do" but "what does this application USE", and because
 		 * the exit summary cannot answer it for the many GL programs that never
 		 * exit: a window stays open, the harness sends SIGTERM, and SIGTERM
 		 * does not run destructors. This is the only form of the count that
@@ -882,7 +882,7 @@ void *glfwd_resolve_one(int index) {
 		/* B1. THE POINT OF ALL OF THIS. Before this existed an entry point the
 		 * host does not implement returned zero and said nothing, which is the
 		 * exact failure mode this repository spends the most words warning
-		 * about -- and the shim had one by construction. One line, at the
+		 * about, and the shim had one by construction. One line, at the
 		 * first call, naming the entry point. Not fatal: returning zero is
 		 * what the application would get natively on this host, where the name
 		 * is equally absent. Fatal would be a policy decision about somebody
@@ -899,8 +899,8 @@ __attribute__((constructor))
 static void glfwd_init(void) {
 	/* B4: no dlopen here. The whole constructor is now one optional branch.
 	 *
-	 * CROSS_LIBC_DLOPEN_GL_EAGER=1 restores the old behaviour -- resolve everything
-	 * before main() -- and exists so the cost of NOT doing that stays a
+	 * CROSS_LIBC_DLOPEN_GL_EAGER=1 restores the old behaviour, resolving everything
+	 * before main(), and exists so the cost of NOT doing that stays a
 	 * measurement rather than a memory. It is also the honest way to ask "how
 	 * much of this dispatcher could this host stand behind", which is a
 	 * question about the host and not about the run. */
@@ -940,7 +940,7 @@ static void glfwd_report(void) {
 		return;
 	}
 	/* The number B6 is about: 3470 forwarded entry points, and how many an
-	 * application actually touches. Reported, never thresholded -- it is a
+	 * application actually touches. Reported, never thresholded, because it is a
 	 * property of the application, and a bar here would be a bar on somebody
 	 * else's program. */
 	glfwd_log("%s: %d of %d entry points were CALLED (%d forwarded, %d absent) "

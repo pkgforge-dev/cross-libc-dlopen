@@ -5,7 +5,7 @@
 order. [`INDEX.md`](INDEX.md) carries the list; this carries the order and the
 baseline.
 
-⚠ **Rewritten every session. It carries no history** -- that is
+⚠ **Rewritten every session. It carries no history.** That is
 [`../HISTORY/`](../HISTORY/README.md)'s job.
 
 ---

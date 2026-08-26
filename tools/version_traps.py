@@ -191,7 +191,7 @@ def main():
             return 2
         uncovered = sorted(set(merged) - covered - set(excluded))
         # A forwarder for something this libc does not consider a trap is not an
-        # error -- an older glibc has fewer traps than the newest one, and the
+        # error, because an older glibc has fewer traps than the newest one, and the
         # extra forwarder is a correct no-op there. Report it, do not fail.
         extra = sorted(covered - set(merged))
         print()

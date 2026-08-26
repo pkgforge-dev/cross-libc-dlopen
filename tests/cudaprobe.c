@@ -1,4 +1,4 @@
-/* T6.1 -- cross-libc load a PROPRIETARY, CLOSED-SOURCE host driver and drive real
+/* T6.1: cross-libc load a PROPRIETARY, CLOSED-SOURCE host driver and drive real
  * hardware through it.
  *
  * Everything else measured in this repository is open-source Mesa: the source
@@ -15,7 +15,7 @@
  *                              of rewrites is ZERO (the E39 rule, arriving from
  *                              a vendor binary instead of a synthetic probe)
  *   libdl.so.2 + libpthread.so.0 separate DT_NEEDED edges, i.e. the pre-2.34
- *                              layout -- E6/E7's re-homing case, for real
+ *                              layout: E6/E7's re-homing case, for real
  *   dlopen("libdxcore.so")     a BARE SONAME opened by the host object
  *                              itself, which cross-libc-dlopen deliberately does
  *                              not intercept, so it has to reach ld.so's
@@ -43,7 +43,7 @@
 /* The CUDA driver API, declared rather than included: there is no CUDA toolkit
  * in these containers and adding one would make the test about the toolkit.
  * Only the _v2 spellings are used wherever a v1 with a DIFFERENT signature also
- * exists -- silently falling back to a v1 that takes `unsigned int *` where the
+ * exists: silently falling back to a v1 that takes `unsigned int *` where the
  * caller passes `size_t *` is exactly the vkprobe bug (section 5), and it would
  * only show itself when the call SUCCEEDS.
  */

@@ -6,7 +6,7 @@
 # reads the exit code, and then runs the same body against a CLEAN tree.
 #
 # ⛔ BOTH HALVES ARE REQUIRED. A gate that refuses a planted defect and ALSO
-# refuses a clean tree is not working, it is stuck -- and two gates in this
+# refuses a clean tree is not working, it is stuck, and two gates in this
 # repository were exactly that when this script was first run, because each
 # pattern matched the line of the workflow it was written on.
 #
@@ -102,7 +102,7 @@ echo "== each gate, against a clean tree and against its own defect =="
 
 # ⛔ THE PLANTS ARE ASSEMBLED AT RUNTIME, and this is not decoration. Spelled
 # out plainly they would sit in this file as literals, the gates would match
-# THIS file, and every one of them would then refuse a clean tree -- which is
+# THIS file, and every one of them would then refuse a clean tree, which is
 # precisely the defect this script exists to catch, reproduced one level up.
 # It happened on the first run of this script.
 OLD_REPO="dlopen""-experiment"

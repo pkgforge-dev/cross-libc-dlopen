@@ -4,8 +4,8 @@
 # Everything in 40-appimage.sh runs against the host-drivers demo AppImage:
 # glxgears, vkcube, and two probes written for this repository. That AppDir
 # bundles a dispatcher and no Mesa, which is one of the two shapes an AppImage
-# comes in and not the common one. This is the other shape -- a SELF-CONTAINED
-# AppImage, 272 libraries, its own Mesa, its own libEGL_mesa.so.0 -- running a
+# comes in and not the common one. This is the other shape: a SELF-CONTAINED
+# AppImage, 272 libraries, its own Mesa, its own libEGL_mesa.so.0, running a
 # real GTK4 application on musl Alpine.
 #
 # It is here because it found a bug that four synthetic cases and two hosts did
@@ -49,8 +49,8 @@ fi
 
 echo "================================================================"
 echo " a real application: gtk4-demo on musl Alpine"
-# An empty version here is the quietest possible way to be wrong -- it happened
-# once already, to the number this whole report is written against -- so say
+# An empty version here is the quietest possible way to be wrong. It happened
+# once already, to the number this whole report is written against, so say
 # UNREADABLE rather than printing nothing after the word "glibc".
 GLIBCV=$(grep -ao 'release version [0-9.]*' "$LP/libc.so.6" 2>/dev/null |
          head -1 | awk '{print $3}' | sed 's/\.$//')
@@ -71,7 +71,7 @@ done
 # measurement: 143 is the SIGTERM that ends a run which survived the timeout,
 # and anything else is a death. SIGTERM also means no destructor runs, which is
 # why the per-name count comes from CROSS_LIBC_DLOPEN_GL_TRACE and not from the exit
-# summary -- the summary is never printed for a program that is killed.
+# summary, because the summary is never printed for a program that is killed.
 gtk() {                        # gtk <extra-env...>
     : > /tmp/gtk.out
     env "$@" APPDIR="$A" GSK_RENDERER=gl LIBGL_ALWAYS_SOFTWARE=1 \
@@ -85,7 +85,7 @@ gtk() {                        # gtk <extra-env...>
 called() { grep -cF "[$1] >> first call:" /tmp/gtk.out; }
 
 # E80a: the control. The AppImage as it ships, no shims. It must survive, or
-#       nothing below means anything -- a shimmed run that also dies would be
+#       nothing below means anything: a shimmed run that also dies would be
 #       measuring GTK4 and not the shim.
 cp "$A/.preload.shipped" "$A/.preload"
 gtk; rc=$?
@@ -125,7 +125,7 @@ done
 #      for: before it, "3470 forwarded entry points" had been exercised by
 #      glxgears (33 linked) and a probe written here (15 called).
 #
-#      Reported, never thresholded -- except for one bound that IS a claim.
+#      Reported, never thresholded, except for one bound that IS a claim.
 #      E80 passes on rc=143, which means "still running when the timeout ended"
 #      and cannot by itself tell a window that rendered from a process that
 #      started and hung. GTK4 renders through GLES, so the GLES count is what

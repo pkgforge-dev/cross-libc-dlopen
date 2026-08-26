@@ -1,7 +1,7 @@
 # The fast gate. Everything here finishes in minutes and runs on every push.
 #
-# The slow half -- two AppImage downloads and apt/apk on four distributions,
-# two of them from 2014 and 2016 -- is appimage-suite.yml, on a schedule.
+# The slow half, two AppImage downloads and apt/apk on four distributions,
+# two of them from 2014 and 2016, is appimage-suite.yml, on a schedule.
 # Splitting them is what keeps this one worth having.
 #
 # PIN EVERY THIRD-PARTY ACTION TO A COMMIT, NOT A TAG. A tag moves, and a moved
@@ -97,7 +97,7 @@ jobs:
           # that does not resolve and a citation nobody can check.
           # ⚠ The character classes are why this gate does not fail on its own
           # source. A pattern spelled plainly here matches the line it is
-          # written on, and the gate then refuses every build -- which is how
+          # written on, and the gate then refuses every build, which is how
           # this was found: the planted-defect pass ran it against a CLEAN tree
           # too, and it already said no.
           #
@@ -343,7 +343,7 @@ jobs:
           # ⚠ volatile, and the buffer written to. At -O2 gcc elides an unused
           # malloc/free pair outright, so the obvious version of this program
           # never calls malloc and the probe correctly reports interposing
-          # nothing -- which reads as a failure of the probe rather than of the
+          # nothing, which reads as a failure of the probe rather than of the
           # test. That happened.
           cat > /tmp/u.c <<'ALLOCEOF'
           #include <stdlib.h>

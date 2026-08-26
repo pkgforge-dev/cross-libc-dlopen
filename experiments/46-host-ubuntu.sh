@@ -4,11 +4,11 @@
 # alpine is musl + classic Mesa. debian:trixie is glibc + glvnd. Between them
 # they leave exactly one of the two sentences in README and REPORT 9 unmeasured:
 # "every musl distro, AND every pre-glvnd glibc distro". This script is the
-# second half -- old Ubuntu, glibc, Mesa with no libGLX_<vendor>.so.0 anywhere.
+# second half: old Ubuntu, glibc, Mesa with no libGLX_<vendor>.so.0 anywhere.
 #
 # ⚠ CONTINUE 4.0's B3 row says these images' repositories "moved to
 # old-releases.ubuntu.com". They did not, and as of 2026-08 old-releases does
-# not carry trusty or xenial AT ALL -- it jumps from saucy to utopic, and every
+# not carry trusty or xenial AT ALL. It jumps from saucy to utopic, and every
 # dists/trusty/... path 404s. Both releases are still in their ESM window, so
 # they are still served from archive.ubuntu.com at the DEFAULT path: the
 # sources.list rewrite the row prescribes is what breaks them. What does have to
@@ -19,7 +19,7 @@
 #   ubuntu:14.04   glibc 2.19   Mesa 10.1.3   python3.4
 #   ubuntu:16.04   glibc 2.23   Mesa 18.0.5   python3.5
 #
-# Neither has a software Vulkan ICD -- Mesa 10.1 predates Vulkan entirely -- so
+# Neither has a software Vulkan ICD, because Mesa 10.1 predates Vulkan entirely, so
 # 40-appimage.sh SKIPS the cases that need a device by name and runs the rest.
 # Neither has python 3.6, so E59 and E60 skip too; both measure the BUNDLE
 # rather than the host, and the other two hosts establish them.
@@ -30,7 +30,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq >/dev/null 2>&1
 
 # libgl1-mesa-glx is classic Mesa's libGL, and on the alternatives layout it
-# lands in /usr/lib/<triplet>/mesa with libEGL in .../mesa-egl -- the two
+# lands in /usr/lib/<triplet>/mesa with libEGL in .../mesa-egl, and the two
 # directories that made the shim's hardcoded list wrong (PR #4). Both are named
 # by /etc/ld.so.conf.d/, which is how the shim finds them now.
 apt-get install -y -qq --no-install-recommends \

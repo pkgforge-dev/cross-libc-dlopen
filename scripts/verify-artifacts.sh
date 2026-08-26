@@ -13,7 +13,7 @@
 #                 replaces still loads. ld.so simply never binds anything to
 #                 it, so it forwards nothing and nothing says why.
 #   export count  a shim exporting fewer entry points than its table declares
-#                 hands some application `undefined symbol` -- not at load,
+#                 hands some application `undefined symbol`, not at load,
 #                 but at whichever call the missing one turns out to be.
 #   max GLIBC_    an artefact needing a symbol version newer than the floor
 #                 loads fine on the machine that built it and fails inside a
@@ -84,20 +84,20 @@ for pair in 'gl-fwd.so gl-fwd-gl.h' 'egl-fwd.so gl-fwd-egl.h' 'gles-fwd.so gl-fw
 done
 
 # ⭐ FATAL: the endbr64 instrumentation, which is what -fcf-protection=full
-# actually delivers. A build where the flag was dropped -- by an edit, or by
+# actually delivers. A build where the flag was dropped, by an edit or by
 # the Makefile's CET_CFLAGS failing to resolve on a host whose compiler does
-# not answer -dumpmachine the expected way -- produces a shim with none, and
+# a compiler that does not answer -dumpmachine the expected way, produces a shim with none, and
 # nothing else here would notice. x86-64 only: CET is an x86 feature and the
 # aarch64 shim correctly has no endbr64 at all.
 #
 # ⚠ REPORTED, NOT FATAL: the .note.gnu.property IBT note, which is absent.
 # The reason is measured, and it is not the one this check used to give.
 # `-fcf-protection=full` alone emits no note on bullseye (gcc 10.2), bookworm
-# (12.2) or trixie (14.2) -- because glibc's crti.o carries no property on any
+# (12.2) or trixie (14.2), because glibc's crti.o carries no property on any
 # of the three, and the linker ANDs that absence across the link.
 # ⛔ `-Wl,-z,ibt,-z,shstk` DOES emit one on all three, and the note it emits is
 # FALSE: _init and _fini come from crti.o/crtn.o, ld.so reaches them through
-# DT_INIT and DT_FINI -- an indirect call -- and neither begins with endbr64.
+# DT_INIT and DT_FINI, an indirect call, and neither begins with endbr64.
 # Forcing the note would assert a property the object does not have, which is
 # worse than not having the note. docs/REPORT.md 9.13 has the full table.
 #

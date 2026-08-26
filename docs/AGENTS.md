@@ -82,18 +82,18 @@ in front of you and read what it names, in full.
 
 | # | the task | read, in this order | ⛔ the rule that governs it |
 |---|---|---|---|
-| 2 | **Start a session** | [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) · [`../TODO/RULES.md`](../TODO/RULES.md) · **the tracker** | ⛔ issues, pull requests AND discussions first. Somebody else may already be doing this. Then report the baseline before proposing anything |
-| 3 | **Take the next task** | [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) work order · the entry in [`../TODO/INDEX.md`](../TODO/INDEX.md) · [`conventions/README.md`](conventions/README.md) | an entry closes **in place**, with its acceptance command actually run and the output recorded |
-| 4 | **Diagnose a failure** | [`diagnostics.md`](diagnostics.md) · [`traps.md`](traps.md) · [`overview.md`](overview.md) | stop at the first rung that answers wrong. The rungs below it are noise until it is fixed |
-| 5 | **Change `src/`** | [`conventions/code.md`](conventions/code.md) · [`overview.md`](overview.md) · the case in [`REPORT.md`](REPORT.md) that covers it | ⛔ a change here needs a case that FAILS before and PASSES after |
+| 2 | **Start a session** | [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md), [`../TODO/RULES.md`](../TODO/RULES.md), **the tracker** | ⛔ issues, pull requests AND discussions first. Somebody else may already be doing this. Then report the baseline before proposing anything |
+| 3 | **Take the next task** | [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) work order, the entry in [`../TODO/INDEX.md`](../TODO/INDEX.md), [`conventions/README.md`](conventions/README.md) | an entry closes **in place**, with its acceptance command actually run and the output recorded |
+| 4 | **Diagnose a failure** | [`diagnostics.md`](diagnostics.md), [`traps.md`](traps.md), [`overview.md`](overview.md) | stop at the first rung that answers wrong. The rungs below it are noise until it is fixed |
+| 5 | **Change `src/`** | [`conventions/code.md`](conventions/code.md), [`overview.md`](overview.md), the case in [`REPORT.md`](REPORT.md) that covers it | ⛔ a change here needs a case that FAILS before and PASSES after |
 | 6 | **Run the suites** | [`reproducing.md`](reproducing.md) | a MISMATCH is a finding, not a harness bug. Investigate before coding |
-| 7 | **Touch CI or a check** | [`../.github/workflows/gates.yml`](../.github/workflows/gates.yml) · [`conventions/shell.md`](conventions/shell.md) | ⭐ plant the defect and read the exit code, **and** run it against a clean tree. `sh scripts/verify-gates.sh` |
-| 8 | **Study another project** | [`../HISTORY/references/`](../HISTORY/references/) · the method at [`TEMPLATE docs/methodology/references.md`](https://github.com/Azathothas/TEMPLATE/blob/main/docs/methodology/references.md), which is in the template and not in this tree | ⛔ capture the commit SHA before stripping. Cite every claim at a file |
-| 9 | **Build or publish** | [`building.md`](building.md) · [`conventions/git.md`](conventions/git.md) | ⛔ the floor rule first. Oldest glibc, never the newest. ⛔ **never push to the default branch** |
-| 10 | **End the session** | [`../TODO/RULES.md`](../TODO/RULES.md) close-out · [`conventions/README.md`](conventions/README.md) | ⛔ **two deep reviews, and they are mandatory.** Then rewrite `PROGRESS.md` and reconcile `INDEX.md`'s counts |
-| -- | **Write or edit a document** | [`conventions/prose.md`](conventions/prose.md) · [`conventions/docs.md`](conventions/docs.md) | one fact, one home |
-| -- | **Commit** | [`conventions/git.md`](conventions/git.md) | ⛔ no tool is credited |
-| -- | **Wonder why something is the way it is** | [`../HISTORY/`](../HISTORY/README.md) | every past mistake is there, in its original wording |
+| 7 | **Touch CI or a check** | [`../.github/workflows/gates.yml`](../.github/workflows/gates.yml), [`conventions/shell.md`](conventions/shell.md) | ⭐ plant the defect and read the exit code, **and** run it against a clean tree. `sh scripts/verify-gates.sh` |
+| 8 | **Study another project** | [`../HISTORY/references/`](../HISTORY/references/), the method at [`TEMPLATE docs/methodology/references.md`](https://github.com/Azathothas/TEMPLATE/blob/main/docs/methodology/references.md), which is in the template and not in this tree | ⛔ capture the commit SHA before stripping. Cite every claim at a file |
+| 9 | **Build or publish** | [`building.md`](building.md), [`conventions/git.md`](conventions/git.md) | ⛔ the floor rule first. Oldest glibc, never the newest. ⛔ **never push to the default branch** |
+| 10 | **End the session** | [`../TODO/RULES.md`](../TODO/RULES.md) close-out, [`conventions/README.md`](conventions/README.md) | ⛔ **two deep reviews, and they are mandatory.** Then rewrite `PROGRESS.md` and reconcile `INDEX.md`'s counts |
+| n/a | **Write or edit a document** | [`conventions/prose.md`](conventions/prose.md), [`conventions/docs.md`](conventions/docs.md) | one fact, one home |
+| n/a | **Commit** | [`conventions/git.md`](conventions/git.md) | ⛔ no tool is credited |
+| n/a | **Wonder why something is the way it is** | [`../HISTORY/`](../HISTORY/README.md) | every past mistake is there, in its original wording |
 
 ⛔ **Read what the row names in full.** Not grepped, not skimmed, not recalled
 from a previous session. The routing exists so the reading is small enough to

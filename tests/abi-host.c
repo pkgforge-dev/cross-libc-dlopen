@@ -1,4 +1,4 @@
-/* T1.3 - T1.7, host half -- the AppImage's side of the boundary.
+/* T1.3 to T1.7, host half: the AppImage's side of the boundary.
  *
  * REPORT.md carried these five as SKIPPED and UNVERIFIED for the whole project.
  * They mattered because a host driver built against a different libc might
@@ -19,7 +19,7 @@
  *         allocates its own size and the init it reaches writes ours, so the
  *         overflow is inside the guest. aarch64 is such a pair, x86-64 is not
  *   T1.7  every struct size and constant the two sides could disagree about,
- *         printed side by side -- and then the divergent structs actually
+ *         printed side by side, and then the divergent structs actually
  *         WRITTEN by the guest into storage this side allocated, behind a
  *         guard band, because an overrun that only happens on success is the
  *         most misleading result available (section 5)
@@ -466,7 +466,7 @@ int main(int argc, char **argv) {
 	 *
 	 * These three are reported as findings, not as failures. A divergence here
 	 * is a true statement about musl-built code in a glibc process, not a
-	 * defect in the loader -- no loader shim can change what offset a compiled
+	 * defect in the loader: no loader shim can change what offset a compiled
 	 * object reads a field at. What they buy is the difference between "six
 	 * hazards, all unverified" and a list of which ones are real. */
 	printf("\n  T1.7c -- the guest reading back a struct glibc filled\n");

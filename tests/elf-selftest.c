@@ -48,7 +48,7 @@ static void test_strip(const char *path) {
 	CK("T0.4 every version tag goes together", count_version_tags(&a) == 0);
 	CK("T0.4 size unchanged by stripping", a.size == orig_size);
 
-	/* The stripped image must still be parseable -- a verdef left without its
+	/* The stripped image must still be parseable, because a verdef left without its
 	 * versym is what segfaults ld.so, so "it still parses" is the point. */
 	char tmp[] = "/tmp/cld-selftest-XXXXXX";
 	int fd = mkstemp(tmp);
@@ -150,7 +150,7 @@ static void test_tail_merge_guard(const char *path) {
 
 /* ------------------------------------------------------------------- T0.8 */
 /*
- * Truncated and bit-flipped ELFs must be refused cleanly -- no crash, no read
+ * Truncated and bit-flipped ELFs must be refused cleanly: no crash, no read
  * past the buffer. The parser is the only code that ever sees a host file we
  * did not create, so it is the whole attack surface.
  */
@@ -167,7 +167,7 @@ static void test_fuzz(const char *path) {
 
 	/* mkstemp REWRITES its template in place, so it has to be reset before
 	 * every call. Reusing a spent template silently fails and makes the whole
-	 * loop a no-op -- which is exactly how this test first "passed" nothing. */
+	 * loop a no-op, which is exactly how this test first "passed" nothing. */
 	char tmp[64];
 #define FRESH_TMP() strcpy(tmp, "/tmp/cld-fuzz-XXXXXX")
 	int survived = 0, attempts = 0;

@@ -56,10 +56,11 @@ number, and declared the controls broken while the measurement on screen said
 
 ## `timeout` and programs that never exit
 
-⚠ **`timeout` on a program that never exits hangs a `$( )` capture -- on the
-case that WORKED.** `glxgears` does not exit; the timeout kills the wrapper and
-leaves children holding the stdout pipe. The case that *fails* exits
-immediately and looks fine, so the symptom is exactly inverted from the fault.
+⚠ **`timeout` on a program that never exits hangs a `$( )` capture, and it
+hangs on the case that WORKED.** `glxgears` does not exit; the timeout kills
+the wrapper and leaves children holding the stdout pipe. The case that
+*fails* exits immediately and looks fine, so the symptom is exactly inverted
+from the fault.
 
 Write to a file and reap.
 

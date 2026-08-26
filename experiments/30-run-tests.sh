@@ -1,5 +1,5 @@
 #!/bin/bash
-# Stage 3 -- runs in Debian bullseye (glibc 2.31), standing in for "an AppImage that
+# Stage 3, running in Debian bullseye (glibc 2.31), standing in for "an AppImage that
 # bundles an older glibc". Every experiment states its PREDICTION; the harness reports
 # MATCH / MISMATCH against it. A MISMATCH is a finding, not a failure of the harness.
 set -u
@@ -26,7 +26,7 @@ cd /work
 #
 # CET is the fourth. -fcf-protection=full is x86-only, and on aarch64 gcc it
 # is a hard error rather than a warning, so the four helper builds in sections
-# M and N would not compile at all -- and a helper that does not build reports
+# M and N would not compile at all, and a helper that does not build reports
 # itself as "./tramp2: No such file or directory", which names the wrong thing
 # entirely. It buys endbr64 on x86-64 and there is no endbr64 on aarch64, so
 # dropping it there removes nothing that was being measured.
@@ -50,7 +50,7 @@ PASS=0; FAIL=0
 # ---------------------------------------------------------------- helpers
 cat > strip_ver.py <<'PEOF'
 # Neutralise DT_VERSYM/VERNEED/VERDEF/VERDEFNUM by retagging them to an unknown tag
-# ld.so ignores -- exactly what cross-libc-dlopen.c does. All four must go together:
+# ld.so ignores, exactly what cross-libc-dlopen.c does. All four must go together:
 # a verdef without its versym segfaults ld.so.
 import struct, sys
 d = bytearray(open(sys.argv[1], 'rb').read())
@@ -223,7 +223,7 @@ echo "         exit=$?  (139 = SIGSEGV: the runtime set must be switched WHOLE)"
 
 # E12 answers "how do you guarantee forward compat for a symbol that does not exist yet?".
 # You do not shim it. You run under the host's own runtime, so the symbol resolves natively.
-# Note NO shim is preloaded here -- contrast with E5.
+# Note NO shim is preloaded here. Contrast with E5.
 run E12 OK "newlib_answer()=99" \
     /work/hostrt/$LDSO --library-path /work/hostrt ./loader /work/libnew.so newlib_answer
 
@@ -232,7 +232,7 @@ echo "-- F. library search path: --library-path vs /etc/ld.so.cache ---"
 # Anylinux patches ld-linux.so to skip /etc/ld.so.cache (it segfaults on some hosts),
 # so --library-path becomes the ONLY discovery mechanism. --inhibit-cache reproduces
 # that patched loader exactly. /usr/local/lib is a real dir on every distro surveyed
-# and is absent from sharun's hardcoded list -- so this is a live gap, not a hypothetical.
+# and is absent from sharun's hardcoded list, so this is a live gap, not a hypothetical.
 echo "int foo_answer(void){return 55;}" > foo.c
 mkdir -p /usr/local/lib
 gcc -shared -fPIC -Wl,-soname,libfoo.so.1 foo.c -o /usr/local/lib/libfoo.so.1
@@ -253,7 +253,7 @@ run E13b FAIL "cannot open shared object file" $LD --library-path "$SHARUN_LIKE"
 run E13c OK   "OK: 55" $LD --library-path "/usr/local/lib:$SHARUN_LIKE" --inhibit-cache ./byname
 
 # ===================================================================
-#  G. THE FIX -- one case per change in ../src (one case per fix)
+#  G. THE FIX: one case per change in ../src (one case per fix)
 #
 #  Everything above measures the problem. Everything below measures a
 #  specific fix, and each one is written so it FAILS without that fix.
@@ -272,7 +272,7 @@ else
     run E14 OK "ELF SELFTEST PASSED" ./elf-selftest /lib/$TRIPLET/libz.so.1
 
     # ---- Design B: the GENERATED shim ----
-    # Generated here, in the container, for THIS process's glibc 2.31 floor --
+    # Generated here, in the container, for THIS process's glibc 2.31 floor,
     # so the test covers the generator, not a checked-in snapshot of its output.
     if command -v python3 >/dev/null 2>&1; then
         python3 /repo/tools/gen_forward_shim.py \
@@ -284,7 +284,7 @@ else
         run E15 OK "compiled" sh -c \
             'gcc -shared -fPIC -O2 -Wall -Werror gen-shim.c -o gen-shim.so 2>&1 && echo compiled'
 
-        # E16: and the implementations are CORRECT, not merely present --
+        # E16: and the implementations are CORRECT, not merely present:
         #      ~40 documented behaviours, on a glibc that really lacks them.
         gcc -O2 /repo/tests/shim-selftest.c -o shimtest \
             -L"$PWD" -l:gen-shim.so -Wl,-rpath,"$PWD" >"$BERR" 2>&1 || bfail shimtest
@@ -298,7 +298,7 @@ else
     gcc -O2 -Wno-format-truncation /repo/src/runtime-select.c \
         -o runtime-select -ldl 2>"$BERR" || bfail runtime-select
 
-    # An AppDir bundling glibc 2.41 -- NEWER than this container's 2.31 host.
+    # An AppDir bundling glibc 2.41, NEWER than this container's 2.31 host.
     rm -rf app_new && mkdir -p app_new/lib && cp -L /work/hostrt/* app_new/lib/ 2>/dev/null
 
     # E17: host OLDER than bundled -> keep bundled, and say why.
@@ -307,7 +307,7 @@ else
 
     # An AppDir bundling this host's own 2.31: equal, so still bundled.
     # Bundle exactly the members hostrt stages, so "incomplete" can never be
-    # the reason a later test refuses -- E20 has to fail for the RIGHT reason.
+    # the reason a later test refuses: E20 has to fail for the RIGHT reason.
     rm -rf app_old && mkdir -p app_old/lib
     for f in libc.so.6 libm.so.6 libdl.so.2 libpthread.so.0 librt.so.1 \
              libutil.so.1 libanl.so.1 libresolv.so.2; do
@@ -321,11 +321,11 @@ else
         env APPDIR="$PWD/app_old" CROSS_LIBC_DLOPEN_RUNTIME=bundled ./runtime-select --probe
 
     # E20: THE E11 GUARD, and the reason Design R is not just "pick the newer
-    #      one". Hand the selector a MIXED set -- 2.41's ld.so and libc beside
-    #      2.31's libdl and libpthread -- as if it were the host. E11 proved
+    #      one". Hand the selector a MIXED set (2.41's ld.so and libc beside
+    #      2.31's libdl and libpthread) as if it were the host. E11 proved
     #      that combination segfaults on contact, so the only right answer is
     #      to refuse it. A selector that accepts it is worse than none.
-    # Every member present -- so "incomplete" cannot be the reason -- but
+    # Every member present, so "incomplete" cannot be the reason, but
     # libdl/libpthread/librt/libutil come from the OLD glibc.
     rm -rf mixedhost && mkdir -p mixedhost
     cp -L /work/hostrt/* mixedhost/ 2>/dev/null
@@ -336,7 +336,7 @@ else
         env APPDIR="$PWD/app_old" ./runtime-select --probe --host-dir "$PWD/mixedhost"
 
     # E21: the control for E20. The SAME newer glibc, unmixed, must be
-    #      ACCEPTED -- otherwise E20 would pass by refusing everything, which
+    #      ACCEPTED, because otherwise E20 would pass by refusing everything, which
     #      is not a guard, it is a broken selector.
     rm -rf goodhost && mkdir -p goodhost && cp -L /work/hostrt/* goodhost/ 2>/dev/null
     run E21 OK "runtime      : host" \
@@ -400,7 +400,7 @@ else
     #      pthread_cond_init now returns EINVAL(22) instead of 0. Everything
     #      users have reported as "the driver loads but nothing works" is this
     #      number. If this ever reports 0 the trap is gone from this glibc and
-    #      E23 is measuring nothing -- which is why both sides are asserted.
+    #      E23 is measuring nothing, which is why both sides are asserted.
     if [ "$condvar_versions" -ge 2 ]; then
         run E22 OK "probe_cond_init()=22" ./loader /work/verprobe_stripped.so probe_cond_init
     else
@@ -410,7 +410,7 @@ else
         echo "         carries and this one does not."
     fi
 
-    # E22b: the control. The very same object, unstripped, is fine -- so E22
+    # E22b: the control. The very same object, unstripped, is fine, so E22
     #       cannot be blamed on the probe, the compiler or this container.
     run E22b OK "probe_cond_init()=0" ./loader /work/verprobe.so probe_cond_init
 
@@ -521,7 +521,7 @@ else
             LD_PRELOAD=/work/cross-libc-dlopen.so \
             ./loader /work/verprobe.so probe_cond_init
 
-    # E24: the trap stated in terms of libc alone -- the obsolete definition
+    # E24: the trap stated in terms of libc alone, the obsolete definition
     #      really does reject the attribute Mesa passes.
     # E25: the memcpy exclusion is justified, not assumed.
     # E27: WHICH resolution primitive may be trusted. dlsym(RTLD_NEXT) answers
@@ -543,7 +543,7 @@ else
     #
     # A DT_NEEDED that cannot be opened makes every symbol it would have
     # provided look unresolved. The old report blamed the bundled glibc for
-    # all of them and pointed at CROSS_LIBC_DLOPEN_RUNTIME=host, which cannot help --
+    # all of them and pointed at CROSS_LIBC_DLOPEN_RUNTIME=host, which cannot help:
     # 258 LLVM symbols, none of which any libc has ever exported (issue #1).
     echo
     echo "-- I. diagnosing a dependency that could not be opened ----------"
@@ -569,7 +569,7 @@ UEOF
     # E29: and the message the CALLER gets is still ld.so's, not one of the
     #      report's own dlsym misses. Every failed probe replaces the pending
     #      dlerror(), so without care the app is told this preload has an
-    #      undefined symbol -- the wrong object entirely.
+    #      undefined symbol, the wrong object entirely.
     run E29 FAIL "libvendor.so.1: cannot open shared object file" \
         env CROSS_LIBC_DLOPEN=1 CROSS_LIBC_DLOPEN_DEBUG=1 \
             LD_PRELOAD=/work/cross-libc-dlopen.so ./loader /work/hostdep.so use
@@ -588,7 +588,7 @@ echo "-- K. dlopen scope: what a plugin can see of its loader's closure --"
 # Reproduced here in three tiny objects rather than by finding a 2014 Mesa: the
 # mechanism is a property of ld.so, not of Mesa, and stating it in twelve lines
 # is worth more than a distro that has to be excavated. It is the reason
-# src/gl-fwd.c asks for RTLD_GLOBAL -- and the reason it asks only for the ONE
+# src/gl-fwd.c asks for RTLD_GLOBAL, and the reason it asks only for the ONE
 # object it loads, rather than making every cross-libc dlopen global.
 cat > prov.c <<'CEOF'
 __attribute__((visibility("default"))) int prov_symbol(void) { return 7; }
@@ -635,9 +635,9 @@ echo "-- L. preload constructor order --------------------------------"
 # gl-fwd.so's constructor dlopens a HOST library, which needs the bundled libc
 # runtime set that cross-libc-dlopen.so's constructor puts in the global scope. So
 # the order matters, and the intuitive answer is wrong: ld.so runs preload
-# constructors in REVERSE of the list. Listing gl-fwd.so after cross-libc-dlopen.so
-# -- which is what a reader would write, and what upstream's packaging note said
-# -- runs it FIRST. Measured, because the alternative is to depend on it.
+# constructors in REVERSE of the list. Listing gl-fwd.so after cross-libc-dlopen.so,
+# which is what a reader would write and what upstream's packaging note said,
+# runs it FIRST. Measured, because the alternative is to depend on it.
 cat > ctor.c <<'CEOF'
 #include <stdio.h>
 __attribute__((constructor)) static void c(void) { fputs(NAME "\n", stderr); }
@@ -648,7 +648,7 @@ CEOF
 gcc -shared -fPIC -DNAME='"ctor-A"' ctor.c -o ctorA.so
 gcc -shared -fPIC -DNAME='"ctor-B"' ctor.c -o ctorB.so
 gcc -O2 ctormain.c -o ctormain
-# E56: A listed first, B listed second -- B's constructor runs first.
+# E56: A listed first, B listed second, so B's constructor runs first.
 run E56 OK "ctor-B" env LD_PRELOAD="$PWD/ctorA.so:$PWD/ctorB.so" ./ctormain
 # E57: and it is the ORDER that decides it, not the file: swap them and the
 #      first line swaps too. Without this pair, E56 alone cannot tell "reverse
@@ -721,7 +721,7 @@ int main(void) {
 CEOF
 gcc -shared -fPIC -O2 tgt.c -o libtgt.so -Wl,-soname,libtgt.so
 # E58: eight integer registers, nine float registers, a varargs call whose %al
-#      carries the float count, and a struct returned through hidden memory --
+#      carries the float count, and a struct returned through hidden memory,
 #      all through a jump that knows none of their shapes.
 #
 # ⚠ This section's STUB macro is x86-64 machine code written by hand: an
@@ -729,7 +729,7 @@ gcc -shared -fPIC -O2 tgt.c -o libtgt.so -Wl,-soname,libtgt.so
 # miniature of src/gl-fwd.c's trampoline, not that trampoline, and it cannot
 # assemble anywhere else. On aarch64 gas rejects it with "unknown mnemonic
 # `jmp'", the binary is never produced, and E58 reported "./tramp: No such
-# file or directory" -- which names the wrong thing entirely.
+# file or directory", which names the wrong thing entirely.
 #
 # The capability this stage lacks on aarch64 is a hand-written x86-64
 # trampoline. What the REAL aarch64 trampolines do is measured, on this same
@@ -753,7 +753,7 @@ echo "-- N. the resolver: a table slot that can run code -------------"
 # an entry point the host does not implement was a silent zero.
 #
 # src/gl-fwd.c now starts every slot at a register-saving resolver and the
-# trampoline carries its own index. These cases measure that resolver -- the
+# trampoline carries its own index. These cases measure that resolver, the
 # real one, built from src/gl-fwd.c with a four-name table, not a copy of it
 # that could drift. libtgt.so from section M is the "host library".
 cat > tgt-fwd.h <<'CEOF'
@@ -831,7 +831,7 @@ int main(int argc, char **argv) {
 CEOF
 # Linked against the SHIM, not against libtgt.so: the shim carries libtgt.so's
 # SONAME, so DT_NEEDED reads libtgt.so and ld.so binds it to whichever object
-# claims that name -- which is the whole mechanism, reproduced in miniature.
+# claims that name, which is the whole mechanism, reproduced in miniature.
 # t_absent exists only in the shim, so this is also the only thing that links.
 # --no-as-needed because mapped.c with no argument references nothing, and the
 # default would drop the DT_NEEDED that the case is about.
@@ -840,12 +840,12 @@ gcc -O2 $CET mapped.c -o mapped ./tgt-fwd.so -Wl,--no-as-needed \
     -Wl,-rpath,"$PWD"
 
 # The shim owns libtgt.so's soname, so the ONE name it is allowed to resolve
-# cannot come from ld.so -- ld.so would hand back the shim. CROSS_LIBC_DLOPEN_GL_HOST_DIR
+# cannot come from ld.so, because ld.so would hand back the shim. CROSS_LIBC_DLOPEN_GL_HOST_DIR
 # is the handoff that names the directory to look in.
 fwd() { env LD_PRELOAD="$PWD/tgt-fwd.so" CROSS_LIBC_DLOPEN_GL_HOST_DIR="$PWD" "$@"; }
 
 # E69: eight integer registers, nine float registers, a varargs %al count and a
-#      struct returned through hidden memory -- all surviving a C call made in
+#      struct returned through hidden memory, all surviving a C call made in
 #      the MIDDLE of the forward. And the second call agrees with the first,
 #      which is what says the slot was patched with the right address rather
 #      than that the resolver got lucky once.
@@ -868,7 +868,7 @@ run E71b OK "shim mapped=1 target mapped=1" fwd ./mapped call
 run E72 OK "ABSENT entry point called: t_absent" \
     fwd env CROSS_LIBC_DLOPEN_DEBUG=1 ./tramp2
 
-# E73: and the number an application can now be measured by -- how much of a
+# E73: and the number an application can now be measured by, namely how much of a
 #      dispatcher it actually touches. Five names, four the host has, five
 #      called. This is the counter B6 needs to stop guessing with.
 run E73 OK "5 of 5 entry points were CALLED (4 forwarded, 1 absent)" \
@@ -877,7 +877,7 @@ run E73 OK "5 of 5 entry points were CALLED (4 forwarded, 1 absent)" \
 echo
 echo "-- O. the shim asks the HOST where its libraries are ------------"
 #
-# The shim resolves exactly one soname, because ld.so cannot -- that name is
+# The shim resolves exactly one soname, because ld.so cannot: that name is
 # taken by the shim itself. WHERE it looks used to be a hardcoded list of
 # conventional directories, and that list was a guess about somebody else's
 # packaging. It drifted: Ubuntu's alternatives layout puts classic libGL.so.1
@@ -890,8 +890,8 @@ echo "-- O. the shim asks the HOST where its libraries are ------------"
 # that both gl-fwd.c and runtime-select.c use.
 #
 # Measured on a directory no list could contain, so a pass cannot come from the
-# hardcoded entries. The control is the same run with the conf file removed --
-# the mechanism's own presence, not an env switch invented to disable it.
+# hardcoded entries. The control is the same run with the conf file removed,
+# using the mechanism's own presence, not an env switch invented to disable it.
 mkdir -p /opt/cross-libc-unguessable-42 /etc/ld.so.conf.d
 cp libtgt.so /opt/cross-libc-unguessable-42/libtgt.so
 [ -f /etc/ld.so.conf ] || printf 'include /etc/ld.so.conf.d/*.conf\n' > /etc/ld.so.conf
@@ -905,7 +905,7 @@ fwd_noenv() { env LD_PRELOAD="$PWD/tgt-fwd.so" CROSS_LIBC_DLOPEN_DEBUG=1 "$@"; }
 confdir
 run E75 OK "target /opt/cross-libc-unguessable-42/libtgt.so" fwd_noenv ./tramp2
 # E75b: the control that must FAIL. Same directory, same library, same
-#       binary -- conf file gone, so nothing names it and the shim comes up
+#       binary, with the conf file gone, so nothing names it and the shim comes up
 #       empty. Without this, E75 would also pass if the shim had simply
 #       guessed the directory, which is the habit being removed.
 noconf

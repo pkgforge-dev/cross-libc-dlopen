@@ -7,7 +7,7 @@
 # a second AppImage:
 #
 #   debian:bullseye-slim  builds the artefacts on the glibc 2.31 FLOOR
-#   alpine:3.22           musl host -- the case the complaint is about
+#   alpine:3.22           musl host, the case the complaint is about
 #   debian:trixie-slim    glibc 2.41, OLDER than the bundled 2.44, so nothing
 #                         NEEDS rewriting. The regression case.
 #   ubuntu:14.04          pre-glvnd glibc: classic Mesa, no libGLX_<vendor>,

@@ -4,7 +4,7 @@
 # THE FLOOR RULE, which is the one that gets got wrong: build on the OLDEST
 # glibc you intend to support, never the newest. A build on glibc 2.41 emits
 # references to GLIBC_2.34 symbols and then fails to load inside a bundle whose
-# glibc is older -- at dlopen time, in somebody else's application, with a
+# glibc is older: at dlopen time, in somebody else's application, with a
 # message about a symbol version rather than about a build. The floor is a
 # property of the BUILD ENVIRONMENT, which is why this script defaults to a
 # container: it is the only portable way to pin one.

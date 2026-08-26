@@ -1,6 +1,6 @@
 #!/bin/sh
 # The far end: a shared object built against musl, exporting one function.
-# Nothing about it is special -- that is the point. It is what a host driver
+# Nothing about it is special, and that is the point. It is what a host driver
 # looks like from a glibc process's side of the fence.
 set -eu
 apk add --no-cache gcc musl-dev >/dev/null 2>&1

@@ -9,20 +9,20 @@ Entries whose deliverable is a number that does not exist yet.
 - **Source.** The port brief, task 4.2. Written down as three distinct
   questions because "static binaries cannot `dlopen`" is close enough to true to
   be repeated and wrong in the way that matters.
-- **Category** measurement · **Priority** high · **Effort** medium ·
+- **Category** measurement, **Priority** high, **Effort** medium,
   **Status** open
 - **Problem.** [`docs/limits.md`](../docs/limits.md) states three cases and
   labels all three UNVERIFIED. A user linking a portable release binary has no
   answer.
 - **Premise**, and how far it was checked: **read, not measured.**
-  - *Static musl* -- `dlopen` is a stub that always fails. Believed from musl's
+  - *Static musl*: `dlopen` is a stub that always fails. Believed from musl's
     own source; ⚠ not confirmed against a specific musl version here.
-  - *Static glibc* -- `dlopen` works, and glibc warns at link time that it
+  - *Static glibc*: `dlopen` works, and glibc warns at link time that it
     "requires at runtime the shared libraries from the glibc version used for
     linking". ⭐ That warning is a description of this project's entire
     subject.
-  - *Dynamically linked against libc only* -- believed squarely in scope.
-- **Approach.** ⚠ The suspected blocker is **not** `dlopen` -- it is that a
+  - *Dynamically linked against libc only*: believed squarely in scope.
+- **Approach.** ⚠ The suspected blocker is **not** `dlopen`: it is that a
   fully static binary has no `LD_PRELOAD` mechanism, because there is no
   dynamic loader to honour it. Measure that first; if the preload cannot be
   delivered, the `dlopen` question is moot for case 2 and the answer is about
@@ -33,14 +33,14 @@ Entries whose deliverable is a number that does not exist yet.
   ```
   ⛔ Write down which of the three was measured, on what, and what happened. An
   "N/A" without a measurement behind it is the mistake
-  [`docs/REPORT.md`](../docs/REPORT.md) §10's last entry is about.
+  [`docs/REPORT.md`](../docs/REPORT.md) section 10's last entry is about.
 
 ---
 
 ## T-02 `libepoxy.so.0`, and the eight loaders behind it
 
 - **Source.** `tools/plugin_boundaries.py --check` against the gtk4 AppDir.
-- **Category** measurement · **Priority** high · **Effort** low ·
+- **Category** measurement, **Priority** high, **Effort** low,
   **Status** open
 - **Problem.** The tool reports nine UNCLASSIFIED loaders in that AppDir. One of
   them is `libepoxy.so.0`, which is **itself a GL entry-point loader**: it
@@ -52,7 +52,7 @@ Entries whose deliverable is a number that does not exist yet.
 - **Approach.** `libepoxy.so.0` first, then the other eight.
 - ⛔ **Do not assume it is benign because GTK4 rendered.** `libdecor-0.so.0` was
   benign; `libGLX.so.0` was the whole of [`docs/REPORT.md`](../docs/REPORT.md)
-  §9.
+  section 9.
 - **Prove.**
   ```bash
   python3 tools/plugin_boundaries.py .tmp/gtk4x/AppDir --check
@@ -66,8 +66,9 @@ Entries whose deliverable is a number that does not exist yet.
 
 - **Source.** The port brief, task 1.5.2. ⛔ Blocking on the README's opening
   sentence.
-- **Category** measurement · **Priority** high · **Effort** medium ·
-  **Status** partially done -- see [`../examples/plain-preload/`](../examples/plain-preload/)
+- **Category** measurement, **Priority** high, **Effort** medium,
+  **Status** partially done
+- **Where it stands.** [`../examples/plain-preload/`](../examples/plain-preload/)
 - **Problem.** Every measured result in the record was obtained through an
   AppImage. "Standalone" is therefore a claim about a case nobody has run.
 - **Premise.** The code no longer *requires* an AppDir: `CROSS_LIBC_DLOPEN_ROOT`
@@ -79,7 +80,7 @@ Entries whose deliverable is a number that does not exist yet.
 - ⚠ **Until that exists, the README's opening sentence stays about AppImages.**
   Widening it to "any program" before there is a measured non-AppImage run
   against a real driver would be exactly the move this project's whole standard
-  exists to prevent. Build it, measure it, then rewrite the sentence -- in that
+  exists to prevent. Build it, measure it, then rewrite the sentence, in that
   order.
 - **Prove.**
   ```bash
@@ -92,11 +93,11 @@ Entries whose deliverable is a number that does not exist yet.
 
 ## T-04 Two struct sizes where this project and solo disagree
 
-- **Source.** Reference sweep of `pg83/solo` -- [`HISTORY/references/solo-findings.md`](../HISTORY/references/solo-findings.md) F2.
-- **Category** measurement · **Priority** medium · **Effort** low ·
+- **Source.** Reference sweep of `pg83/solo`, [`HISTORY/references/solo-findings.md`](../HISTORY/references/solo-findings.md) F2.
+- **Category** measurement, **Priority** medium, **Effort** low,
   **Status** open
 - **Problem.** solo's `dev/abi-diff.txt` lists `struct_rusage` as 144 bytes on
-  glibc and 272 on musl, and `struct_sched_param` as 4 versus 48 -- both marked
+  glibc and 272 on musl, and `struct_sched_param` as 4 versus 48, both marked
   DIFF. This project measured both as **crossing harmlessly** (E47, E49).
 - **Premise.** Both measurements are real; they are very likely answering
   different questions. solo probes `sizeof`; `tests/abi-host.c` probes whether
@@ -113,9 +114,9 @@ Entries whose deliverable is a number that does not exist yet.
 
 ## T-05 NixOS as a host class
 
-- **Source.** Reference sweep of `pg83/solo` -- F7, and solo's
+- **Source.** Reference sweep of `pg83/solo`, F7, and solo's
   [issue #2](https://github.com/pg83/solo/issues/2).
-- **Category** measurement · **Priority** medium · **Effort** medium ·
+- **Category** measurement, **Priority** medium, **Effort** medium,
   **Status** open
 - **Problem.** The host matrix here is Alpine, Debian trixie, Ubuntu 14.04 and
   16.04. NixOS is a fourth host class that neither is nor pretends to be FHS,
@@ -123,7 +124,7 @@ Entries whose deliverable is a number that does not exist yet.
 - **Premise.** Measured, in solo's tracker rather than here: NixOS publishes
   Vulkan ICD manifests under `/run/opengl-driver/share`, and **no FHS path
   carries a manifest at all**. A user hit `vkCreateInstance failed: VkResult -9`
-  -- ⚠ the same result code this project's E31 predicts, from a different cause.
+  ⚠ That is the same result code this project's E31 predicts, from a different cause.
   This project's sharun path already names `/run/opengl-driver/lib`; the
   **manifest** directory is a different thing and is unhandled.
 - **Approach.** Add a NixOS host stage. ⭐ **Lay the tree out and then delete
@@ -137,21 +138,21 @@ Entries whose deliverable is a number that does not exist yet.
 
 ## T-06 Translate the two live struct hazards at the call
 
-- **Source.** Reference sweep of `pg83/solo` --
-  [`HISTORY/references/solo-usable.md`](../HISTORY/references/solo-usable.md) §1.
-- **Category** measurement · **Priority** high · **Effort** medium ·
+- **Source.** Reference sweep of `pg83/solo`, at
+  [`HISTORY/references/solo-usable.md`](../HISTORY/references/solo-usable.md) section 1.
+- **Category** measurement, **Priority** high, **Effort** medium,
   **Status** open
 - **Problem.** [`docs/limits.md`](../docs/limits.md) states the two live
   hazards are not fixable, and gives the reason as "an offset compiled into an
   object is not reachable from a preload".
 - **Premise.** ⛔ **The measurement is right and the reason is imprecise.** It
   holds for a preload that interposes only `dlopen`. solo repairs both by
-  interposing the **call** -- `lib/glibc_shim.cpp:3092` for `regexec` and
-  `:3460` for `nftw` -- so the reach is a property of where you interpose, not of
+  interposing the **call** (`lib/glibc_shim.cpp:3092` for `regexec` and
+  `:3460` for `nftw`), so the reach is a property of where you interpose, not of
   preloading.
 - **Approach.** Interpose `regexec` and `nftw`, translating at the boundary.
   The shapes and the direction of each translation are quoted in
-  `solo-usable.md` §1.
+  `solo-usable.md` section 1.
 - ⚠ **Interpose only where the direction is unambiguous.** solo knows which
   side every call came from because it supplies the whole libc; this does not,
   and translating a call that needed no translation is a new defect of the same
@@ -161,5 +162,5 @@ Entries whose deliverable is a number that does not exist yet.
   sh scripts/run-appimage.sh --only alpine
   ```
   E50 currently reports `2 live hazard(s)`. Closes when it reports 0 **and**
-  E47/E49 still pass -- a translation that breaks the same-libc control is not a
+  E47/E49 still pass: a translation that breaks the same-libc control is not a
   fix.

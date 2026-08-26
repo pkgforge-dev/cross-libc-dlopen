@@ -1,7 +1,7 @@
 # Two gaps, and the failure message each one gives you
 
-A bundle that ships its own glibc cannot ship GPU drivers -- Mesa plus LLVM is
-100-200 MB -- so it has to use the host's. Two different things stop it, and
+A bundle that ships its own glibc cannot ship GPU drivers, because Mesa plus
+LLVM is 100-200 MB, so it has to use the host's. Two different things stop it, and
 telling them apart is the whole idea.
 
 Getting the diagnosis backwards costs a session, because the second gap's error
@@ -12,7 +12,7 @@ message is about neither of its two subjects.
 ## Gap 1: libc
 
 **The host's driver exists, is nameable, and was built against a different
-libc** -- a newer glibc, or musl. A process carrying a bundled glibc 2.31
+libc**, either a newer glibc or musl. A process carrying a bundled glibc 2.31
 cannot `dlopen` an object that wants `GLIBC_2.38`, and cannot `dlopen` a musl
 object at all.
 
@@ -48,7 +48,7 @@ Three files support it:
 **The host has the capability and ships nothing in the shape the bundled loader
 looks for.** The bundle ships libglvnd; the application links `libGL.so.1`;
 behind it `libGLX.so.0` `dlopen`s a vendor library called
-`libGLX_<vendor>.so.0` -- and a host whose Mesa was built *without* glvnd ships
+`libGLX_<vendor>.so.0`. A host whose Mesa was built *without* glvnd ships
 no such file at all.
 
 ⭐ **This is the single most useful sentence here.** What you see is:
@@ -59,8 +59,8 @@ couldn't get an RGB, Double-buffered visual
 
 That is a message about **visuals**, for a fault that is about neither visuals
 nor libc. No amount of libc bridging carries a file that does not exist. If you
-are reading that line and reaching for the loader, you are on the wrong rung --
-see [`diagnostics.md`](diagnostics.md).
+are reading that line and reaching for the loader, you are on the wrong rung.
+See [`diagnostics.md`](diagnostics.md).
 
 **The repair** is [`src/gl-fwd.c`](../src/gl-fwd.c): an object built with the
 SONAME of the library it replaces, preloaded so `ld.so` binds the application's
@@ -71,7 +71,7 @@ The same source file, built with three different tables, is three shims:
 
 | built as | SONAME | table | entry points |
 |---|---|---|---|
-| `gl-fwd.so` | `libGL.so.1` | `gl-fwd-gl.h` | see [`REPORT.md`](REPORT.md) §9 |
+| `gl-fwd.so` | `libGL.so.1` | `gl-fwd-gl.h` | see [`REPORT.md`](REPORT.md) section 9 |
 | `egl-fwd.so` | `libEGL.so.1` | `gl-fwd-egl.h` | " |
 | `gles-fwd.so` | `libGLESv2.so.2` | `gl-fwd-gles2.h` | " |
 
@@ -92,7 +92,7 @@ CROSS_LIBC_DLOPEN=1 CROSS_LIBC_DLOPEN_DEBUG=1 your-app 2>&1 | grep 'cross-libc-d
 ```
 
 Lines naming objects being rewritten mean gap 1 is being handled. **Silence,
-with a rendering failure, means gap 2** -- the application never got as far as
+with a rendering failure, means gap 2**: the application never got as far as
 asking for a host object, because the dispatcher it linked found no vendor to
 dispatch to.
 

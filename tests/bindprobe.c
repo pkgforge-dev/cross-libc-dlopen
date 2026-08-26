@@ -1,4 +1,4 @@
-/* T6.2 -- which DEFINITION did each object in the process actually bind?
+/* T6.2: which DEFINITION did each object in the process actually bind?
  *
  * `LD_DEBUG=bindings` prints the version a reference ASKED for. It does not
  * print the definition the reference GOT, and for the version-binding trap
@@ -7,7 +7,7 @@
  *
  * So read the answer out of the process instead of arguing about it. For every
  * loaded object, walk its relocations, find the GOT slot for the named symbol,
- * and report the address the loader put there -- then say which file that
+ * and report the address the loader put there, then say which file that
  * address is in and, when it is libc, which VERSION of the symbol it is.
  *
  * The verdict that matters is not per object, it is per symbol across all of
@@ -28,7 +28,7 @@
  * the choice is made, never WHICH definition is chosen.
  *
  * Exit 0 if every symbol is bound uniformly, 1 if any is mixed, 2 on a usage
- * or load error -- so "mixed" is distinguishable from "could not measure".
+ * or load error, so "mixed" is distinguishable from "could not measure".
  */
 #define _GNU_SOURCE
 #include <dlfcn.h>
@@ -127,7 +127,7 @@ static void record(const char *obj, const char *name, void *addr) {
  *
  * The symbol index is used without a bound because there is nothing to bound it
  * against: DT_SYMTAB carries no count, and the only honest sources are the hash
- * tables. It is safe here for a reason rather than by luck -- every object this
+ * tables. It is safe here for a reason rather than by luck: every object this
  * walks has already been relocated by ld.so, which resolved these same indices
  * first and would have died on a bad one. Do not reuse this on an object read
  * off disk; that is what the fuzzed rewriter in cross-libc-dlopen.c is for. */
@@ -175,7 +175,7 @@ static int visit(struct dl_phdr_info *info, size_t size, void *data) {
 static void describe(void *libc, const char *sym, void *addr, char *out, size_t n) {
 	Dl_info di;
 	/* dladdr leaves di untouched when it fails, so the offset branch below
-	 * must never be reached on that path -- reading dli_fbase then is reading
+	 * must never be reached on that path, because reading dli_fbase then is reading
 	 * an uninitialised pointer. */
 	int known = dladdr(addr, &di) && di.dli_fname;
 	const char *file = known ? di.dli_fname : "?";

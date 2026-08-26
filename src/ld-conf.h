@@ -1,4 +1,4 @@
-/* ld-conf.h -- every directory the DISTRO itself calls a library directory.
+/* ld-conf.h: every directory the DISTRO itself calls a library directory.
  *
  * WHY THIS IS A HEADER AND NOT TWO FUNCTIONS. Two things in this repository
  * need the host's own list of library directories, for two different reasons,
@@ -11,7 +11,7 @@
  *                         ld.wsl.conf, so under a loader with the cache
  *                         inhibited (E13b) libcuda.so.1 cannot dlopen its own
  *                         libdxcore.so and CUDA reports no device at all.
- *   src/gl-fwd.c          resolves ONE soname -- the one it is impersonating --
+ *   src/gl-fwd.c          resolves ONE soname, the one it is impersonating,
  *                         which ld.so cannot answer because the shim owns that
  *                         name. It had a hardcoded list of conventional
  *                         directories, and that list was WRONG on Ubuntu's
@@ -24,7 +24,7 @@
  * belongs to whatever launches the process. A hardcoded list of somebody else's
  * packaging conventions is neither: it is a GUESS, and the guess drifted. What
  * this file does instead is read the host's own answer out of the plain-text
- * /etc/ld.so.conf -- the same benefit the binary cache gives, without touching
+ * /etc/ld.so.conf, the same benefit the binary cache gives, without touching
  * the binary cache whose parsing is why the cache was inhibited in the first
  * place. It is also the same computation sharun does upstream from the cache
  * (get_ld_cache_dirs, Anylinux-sharun@54208d2); the two are needed
@@ -58,7 +58,7 @@
 
 struct ldconf_walk {
 	/* Called once per directory named, in file order. Returning non-zero
-	 * stops the whole walk, which is what gl-fwd wants -- it is looking for
+	 * stops the whole walk, which is what gl-fwd wants, because it is looking for
 	 * one file and there is nothing to do after it finds it. */
 	int (*dir)(const char *dir, void *ctx);
 	/* Never drop anything silently: an incomplete path is the whole failure
@@ -112,8 +112,8 @@ static int ldconf_walk_file(struct ldconf_walk *w, const char *path, int depth) 
 				pat++;
 			if (!*pat)
 				continue;
-			/* Only the trailing-glob form -- a directory, a slash, then a
-			 * star and a suffix -- occurs in practice. Expand it by hand
+			/* Only the trailing-glob form, a directory, a slash, then a
+			 * star and a suffix, occurs in practice. Expand it by hand
 			 * rather than pulling in glob(), which would make this depend on
 			 * a libc call in the middle of deciding which libc to use. */
 			char dir[LDCONF_MAX_PATH], suffix[64];

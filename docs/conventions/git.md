@@ -117,7 +117,7 @@ The one exception is an explicit, recorded instruction from the operator, for a
 specific operation, once. When that happens:
 
 1. Push the pre-rewrite state to a branch on the remote first.
-2. ⭐ **Confirm the backup is fetchable before touching anything** --
+2. ⭐ **Confirm the backup is fetchable before touching anything.**
    `git ls-remote origin` naming it is the confirmation; having pushed it is
    not.
 3. Verify the working tree is exactly what the result should contain.

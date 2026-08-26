@@ -144,7 +144,7 @@ such file. Two repairs are available:
   glvnd's vendor ABI on top of the host's classic `libGL.so.1`, and leave the
   bundled dispatcher in place.
 
-(B) is the more respectful of the two -- it keeps the bundled dispatcher's full
+(B) is the more respectful of the two: it keeps the bundled dispatcher's full
 ABI and needs no symbol enumeration at the application boundary. It was
 rejected for three reasons, in order of weight:
 
@@ -161,15 +161,15 @@ rejected for three reasons, in order of weight:
    (B) is (A) plus a second interface.
 
 3. **It fixes GL and not EGL.** EGL's vendor discovery is a different mechanism
-   -- JSON files under `/usr/share/glvnd/egl_vendor.d` naming
-   `libEGL_<vendor>.so.0` -- so (B) would need a second, differently shaped
+   (JSON files under `/usr/share/glvnd/egl_vendor.d` naming
+   `libEGL_<vendor>.so.0`), so (B) would need a second, differently shaped
    implementation. (A) is the same source file built twice with a different
    table and a different vendor marker, which is what `egl-fwd.so` is.
 
 The cost of (A), stated plainly because it is real: the shim must export
 everything the object it replaces exports, or an application that links a name
 outside the list fails with `undefined symbol`. For `libGL.so.1` that is the
-whole dispatcher -- the count is in [`REPORT.md`](REPORT.md) 9, which is its one
+whole dispatcher. The count is in [`REPORT.md`](REPORT.md) 9, which is its one
 home. It is only tolerable because the list is READ OUT of the bundled library
 rather than typed, and because `make gl-syms-check` fails the build if the two
 ever disagree. A hand-written subset is the failure mode, not the design: a

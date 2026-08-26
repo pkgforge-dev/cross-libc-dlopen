@@ -58,8 +58,8 @@ precisely this reason. Keep that property in anything you write to check this.
 A bundled loader is typically patched to skip the host's cache, so a library
 whose directory is named *only* there is unreachable however correct everything
 else is. The symptom is a load failure naming a dependency, several levels down
-from the driver you were trying to open. Extend the library path -- for sharun,
-`SHARUN_FALLBACK_LIBRARY_PATH`.
+from the driver you were trying to open. Extend the library path. For sharun,
+that is `SHARUN_FALLBACK_LIBRARY_PATH`.
 
 ---
 

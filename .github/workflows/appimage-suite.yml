@@ -3,7 +3,7 @@
 #
 # WHY IT IS NOT ON EVERY PUSH. It downloads two AppImages (10 MB and 30 MB) and
 # installs apt or apk packages on four distributions, two of which are from
-# 2014 and 2016 and are served by archive.ubuntu.com -- a third-party mirror
+# 2014 and 2016 and are served by archive.ubuntu.com, a third-party mirror
 # this repository does not control and whose slowness is not a finding about
 # this code. gates.yml is the ~4 minute gate; this is the wide one.
 #
@@ -11,16 +11,16 @@
 # is indistinguishable from a broken one, so the reasons are here and not only
 # in a document:
 #
-#   a real GPU              -- lavapipe and llvmpipe exercise the SAME dlopen,
+#   a real GPU              : lavapipe and llvmpipe exercise the SAME dlopen,
 #                              rewrite and forward paths. The driver differs;
 #                              the loader does not. The hardware cases SKIP by
 #                              name, which is the existing mechanism.
-#   /dev/dri DRM drivers    -- the ICD interface is identical for a software
+#   /dev/dri DRM drivers    : the ICD interface is identical for a software
 #                              ICD. What is untested is the driver's own
 #                              device handling.
-#   NVIDIA's closed stack   -- nothing stands in for it. Untested in CI; the
+#   NVIDIA's closed stack   : nothing stands in for it. Untested in CI; the
 #                              local result on an RTX 3050 Ti is in the record.
-#   aarch64 on real silicon -- ⭐ NOT a gap here. ubuntu-24.04-arm IS real
+#   aarch64 on real silicon : ⭐ NOT a gap here. ubuntu-24.04-arm IS real
 #                              silicon, so this job CLOSES what qemu-user
 #                              could only approximate: a real memory model and
 #                              a real Mesa behind the trampolines.
@@ -63,7 +63,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Both AppImages are sha256-verified by the driver, so a cache hit is
-      # exactly as trustworthy as a fresh download -- a poisoned cache fails
+      # exactly as trustworthy as a fresh download, because a poisoned cache fails
       # the pin and stops the run.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

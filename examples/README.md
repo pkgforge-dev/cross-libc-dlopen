@@ -50,13 +50,13 @@ runtime. Relevant files: `src/main.rs`, `src/utils.rs`.
 It already carries the library-path completeness fix this repository used to
 ship as a patch:
 [`54208d2`](https://github.com/pkgforge-dev/Anylinux-sharun/commit/54208d2bc7d4c919ba46a6c234f6af7f8426b537),
-*"add more directories to `--library-path`"* -- verified to exist under that
+*"add more directories to `--library-path`"*, verified to exist under that
 message.
 
 ⭐ **The coupling is the point.** This loader can only reach a host driver that
 sharun's `--library-path` already reaches. `SHARUN_FALLBACK_LIBRARY_PATH` is the
 supported way to extend it without editing anything. A driver whose directory is
-named only in `/etc/ld.so.cache` is invisible without it -- measured in E45,
+named only in `/etc/ld.so.cache` is invisible without it, measured in E45,
 where the CUDA round trip fails until that directory is added and succeeds once
 it is. See [`docs/ground-truth.md`](../docs/ground-truth.md) for the three gaps
 that fix does *not* reach.
@@ -65,7 +65,7 @@ that fix does *not* reach.
 
 ## onelf
 
-[`QaidVoid/onelf`](https://github.com/QaidVoid/onelf) -- Rust workspace, "pack
+[`QaidVoid/onelf`](https://github.com/QaidVoid/onelf), a Rust workspace, "pack
 entire directories into self-contained executables". Verified present:
 `crates/onelf/src/bundle/gpu.rs`, `crates/onelf-format/src/drivers.rs`,
 `docs/guide/cross-libc.md`.
@@ -73,7 +73,7 @@ entire directories into self-contained executables". Verified present:
 ⚠ **onelf solves a different half of the same problem, and the contrast is the
 example.** It bundles the *entire* libc and injects an `AT_EXECFN` bootstrap
 into each bundled executable; the bootstrap maps the bundled loader and jumps
-into it, so -- in its own words -- the host's own loader is never consulted and a
+into it, so, in its own words, the host's own loader is never consulted and a
 musl binary runs on a glibc host without host-level setup.
 
 Its own `docs/guide/cross-libc.md` then states the wall it hits, under the
@@ -93,15 +93,15 @@ measurement belongs.
 
 ---
 
-## runimage -- this project does not apply, and here is why
+## runimage: this project does not apply, and here is why
 
-[`VHSgunzo/runimage`](https://github.com/VHSgunzo/runimage) -- shell, "portable
+[`VHSgunzo/runimage`](https://github.com/VHSgunzo/runimage), a shell project, "portable
 single-file linux container". Verified present: `rootfs/`, `RunDir` (a symlink),
 `examples/` with alpine, debian, fedora, ubuntu, void and steam recipes.
 
 **It does not have the problem this project solves**, and its own README says
 what it does instead. runimage carries a complete root filesystem, so an
-application inside it links that userland's libc, not the host's -- there is no
+application inside it links that userland's libc, not the host's: there is no
 bundled-glibc-meets-host-musl boundary to bridge.
 
 For the GPU it takes the opposite approach: rather than loading the host's
@@ -113,7 +113,7 @@ directory of driver images.
 
 ⭐ **That is a coherent and different answer**, and it costs a driver-sized
 download rather than a shim. The one place the two could meet is
-`RIM_SYS_NVLIBS=1`, where runimage does reach for host libraries -- if that path
+`RIM_SYS_NVLIBS=1`, where runimage does reach for host libraries, and if that path
 ever hits a libc-family mismatch, this loader is what would bridge it.
 ⛔ **UNVERIFIED:** not tested, and not claimed.
 
@@ -127,4 +127,4 @@ answers in [`docs/limits.md`](../docs/limits.md) and carried as work in
 [`TODO/measurement.md`](../TODO/measurement.md) T-01.
 
 The `plain-preload` example above covers the *third* of those three shapes in
-part -- a normally dynamically linked program -- and says so.
+part, a normally dynamically linked program, and says so.
