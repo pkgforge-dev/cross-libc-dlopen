@@ -45,7 +45,7 @@ issue list. If `gh` is unavailable, the three calls it wraps are
 it says so.** Any of them may be wrong, may be stale, may describe a version of
 this repository that no longer exists, or may have been written by somebody who
 was guessing. Several claims in this repository's own history were exactly
-that, and are recorded in [`../HISTORY/`](../HISTORY/README.md).
+that, and are recorded in [`history/`](history/README.md).
 
 Treat every one of them the way this repository treats any other claim:
 
@@ -61,9 +61,9 @@ disagree, the operator is right and the disagreement is worth reporting.
 
 ### Then
 
-⭐ **Read [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md).** It is the only file
+⭐ **Read [`todo/PROGRESS.md`](todo/PROGRESS.md).** It is the only file
 that carries a work order. Nothing else does, not this file, not `README.md`,
-not `TODO/INDEX.md`.
+not `docs/todo/INDEX.md`.
 
 ⛔ **And nothing you do lands on the default branch directly.** Branch, then a
 pull request. Whether you may open it, merge it, or dispatch CI without asking
@@ -82,18 +82,18 @@ in front of you and read what it names, in full.
 
 | # | the task | read, in this order | ⛔ the rule that governs it |
 |---|---|---|---|
-| 2 | **Start a session** | [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md), [`../TODO/RULES.md`](../TODO/RULES.md), **the tracker** | ⛔ issues, pull requests AND discussions first. Somebody else may already be doing this. Then report the baseline before proposing anything |
-| 3 | **Take the next task** | [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) work order, the entry in [`../TODO/INDEX.md`](../TODO/INDEX.md), [`conventions/README.md`](conventions/README.md) | an entry closes **in place**, with its acceptance command actually run and the output recorded |
+| 2 | **Start a session** | [`todo/PROGRESS.md`](todo/PROGRESS.md), [`todo/RULES.md`](todo/RULES.md), **the tracker** | ⛔ issues, pull requests AND discussions first. Somebody else may already be doing this. Then report the baseline before proposing anything |
+| 3 | **Take the next task** | [`todo/PROGRESS.md`](todo/PROGRESS.md) work order, the entry in [`todo/INDEX.md`](todo/INDEX.md), [`conventions/README.md`](conventions/README.md) | an entry closes **in place**, with its acceptance command actually run and the output recorded |
 | 4 | **Diagnose a failure** | [`diagnostics.md`](diagnostics.md), [`traps.md`](traps.md), [`overview.md`](overview.md) | stop at the first rung that answers wrong. The rungs below it are noise until it is fixed |
-| 5 | **Change `src/`** | [`conventions/code.md`](conventions/code.md), [`overview.md`](overview.md), the case in [`REPORT.md`](REPORT.md) that covers it | ⛔ a change here needs a case that FAILS before and PASSES after |
+| 5 | **Change `src/`** | [`conventions/code.md`](conventions/code.md), [`overview.md`](overview.md), the case in [`report/README.md`](report/README.md) that covers it | ⛔ a change here needs a case that FAILS before and PASSES after |
 | 6 | **Run the suites** | [`reproducing.md`](reproducing.md) | a MISMATCH is a finding, not a harness bug. Investigate before coding |
 | 7 | **Touch CI or a check** | [`../.github/workflows/gates.yml`](../.github/workflows/gates.yml), [`conventions/shell.md`](conventions/shell.md) | ⭐ plant the defect and read the exit code, **and** run it against a clean tree. `sh scripts/verify-gates.sh` |
-| 8 | **Study another project** | [`../HISTORY/references/`](../HISTORY/references/), the method at [`TEMPLATE docs/methodology/references.md`](https://github.com/Azathothas/TEMPLATE/blob/main/docs/methodology/references.md), which is in the template and not in this tree | ⛔ capture the commit SHA before stripping. Cite every claim at a file |
+| 8 | **Study another project** | [`history/references/`](history/references/), the method at [`TEMPLATE docs/methodology/references.md`](https://github.com/Azathothas/TEMPLATE/blob/main/docs/methodology/references.md), which is in the template and not in this tree | ⛔ capture the commit SHA before stripping. Cite every claim at a file |
 | 9 | **Build or publish** | [`building.md`](building.md), [`conventions/git.md`](conventions/git.md) | ⛔ the floor rule first. Oldest glibc, never the newest. ⛔ **never push to the default branch** |
-| 10 | **End the session** | [`../TODO/RULES.md`](../TODO/RULES.md) close-out, [`conventions/README.md`](conventions/README.md) | ⛔ **two deep reviews, and they are mandatory.** Then rewrite `PROGRESS.md` and reconcile `INDEX.md`'s counts |
+| 10 | **End the session** | [`todo/RULES.md`](todo/RULES.md) close-out, [`conventions/README.md`](conventions/README.md) | ⛔ **two deep reviews, and they are mandatory.** Then rewrite `PROGRESS.md` and reconcile `INDEX.md`'s counts |
 | n/a | **Write or edit a document** | [`conventions/prose.md`](conventions/prose.md), [`conventions/docs.md`](conventions/docs.md) | one fact, one home |
 | n/a | **Commit** | [`conventions/git.md`](conventions/git.md) | ⛔ no tool is credited |
-| n/a | **Wonder why something is the way it is** | [`../HISTORY/`](../HISTORY/README.md) | every past mistake is there, in its original wording |
+| n/a | **Wonder why something is the way it is** | [`history/`](history/README.md) | every past mistake is there, in its original wording |
 
 ⛔ **Read what the row names in full.** Not grepped, not skimmed, not recalled
 from a previous session. The routing exists so the reading is small enough to
@@ -147,7 +147,7 @@ and welded to a measured fact it inherits that fact's authority.
 ### 3. One fact, one home
 
 ⛔ **No measured number appears in two documents.** Every count and every suite
-total lives in [`REPORT.md`](REPORT.md); everywhere else points at it. The gate
+total lives in [`report/README.md`](report/README.md); everywhere else points at it. The gate
 is in [`gates.yml`](../.github/workflows/gates.yml).
 
 ---
@@ -160,7 +160,7 @@ is in [`gates.yml`](../.github/workflows/gates.yml).
 | `src/forward-shim.c`, `src/gl-fwd-*.h` | ⛔ **generated.** [`conventions/code.md`](conventions/code.md) has the regeneration commands |
 | `inventories/*.json` | measured symbol inventories the generator consumes |
 | `.gitattributes` | enforces LF on `.sh`. A CR makes every command in a script report "not found" while naming something else |
-| the AppDir's dispatcher slot | ⛔ **upstream spells it, and upstream has already changed the spelling.** `lib/foreign-dlopen.so` became `lib/cross-libc-dlopen.so`, so `experiments/41-extract.sh` reads the name out of the AppDir into `.cld-slot` and nothing hardcodes it. Hardcoding either spelling makes the A/B a no-op that reports both arms agreeing. Dropping the `ANYLINUX_*` spelling from the `env` calls in `experiments/40-appimage.sh` does the same to E30, E37a and E43a. `sh scripts/verify-upstream-controls.sh` proves the difference. [`REPORT.md`](REPORT.md) 9.17 |
+| the AppDir's dispatcher slot | ⛔ **upstream spells it, and upstream has already changed the spelling.** `lib/foreign-dlopen.so` became `lib/cross-libc-dlopen.so`, so `experiments/41-extract.sh` reads the name out of the AppDir into `.cld-slot` and nothing hardcodes it. Hardcoding either spelling makes the A/B a no-op that reports both arms agreeing. Dropping the `ANYLINUX_*` spelling from the `env` calls in `experiments/40-appimage.sh` does the same to E30, E37a and E43a. `sh scripts/verify-upstream-controls.sh` proves the difference. [`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) 9.17 |
 
 ---
 
@@ -180,4 +180,4 @@ Tens of minutes: two downloads and four distributions, two of them from 2014
 and 2016. Not a pre-commit gate. ⚠ Neither is deprecated by CI, because CI is
 the wider matrix and the architectures a developer does not have.
 
-Totals and per-host results: [`REPORT.md`](REPORT.md).
+Totals and per-host results: [`report/README.md`](report/README.md).

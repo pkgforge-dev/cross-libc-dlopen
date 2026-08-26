@@ -28,7 +28,7 @@ with the README adding: *no loader shim can supply a file the distribution does
 not ship.* The skip reason was measured and correct. The sentence after it was
 neither, and it turned the whole thing into a closed question for a session. It
 is now closed the other way: a shim cannot supply the missing file, but it can
-replace the object that was looking for it, and section 9 of REPORT.md is the
+replace the object that was looking for it, and section 9 of ../report/README.md is the
 whole chain.
 
 Four habits come out of that, in descending order of how much they would have
@@ -293,7 +293,7 @@ of *does the AppImage work on this host*. Section 4 is written that way now.
 - **Some controls do not flip, and that is the result.** The CUDA cases were
   written expecting the feature-off control to fail. It passes, because NVIDIA
   ships against a `GLIBC_2.2.5` floor and nothing in the blob can be missing.
-  The correct response was to state that as the finding (REPORT.md 7.1), not to
+  The correct response was to state that as the finding (../report/07-closed-source-driver-and-abi.md 7.1), not to
   keep forcing the test until it broke. A control that has to be engineered into
   failing is not evidence of anything.
 - **`$?` after a pipeline is the LAST command's status.** `probe | sed` then

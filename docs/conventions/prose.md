@@ -49,7 +49,7 @@ prose.
 ⚠ **The check is section 4 of `scripts/check-drift.sh`**, which CI runs on
 every push. It refuses. It carries no budget, no pin and no tolerance, and it
 does not pass because a count fell: it was a ratchet once, and
-[`../REPORT.md`](../REPORT.md) 9.14 records the ratchet drifting eight under
+[`../report/09-the-second-boundary.md`](../report/09-the-second-boundary.md) 9.14 records the ratchet drifting eight under
 the tree and then admitting a planted dash.
 
 It covers Markdown prose, C comments, and shell, YAML, Python and Makefile
@@ -65,7 +65,7 @@ local: five occurrences sit on `verdict` lines that
 spelling [`../diagnostics.md`](../diagnostics.md) documents as the debug line a
 reader greps for.
 
-`HISTORY/` is excluded because it records original wording.
+`docs/history/` is excluded because it records original wording.
 
 ⛔ **A specimen is not a violation.** A dash inside a code span is being named
 rather than used, which is what makes this page writable: a rule that banned
@@ -152,13 +152,13 @@ the old text saying the text above is retired. An agent reads the first
 paragraph, stops, and acts on the retired rule.
 
 1. Rewrite the rule to what it is now. The current text is the only text.
-2. Move the superseded wording to [`../../HISTORY/`](../../HISTORY/README.md).
+2. Move the superseded wording to [`../history/`](../history/README.md).
 3. Link to it once, from the rule, in a sentence.
 
 ⚠ This is not licence to delete. A superseded rule is moved, never dropped.
 
 ⭐ **The one exception is a measured correction inside the record.**
-[`../REPORT.md`](../REPORT.md) is a measured record, and a premise a later
+[`../report/README.md`](../report/README.md) is a measured record, and a premise a later
 measurement disproves keeps its title and gets the correction written
 underneath. The title is how the item has been referred to everywhere else.
 That is a different operation from a stacked banner: the
@@ -180,14 +180,14 @@ has no X". It may **not** say "and therefore nothing can be done". That is a
 claim about the design space, it needs its own evidence, and welded to a
 measured fact it inherits the measured fact's authority. One such sentence kept
 OpenGL broken on every musl distribution for an entire session
-([`../../HISTORY/traps.md`](../../HISTORY/traps.md)).
+([`../history/traps.md`](../history/traps.md)).
 
 ---
 
 ## One fact, one home
 
 Every measured number lives in exactly one document.
-[`../REPORT.md`](../REPORT.md) is that home for every count and every suite
+[`../report/README.md`](../report/README.md) is that home for every count and every suite
 total; everything else points at it.
 
 ⛔ **A value in two documents with no check between them drifts**, and the copy
@@ -195,7 +195,7 @@ a reader trusts is the wrong one. The gate is the `every headline number has
 exactly one home` step in
 [`../../.github/workflows/gates.yml`](../../.github/workflows/gates.yml).
 
-⚠ `HISTORY/` is excluded from that gate on purpose. It records what was true
+⚠ `docs/history/` is excluded from that gate on purpose. It records what was true
 when it was written and says so at the top of every file.
 
 ---
@@ -205,8 +205,8 @@ when it was written and says so at the top of every file.
 **A document says what the thing does. It does not say what the project did.**
 
 ⛔ Correction logs, audit trails and "this used to say" notes do not go on a
-reference page or in `README.md`. They go in `HISTORY/`, or in the commit
-message, or in a measured correction inside `REPORT.md` where the record is the
+reference page or in `README.md`. They go in `docs/history/`, or in the commit
+message, or in a measured correction inside `../report/README.md` where the record is the
 point.
 
 ⚠ An unlinked page is not read, so it is not corrected. A page nothing links to

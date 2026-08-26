@@ -55,14 +55,14 @@ build by name when the host is newer.
 `lib/foreign-dlopen.so` up to the build hashed `712766f8`, and
 `lib/cross-libc-dlopen.so` in the one pinned now. So it is READ out of the
 extracted AppDir by `experiments/41-extract.sh` and never spelled by us.
-[`../REPORT.md`](../REPORT.md) 9.17.
+[`../report/09-the-second-boundary.md`](../report/09-the-second-boundary.md) 9.17.
 
 ⚠ **`.foreign-dlopen-enabled` was the second name here, and is not one any
 more.** It is `quick-sharun`'s opt-in marker and an AppDir still carries it,
 but nothing in `src/` reads it: the markers were removed and the feature is on
 by default whenever the object is preloaded. It stayed listed as load-bearing
 in four places for the rest of the branch, and one of them was the comment
-explaining why a case passed. [`../REPORT.md`](../REPORT.md) 9.16.
+explaining why a case passed. [`../report/09-the-second-boundary.md`](../report/09-the-second-boundary.md) 9.16.
 
 ⚠ **The `ANYLINUX_*` environment names are a different case and they are
 gone.** `src/cld-env.h` no longer reads any of them, because nothing consumed
@@ -148,7 +148,7 @@ needs a review.
 
 - **Never modify a host file.** Every write goes under `$XDG_RUNTIME_DIR` or
   `$TMPDIR`. [`../../tests/invariants.c`](../../tests/invariants.c) and the
-  checksum comparison in [`../REPORT.md`](../REPORT.md) guard this.
+  checksum comparison in [`../report/README.md`](../report/README.md) guard this.
 - **Exactly one libc family per process.** Never `dlopen` a second libc. E8 and
   E9 measure why for glibc. musl's libc *can* be mapped by a glibc `ld.so`,
   which is worse rather than better, because it succeeds quietly.
@@ -227,7 +227,7 @@ named.** Never silently omitted, never guessed.
 ⛔ Every `run` and `verdict` line states a prediction the harness scores.
 Rewriting one in another language, "cleaning up" a grep, or making an assertion
 tidier silently changes what is being asserted. Several look odd because of a
-trap recorded in [`../../HISTORY/traps.md`](../../HISTORY/traps.md).
+trap recorded in [`../history/traps.md`](../history/traps.md).
 
 Port the orchestration around them. `scripts/run-evidence.sh` and
 `scripts/run-appimage.sh` are that layer.

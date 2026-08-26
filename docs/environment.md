@@ -1,6 +1,6 @@
 # The environment the measurements were taken in
 
-Every number in [`REPORT.md`](REPORT.md) came from this machine unless the
+Every number in [`report/README.md`](report/README.md) came from this machine unless the
 text says otherwise. It is stated so a result that differs elsewhere can be
 attributed rather than argued about.
 

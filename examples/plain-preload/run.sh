@@ -2,7 +2,7 @@
 # A plain LD_PRELOAD against a normal binary. No AppDir, no marker file, no
 # .preload, no launcher.
 #
-# ⭐ THIS IS THE STANDALONE CASE. Every measured result in docs/REPORT.md was
+# ⭐ THIS IS THE STANDALONE CASE. Every measured result in docs/report/README.md was
 # obtained through an AppImage, which is the hardest consumer because it
 # supplies its own loader. This shows the easiest one: an ordinary dynamically
 # linked program on an ordinary host.
@@ -13,7 +13,7 @@
 #   after   the same dlopen succeeds and the symbol in it is called
 #
 # ⚠ WHAT IT DOES NOT MEASURE. The object on the far end is a stand-in, not a
-# host GPU driver. That is the difference between this and TODO/measurement.md
+# host GPU driver. That is the difference between this and docs/todo/measurement.md
 # T-03, and it is why the README's opening sentence is still about AppImages.
 #
 #   sh examples/plain-preload/run.sh

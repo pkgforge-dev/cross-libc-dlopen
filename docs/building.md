@@ -53,7 +53,7 @@ which compared against a glibc floor is a number that means nothing.
 | artefact | constraint |
 |---|---|
 | `cross-libc-dlopen.so` | must need no symbol newer than the floor |
-| `gl-fwd.so` | SONAME **must** be `libGL.so.1`. ⚠ It should also carry the IBT property note and currently does not: no Debian gcc emits one, measured on three. See [`REPORT.md`](REPORT.md) 9 and `TODO/infrastructure.md` T-17 |
+| `gl-fwd.so` | SONAME **must** be `libGL.so.1`. ⚠ It should also carry the IBT property note and currently does not: no Debian gcc emits one, measured on three. See [`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) 9 and `docs/todo/infrastructure.md` T-17 |
 | `egl-fwd.so` | SONAME **must** be `libEGL.so.1` |
 | `gles-fwd.so` | SONAME **must** be `libGLESv2.so.2`; its table comes from an AppDir that BUNDLES GLES, which the host-drivers demo does not |
 | `runtime-select` | a normal executable, same floor rule |

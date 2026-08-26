@@ -33,7 +33,7 @@ structural rather than a packaging accident.
 | No host implementation for 1097 of the GL entry points | a property of Alpine's Mesa 25.1, not of this repository: they are extensions glvnd knows the names of and that Mesa has no code for. Making the absent case OBSERVABLE was B1 and is DONE: a call to one is a line naming it, and `glprobe` reaches zero of the 1097 (4.0.1). Making Mesa implement them is not this project's work | nothing here. See B1 |
 | **Nine unclassified loaders in the gtk4 AppDir** | measured, not guessed: `python3 tools/plugin_boundaries.py .tmp/gtk4x/AppDir --check` reports `covered 2, n/a 1, unmeasured 3, UNCLASSIFIED 9`. Two of the three `unmeasured` are `libgbm.so.1` and `libva.so.2`, which the row above says this repository has no AppImage for, and it does now. ⭐ And one of the nine is **`libepoxy.so.0`**, which is itself a GL entry-point loader: it `dlopen`s `libGL`/`libEGL`/`libGLESv2` by soname and resolves through them, which is the same DISPATCHER shape as libglvnd and is very likely why gtk4-demo's counts are 1 GL and 46 GLES (E83). Nobody has looked at it | nothing. It is not blocked, it is unexamined, and it is the cheapest lead in this file: `libepoxy.so.0` first, then the other eight. ⛔ Do not assume it is benign because GTK4 rendered: `libdecor-0.so.0` was benign and `libGLX.so.0` was the whole of section 9 |
 | The two live ABI hazards | `regoff_t` is 4 bytes on glibc and 8 on musl, and the `FTW_*` values are off by one, so a musl-built object reads a glibc-filled `regmatch_t[]` or classifies an `nftw` entry wrongly (E50). An offset compiled into an object is not reachable from a preload | nothing in this repository. It is a property of the two libcs, and the useful output is the list of two, which E50 keeps honest |
-| Three residual library-path gaps upstream | the sharun fix is **upstreamed** ([Anylinux-sharun@`54208d2`](https://github.com/pkgforge-dev/Anylinux-sharun/commit/54208d2bc7d4c919ba46a6c234f6af7f8426b537)) and the patch here is deleted. What that change does not reach is musl's `/etc/ld-musl-<arch>.path`, multiarch triplets past three, and the non-FHS prefixes; `../docs/ground-truth.md` has the measurement | a different repository, and section 8 forbids writing there |
+| Three residual library-path gaps upstream | the sharun fix is **upstreamed** ([Anylinux-sharun@`54208d2`](https://github.com/pkgforge-dev/Anylinux-sharun/commit/54208d2bc7d4c919ba46a6c234f6af7f8426b537)) and the patch here is deleted. What that change does not reach is musl's `/etc/ld-musl-<arch>.path`, multiarch triplets past three, and the non-FHS prefixes; `../ground-truth.md` has the measurement | a different repository, and section 8 forbids writing there |
 
 ---
 
@@ -59,7 +59,7 @@ preload that interposes only `dlopen`. It does not hold for one that interposes
 the **call**: `pg83/solo` repairs both hazards that way, at
 `lib/glibc_shim.cpp:3092` (`regexec`) and `:3460` (`nftw`), and the shapes are
 quoted in
-[`../HISTORY/references/solo-usable.md`](../HISTORY/references/solo-usable.md) section 1.
+[`../history/references/solo-usable.md`](../history/references/solo-usable.md) section 1.
 
 The work is [`measurement.md`](measurement.md) **T-06**. ⚠ It is bounded, not
 free: interposing where the direction of a call is ambiguous translates

@@ -88,7 +88,7 @@ family stops mattering.
 
 ⛔ **UNVERIFIED:** no onelf bundle has been driven through this loader here. The
 contrast above is read out of onelf's own documentation and source layout, not
-measured. [`TODO/measurement.md`](../TODO/measurement.md) T-03 is where the
+measured. [`docs/todo/measurement.md`](../docs/todo/measurement.md) T-03 is where the
 measurement belongs.
 
 ---
@@ -124,7 +124,7 @@ ever hits a libc-family mismatch, this loader is what would bridge it.
 ⚠ **"Static binaries cannot `dlopen`" is the wrong answer.** Three distinct
 cases, all three currently **UNVERIFIED**, written down as questions rather than
 answers in [`docs/limits.md`](../docs/limits.md) and carried as work in
-[`TODO/measurement.md`](../TODO/measurement.md) T-01.
+[`docs/todo/measurement.md`](../docs/todo/measurement.md) T-01.
 
 The `plain-preload` example above covers the *third* of those three shapes in
 part, a normally dynamically linked program, and says so.

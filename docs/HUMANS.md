@@ -50,7 +50,7 @@ Read docs/AGENTS.md and follow its "Start here, every session" section.
 Then report the baseline. Do not start work yet.
 ```
 
-⭐ **Why this first.** [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) is the only
+⭐ **Why this first.** [`todo/PROGRESS.md`](todo/PROGRESS.md) is the only
 file carrying a work order, and the tracker is the only place another person's
 work in flight is visible. A session that skips either re-derives a plan that
 already exists or duplicates one somebody is halfway through.
@@ -60,10 +60,10 @@ already exists or duplicates one somebody is halfway through.
 ## 3. Do the next thing
 
 ```
-Take the first item in TODO/PROGRESS.md's work order and do it. Follow
+Take the first item in docs/todo/PROGRESS.md's work order and do it. Follow
 docs/conventions/. Close the entry in place with its acceptance command
-actually run and the output pasted in. Then rewrite TODO/PROGRESS.md and
-reconcile TODO/INDEX.md's counts.
+actually run and the output pasted in. Then rewrite docs/todo/PROGRESS.md and
+reconcile docs/todo/INDEX.md's counts.
 ```
 
 Or name your own:
@@ -142,14 +142,14 @@ because their patterns matched their own source.
 ## 8. Study another project
 
 ```
-Read HISTORY/references/ for what has already been swept, then follow the
+Read docs/history/references/ for what has already been swept, then follow the
 method at
 https://github.com/Azathothas/TEMPLATE/blob/main/docs/methodology/references.md
 
 Target: <owner/repo>
 
 ⛔ Capture the commit SHA before stripping anything. Cite every claim at a
-file. Anything actionable becomes a TODO entry, not a paragraph.
+file. Anything actionable becomes a docs/todo entry, not a paragraph.
 ```
 
 ---
@@ -174,9 +174,9 @@ request.
 ## 10. End the session
 
 ```
-Follow the close-out in TODO/RULES.md: both suites green with their skips
-named, closures written where the entries are, TODO/PROGRESS.md rewritten,
-TODO/INDEX.md counts reconciled. Then do the review passes required by
+Follow the close-out in docs/todo/RULES.md: both suites green with their skips
+named, closures written where the entries are, docs/todo/PROGRESS.md rewritten,
+docs/todo/INDEX.md counts reconciled. Then do the review passes required by
 docs/conventions/README.md and tell me, for each one, what it swept and what
 it found.
 ```
@@ -210,7 +210,7 @@ failing, which is intended and is not a degraded run.
 If an agent tells you something is not possible, ask what it measured. If the
 answer is "it follows from X", that is an inference, and this project has been
 wrong that way before, twice, both recorded in
-[`../HISTORY/traps.md`](../HISTORY/traps.md).
+[`history/traps.md`](history/traps.md).
 
 ⭐ **The agent follows [`conventions/`](conventions/README.md) mechanically.
 You do not have to.** If you write a script, a document or a workflow that

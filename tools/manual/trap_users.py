@@ -10,7 +10,7 @@ and does it import them WITH a version or without one?
 Why it matters
 --------------
 An unversioned reference does not get the default definition; it gets glibc's
-obsolete one (REPORT.md 6.2).  Three kinds of object have unversioned
+obsolete one (../../docs/report/06-goal-2-the-last-blocker.md 6.2).  Three kinds of object have unversioned
 references:
 
   * anything built against musl, which never had symbol versions,

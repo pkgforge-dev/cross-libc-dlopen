@@ -14,7 +14,7 @@
  *                                     body is `if (attr) return EINVAL;`
  *     pthread_cond_init@@GLIBC_2.3.2  the real one
  *
- * Measured (REPORT.md T3.2, E22): a stripped or musl-built object calling
+ * Measured (../docs/report/README.md T3.2, E22): a stripped or musl-built object calling
  * pthread_cond_init with an attribute gets EINVAL.  In Mesa that surfaces as
  * u_cnd_monotonic_init -> thrd_error -> wsi_display_init_wsi ->
  * VK_ERROR_OUT_OF_HOST_MEMORY -> vkEnumeratePhysicalDevices reports zero

@@ -830,7 +830,7 @@ static void rs_decide(struct rs_plan *p, const char *appdir) {
 		return;
 	}
 
-	/* --- the decision matrix (see REPORT.md) --- */
+	/* --- the decision matrix (see ../docs/report/README.md) --- */
 	if (hver <= bver && !(forced && !strcmp(forced, "host"))) {
 		snprintf(p->reason, sizeof(p->reason),
 		         "host glibc %s is not newer than bundled %s -- old host libraries "

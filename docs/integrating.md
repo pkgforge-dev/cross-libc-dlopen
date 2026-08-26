@@ -19,7 +19,7 @@ documents, the GL shims **ask**: they `dlsym` for
 
 Since the loader went lazy this handshake is belt-and-braces rather than
 load-bearing, because by the first GL call every constructor has long since
-run ([`REPORT.md`](REPORT.md) section 9.6). It costs nothing and it removes an
+run ([`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) section 9.6). It costs nothing and it removes an
 ordering question from every integration.
 
 ---
@@ -81,7 +81,7 @@ root and it stays accepted.
 ### An AppImage laid out by `quick-sharun`
 
 The hardest consumer, because it supplies its own loader. It is also the one
-every measured result in [`REPORT.md`](REPORT.md) was obtained through.
+every measured result in [`report/README.md`](report/README.md) was obtained through.
 
 Add the artefacts to the AppDir's `lib/` and name them in `.preload`:
 
@@ -107,7 +107,7 @@ changed it once: the demo AppImage this repository's suite pins shipped
 `lib/foreign-dlopen.so` and now ships `lib/cross-libc-dlopen.so`. Read the
 bundle's own `.preload` and use what is in it, which is what
 `experiments/41-extract.sh` does before `experiments/40-appimage.sh` touches
-anything. [`REPORT.md`](REPORT.md) 9.17.
+anything. [`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) 9.17.
 
 ⚠ **`SHARUN_FALLBACK_LIBRARY_PATH` is how the harness talks to THIS launcher**,
 not an interface of this project. It extends the library path sharun assembles,

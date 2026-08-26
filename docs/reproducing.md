@@ -18,7 +18,7 @@ or, on a machine with PowerShell and no POSIX shell:
 ```
 
 Every prediction must hold. ⭐ **The expected totals live in
-[`REPORT.md`](REPORT.md) and nowhere else**: one fact, one home, so a number
+[`report/README.md`](report/README.md) and nowhere else**: one fact, one home, so a number
 that moves moves in one file. Run this before every commit. A MISMATCH is a
 finding, not a harness bug: investigate before coding.
 
@@ -59,7 +59,7 @@ APPIMAGE: a real GTK4 application that bundles its own Mesa. `-Only` takes
 `alpine`, `debian`, `ubuntu1404`, `ubuntu1604`, `gtk4`, `both` or `all`.
 
 Each host has its own expected total and its own named skips.
-[`REPORT.md`](REPORT.md) section 8 carries all five, with the host each came from.
+[`report/08-test-results.md`](report/08-test-results.md) section 8 carries all five, with the host each came from.
 It downloads the demo AppImage once into `.tmp` (sha256 verified), extracts it
 inside a container because the payload is DwarFS, builds `src/` on the glibc
 2.31 **floor**, builds the musl half of the ABI probe on Alpine, and then runs
@@ -135,7 +135,7 @@ the only form of the claim that matches what was asked.
 `lib/cross-libc-dlopen.so` instead, so `experiments/41-extract.sh` reads the
 name out of the extracted AppDir and writes it to `AppDir/.cld-slot`. The
 commands below read that file rather than spelling either name, and so should
-yours. [`REPORT.md`](REPORT.md) 9.17.
+yours. [`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) 9.17.
 
 ### 3.4 Driving it by hand
 

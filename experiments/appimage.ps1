@@ -55,7 +55,7 @@ $Work = Join-Path $Repo '.tmp'
 # ⛔ THESE FOUR VALUES ARE A TWIN OF scripts/run-appimage.sh's x86_64 branch,
 # and check-drift.sh refuses when the two disagree. They diverged once, in the
 # change that re-pinned the shell suite and left this file refusing on the old
-# hash, and docs/reproducing.md points a reader here. docs/REPORT.md 9.15 has
+# hash, and docs/reproducing.md points a reader here. docs/report/09-the-second-boundary.md 9.15 has
 # the pin policy; do not edit one side alone.
 $Sha  = 'd77a01ebacb739392ca8c39f879dc5bc626283b0c01bd9dc12eecbea92dd34c1'
 $Url  = 'https://github.com/Samueru-sama/Anylinux-AppImages/releases/download/demo/vkcube+glxgears-host-drivers-demo-x86_64.AppImage'

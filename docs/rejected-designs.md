@@ -131,7 +131,7 @@ Until one of those is on the table there is nothing to justify it with.
 **Verdict: rejected. It solves the same problem with a harder interface, and
 the interface is private.**
 
-The OpenGL gap (REPORT.md 9) is that the AppImage bundles libglvnd's
+The OpenGL gap (report/09-the-second-boundary.md 9) is that the AppImage bundles libglvnd's
 `libGL.so.1`, a dispatcher that `dlopen`s a vendor library
 `libGLX_<vendor>.so.0`, and a host whose Mesa was built without glvnd ships no
 such file. Two repairs are available:
@@ -169,12 +169,12 @@ rejected for three reasons, in order of weight:
 The cost of (A), stated plainly because it is real: the shim must export
 everything the object it replaces exports, or an application that links a name
 outside the list fails with `undefined symbol`. For `libGL.so.1` that is the
-whole dispatcher. The count is in [`REPORT.md`](REPORT.md) 9, which is its one
+whole dispatcher. The count is in [`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) 9, which is its one
 home. It is only tolerable because the list is READ OUT of the bundled library
 rather than typed, and because `make gl-syms-check` fails the build if the two
 ever disagree. A hand-written subset is the failure mode, not the design: a
 measured subset of 33 renders `glxgears` and leaves `glGetIntegerv` an undefined
-symbol ([`REPORT.md`](REPORT.md) 9.3).
+symbol ([`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) 9.3).
 
 ### When to revisit
 

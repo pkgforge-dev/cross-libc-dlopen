@@ -1,6 +1,6 @@
 /* T1.3 to T1.7, host half: the AppImage's side of the boundary.
  *
- * REPORT.md carried these five as SKIPPED and UNVERIFIED for the whole project.
+ * ../docs/report/README.md carried these five as SKIPPED and UNVERIFIED for the whole project.
  * They mattered because a host driver built against a different libc might
  * share a struct, an allocation, an errno or a FILE with the process, and if
  * the two sides disagree about any of them the damage is silent. They were once
@@ -349,7 +349,7 @@ int main(int argc, char **argv) {
 		 *
 		 * ⚠ It does not go through ok(). A hazard is not a failed check: it is
 		 * a thing no loader can fix, which is what E50 counts and what section
-		 * 11 of docs/REPORT.md is a list of. */
+		 * 11 of docs/report/README.md is a list of. */
 		if (gv.sz_pthread_mutex_t != hv.sz_pthread_mutex_t) {
 			printf("    %-4s %-36s host=%llu guest=%llu\n", "DIFF",
 			       "a mutex the guest allocates and inits",

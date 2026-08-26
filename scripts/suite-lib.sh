@@ -129,7 +129,7 @@ upstream_digest() {                    # upstream_digest <owner/repo> <tag> <ass
 # the asset had already been replaced before the run started, and every asset
 # on that release was replaced AGAIN at 08:32:37Z, 56 seconds after the run
 # ended. The upstream tag is `demo` and it is mutable, so this recurs by
-# design. docs/REPORT.md 9.15.
+# design. docs/report/09-the-second-boundary.md 9.15.
 fetch_verified() {                     # fetch_verified <url> <dest> <sha256> <label> [repo tag asset]
 	_url=$1; _dst=$2; _want=$3; _label=$4
 	_repo=${5:-}; _tag=${6:-}; _asset=${7:-}
@@ -161,7 +161,7 @@ fetch_verified() {                     # fetch_verified <url> <dest> <sha256> <l
 		_why="UPSTREAM RE-UPLOADED IT. What arrived is exactly what the release
       publishes today, so the pin is older than the asset and nothing is wrong
       with the download. ⛔ Re-pinning is a deliberate, reviewed act and not a
-      way to make this green: read docs/REPORT.md 9.15 before you do it."
+      way to make this green: read docs/report/09-the-second-boundary.md 9.15 before you do it."
 	elif [ "$_pub" = "$_want" ]; then
 		_why="⛔ THE DOWNLOAD IS WRONG, NOT THE PIN. The release still publishes
       the pinned digest, so these bytes were truncated, cached wrong, or

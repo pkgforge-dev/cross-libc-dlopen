@@ -2,7 +2,7 @@
 
 Eight limits were named as open. Seven closed, each with a record of what
 was measured to close it; the eighth is blocked by hardware and lives in
-[`TODO/blocked.md`](../TODO/blocked.md).
+[`docs/todo/blocked.md`](../todo/blocked.md).
 
 *Moved verbatim from `CONTINUE.md` when that file was dissolved into the
 work record. The wording is the original: a trap written down in one
@@ -57,7 +57,7 @@ evidence just publishes the gap.
 
 > *That port has since happened, and `PORTING.md` was consumed by it: the file
 > named above no longer exists. Everything it asked for is either in the tree
-> or is an entry in [`TODO/`](../TODO/INDEX.md).*
+> or is an entry in [`docs/todo/`](../todo/INDEX.md).*
 
 ### 4.0.1 Closure records
 
@@ -140,7 +140,7 @@ variation looks like at this scale, not an improvement. Eager costs **29 MB and
 0.12 s** over lazy, which is the host Mesa closure being mapped and is the
 figure this section used to record as the price of the default.
 
-REPORT.md 9.9 has the same table beside the `/proc/self/maps` measurement,
+../report/09-the-second-boundary.md 9.9 has the same table beside the `/proc/self/maps` measurement,
 because a clock says how long and only the maps say what loaded.
 
 #### B1 -- and the answer to the question the row could not ask
@@ -382,7 +382,7 @@ sharun assembles, and adding an entry treats the symptom. Section 7 says the
 same thing -- gl-fwd's list is "the one deliberate exception, and it is
 bounded... it must not grow into one".
 
-So the list is now **derived**. [`src/ld-conf.h`](../src/ld-conf.h) is one walk of
+So the list is now **derived**. [`src/ld-conf.h`](../../src/ld-conf.h) is one walk of
 `/etc/ld.so.conf`, shared by `gl-fwd.c` and `runtime-select.c` so there is one
 parser rather than two, and the shim looks in this order:
 
@@ -433,6 +433,6 @@ musl-built object, which never had version information at all. That is why the
 same failure showed up on Alpine, on Gentoo with a glibc `radv`, and on Debian
 once the ICD manifest named an absolute path.
 
-The fix is [`src/version-compat.c`](../src/version-compat.c) plus
-[`tools/version_traps.py`](../tools/version_traps.py); REPORT.md 6.2 has the whole
+The fix is [`src/version-compat.c`](../../src/version-compat.c) plus
+[`tools/version_traps.py`](../../tools/version_traps.py); ../report/06-goal-2-the-last-blocker.md 6.2 has the whole
 chain with the commands.

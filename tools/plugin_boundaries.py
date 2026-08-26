@@ -192,7 +192,7 @@ def main():
           f'   unmeasured {len(unmeasured)}   UNCLASSIFIED {len(unknown)}')
     if unmeasured:
         print('\nThe unmeasured ones are the shape the OpenGL boundary was, and '
-              'none of them is a libc problem. Named, not fixed: REPORT.md 9.10.')
+              'none of them is a libc problem. Named, not fixed: ../docs/report/09-the-second-boundary.md 9.10.')
     if unknown:
         print('\nUNCLASSIFIED: ' + ', '.join(unknown))
         print('Add each to KNOWN in this file once you have measured what it '

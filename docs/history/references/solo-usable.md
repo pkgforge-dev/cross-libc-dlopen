@@ -59,7 +59,7 @@ reachable this way. solo supplies the whole libc and knows which side every call
 came from; a `dlopen` interposer does not, and guessing wrong translates a call
 that did not need it. Interpose only where the direction is unambiguous.
 
-Work: [`TODO/measurement.md`](../../TODO/measurement.md) T-06.
+Work: [`docs/todo/measurement.md`](../../todo/measurement.md) T-06.
 
 ---
 
@@ -84,7 +84,7 @@ The file is checked in and CI re-runs the generator (`abi_diff` step in
 `.github/workflows/ci.yml`, `ubuntu-clang` job), so a libc update that moves an
 offset shows up as a diff on a tracked file rather than as a bug months later.
 
-Work: [`TODO/measurement.md`](../../TODO/measurement.md) T-04.
+Work: [`docs/todo/measurement.md`](../../todo/measurement.md) T-04.
 
 ---
 
@@ -113,7 +113,7 @@ entries; aarch64 **1172**) and a `snapshot`, pinned in CI by
 `hashFiles('tst/corpus_x86_64.json', 'build.py')` so the corpus is cached and
 reproducible.
 
-Work: [`TODO/infrastructure.md`](../../TODO/infrastructure.md) T-15.
+Work: [`docs/todo/infrastructure.md`](../../todo/infrastructure.md) T-15.
 
 ---
 
@@ -151,7 +151,7 @@ echo "9abbdcc0...  nixos.png" | sha256sum -c
 2. **Assert the frame by hash, with the environment stripped.** `glprobe` reads
    one pixel back. A whole-image hash is strictly stronger and costs nothing.
 
-Work: [`TODO/infrastructure.md`](../../TODO/infrastructure.md) T-16.
+Work: [`docs/todo/infrastructure.md`](../../todo/infrastructure.md) T-16.
 
 ---
 
@@ -161,7 +161,7 @@ Work: [`TODO/infrastructure.md`](../../TODO/infrastructure.md) T-16.
 
 | solo does | why it does not transfer |
 |---|---|
-| replaces the dynamic loader (`lib/elf_loader.cpp`) | solo owns the process image. This project is a guest in somebody else's, where replacing the loader means replacing the host's. Refused with a measurement in [`docs/rejected-designs.md`](../../docs/rejected-designs.md) |
+| replaces the dynamic loader (`lib/elf_loader.cpp`) | solo owns the process image. This project is a guest in somebody else's, where replacing the loader means replacing the host's. Refused with a measurement in [`docs/rejected-designs.md`](../../rejected-designs.md) |
 | hand-maintains a 5948-line bridge | this project's shim is **generated** from measured symbol inventories. Different maintenance model, deliberately: solo's is auditable line by line, this one cannot drift from the inventory it was generated against. ⚠ Neither is better outright -- see the comparison in `README.md` |
 | bundles the entire libc | the whole premise here is *not* bundling a second libc |
 | an `AT_EXECFN` bootstrap | needs to own the executable. A preload does not |

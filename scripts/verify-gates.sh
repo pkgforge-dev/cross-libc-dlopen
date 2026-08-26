@@ -92,10 +92,13 @@ g_attrib() {
 	git grep -nIiE "generated with \[?($tool)" -- . && f=1
 	return $f
 }
+# ⚠ docs/report/ collapses to one home, because it is one document split by
+# section. Kept identical to the gates.yml step, including that.
 g_onehome() {
 	f=0
 	for n in 3470 358 53/53 50/50 45/45 40/40 26/26; do
-		c=$(git grep -lF "$n" -- '*.md' ':(exclude)HISTORY/*' | wc -l)
+		c=$(git grep -lF "$n" -- '*.md' ':(exclude)docs/history/*' |
+		    sed 's|^docs/report/.*|docs/report/|' | sort -u | wc -l)
 		[ "$c" -gt 1 ] && f=1
 	done
 	return $f
@@ -209,5 +212,5 @@ echo "     - the endings gate. .gitattributes normalises a CRLF file on the way"
 echo "       into the index, so the defect cannot be planted from this side."
 echo "     - anything that needs a runner: the build matrix, the artefact"
 echo "       verifier's floor rule, and the generated-table checks."
-echo "       TODO/infrastructure.md T-10 is where those are tracked."
+echo "       docs/todo/infrastructure.md T-10 is where those are tracked."
 [ "$bad" -eq 0 ]

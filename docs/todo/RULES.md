@@ -2,23 +2,23 @@
 
 ⛔ **This file owns one thing: the life of an entry in this directory.** How the
 code is written, how a document is written, and what may be pushed are owned by
-[`../docs/conventions/`](../docs/conventions/README.md), and this page does not
+[`../conventions/`](../conventions/README.md), and this page does not
 restate them.
 
 ⚠ It used to restate them, at length. Three of its sections were near-verbatim
-copies of [`../docs/conventions/git.md`](../docs/conventions/git.md), and a
+copies of [`../conventions/git.md`](../conventions/git.md), and a
 reader had no way to tell which copy was authoritative when the two drifted.
 The implementation invariants it carried now live in
-[`../docs/conventions/code.md`](../docs/conventions/code.md), beside the rest of
+[`../conventions/code.md`](../conventions/code.md), beside the rest of
 what governs `src/`.
 
 | what you need | where it lives |
 |---|---|
-| the invariants a change to `src/` must not break | [`code.md`](../docs/conventions/code.md) |
-| attribution, branches, pushing, the tracker | [`git.md`](../docs/conventions/git.md) |
-| how a document is written | [`prose.md`](../docs/conventions/prose.md) |
-| which documents exist and what each owns | [`docs.md`](../docs/conventions/docs.md) |
-| mistakes that shipped, each with what it caused | [`forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md) |
+| the invariants a change to `src/` must not break | [`code.md`](../conventions/code.md) |
+| attribution, branches, pushing, the tracker | [`git.md`](../conventions/git.md) |
+| how a document is written | [`prose.md`](../conventions/prose.md) |
+| which documents exist and what each owns | [`docs.md`](../conventions/docs.md) |
+| mistakes that shipped, each with what it caused | [`forbidden-patterns.md`](../conventions/forbidden-patterns.md) |
 
 ---
 
@@ -49,7 +49,7 @@ been referred to everywhere else.
 
 1. **Both suites green, with their skips named.**
    `sh scripts/run-evidence.sh` and `sh scripts/run-appimage.sh`. The expected
-   totals are in [`../docs/REPORT.md`](../docs/REPORT.md) section 8.
+   totals are in [`../report/08-test-results.md`](../report/08-test-results.md) section 8.
 2. **Write the closure where the entry is**, per the rule above.
 3. **Rewrite [`PROGRESS.md`](PROGRESS.md)** so the next reader does not redo
    what you did. ⭐ It is the only file written FOR the next session rather than
@@ -62,5 +62,5 @@ been referred to everywhere else.
    count, it lives in one file by design: `git grep` for it and confirm it
    still does.
 6. **Two deep reviews**, asking different questions.
-   [`../docs/conventions/README.md`](../docs/conventions/README.md) has what
+   [`../conventions/README.md`](../conventions/README.md) has what
    each pass must state before it runs and report after.
