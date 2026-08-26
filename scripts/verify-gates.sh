@@ -39,6 +39,29 @@ plant() {                              # plant <path> <content>
 	git add -f "$1" >/dev/null 2>&1
 }
 
+# ⛔ AN EXEMPTION IS A CLAIM AND IT NEEDS PROVING TOO. check() asserts that a
+# plant makes the gate refuse. This asserts the opposite: the gate stays green
+# with the content present, which is what an exemption means. Without it an
+# exemption could quietly stop applying and nothing would say so, and the two
+# checks here would become unwritable at the same moment.
+check_exempt() {                       # check_exempt <name> <gate-fn> <path> <content>
+	name=$1; fn=$2; path=$3; body=$4
+	"$fn" >/dev/null 2>&1; clean=$?
+	plant "$path" "$body"
+	"$fn" >/dev/null 2>&1; dirty=$?
+	cleanup
+	if [ "$clean" -eq 0 ] && [ "$dirty" -eq 0 ]; then
+		printf '  ok    clean=0 exempt=0    %s\n' "$name"
+		pass=$((pass + 1))
+	elif [ "$clean" -ne 0 ]; then
+		printf '  STUCK clean=%-2s            %s   <-- refuses a CLEAN tree\n' "$clean" "$name"
+		bad=$((bad + 1))
+	else
+		printf '  LOST  clean=0 exempt=%-2s   %s   <-- the exemption stopped applying\n' "$dirty" "$name"
+		bad=$((bad + 1))
+	fi
+}
+
 check() {                              # check <name> <gate-fn> <path> <content>
 	name=$1; fn=$2; path=$3; body=$4
 	"$fn" >/dev/null 2>&1; clean=$?
@@ -93,10 +116,12 @@ g_endings() {
 	[ -z "$(git ls-files --eol | grep -v 'i/lf' | grep -v 'i/-text')" ]
 }
 
-# ⛔ NOT RESTATED. gates.yml runs this one as `sh scripts/check-drift.sh`, so
-# the body here is that same call rather than a copy of its four sections: a
-# copy is a second thing to keep in step, and the first one to drift.
+# ⛔ NOT RESTATED. gates.yml runs these as `sh scripts/check-drift.sh` and
+# `sh scripts/check-charset.sh`, so the bodies here are those same calls rather
+# than copies of their sections: a copy is a second thing to keep in step, and
+# the first one to drift.
 g_drift() { sh scripts/check-drift.sh; }
+g_charset() { sh scripts/check-charset.sh; }
 
 echo "== each gate, against a clean tree and against its own defect =="
 
@@ -105,6 +130,12 @@ echo "== each gate, against a clean tree and against its own defect =="
 # THIS file, and every one of them would then refuse a clean tree, which is
 # precisely the defect this script exists to catch, reproduced one level up.
 # It happened on the first run of this script.
+# ⚠ THE DASH AND THE CHARACTER ARE ASSEMBLED TOO, for the same reason as the
+# names below: written plainly they would make THIS file a violation of the two
+# checks it is proving, and both would then refuse a clean tree.
+DASH2="-""- "
+DASH1="-""-"
+SECTION=$(printf '\302\247')
 OLD_REPO="dlopen""-experiment"
 OLD_REPO_US="dlopen""_experiment"
 TOOLNAME="Clau""de"
@@ -123,10 +154,29 @@ check "every headline number has one home" g_onehome docs/_gate_probe.md \
 # ⛔ THIS CHECK EXISTS BECAUSE THE RATCHET DID NOT REFUSE. It was written as a
 # budget with a hardcoded number and a printed suggestion that the next reader
 # lower it. Nobody did, the tree drifted eight under, and a planted dash then
-# landed inside the slack and passed. Proving it by hand once proves it on the
-# day; this proves it on every run. scripts/check-drift.sh section 4.
-check "the dash ratchet refuses a new dash" g_drift docs/_gate_probe.md \
-	'A sentence -- with a dash.'
+# landed inside the slack and passed. It carries no number now, and proving
+# that by hand once proves it on the day; this proves it on every run.
+# scripts/check-drift.sh section 4.
+check "a dash used as punctuation is refused" g_drift docs/_gate_probe.md \
+	"A sentence ${DASH2}with a dash."
+# ⚠ THE WRAPPED FORM IS A SEPARATE CASE. The check matched only a dash with a
+# space after it, so a paragraph breaking straight after the dash was invisible
+# to it for the whole life of the ratchet. 17 were in the tree when that was
+# found, one of them in docs/conventions/git.md.
+check "  the same, wrapping at end of line" g_drift docs/_gate_probe.md \
+	"A sentence ending ${DASH1}
+and continuing here."
+check "a banned character is refused" g_charset docs/_gate_probe.md \
+	"A planted section sign ${SECTION} in running prose."
+
+# ⛔ AND THE RULE MUST STAY WRITABLE. A dash or a character inside a code span
+# is being NAMED, not used. Without these two exemptions the page that states
+# each rule cannot show what it bans, and this file cannot record the plants
+# above. docs/conventions/prose.md depends on both.
+check_exempt "  a dash in a code span is a specimen" g_drift docs/_gate_probe.md \
+	"The rule bans \`${DASH2}\` and names its replacement."
+check_exempt "  a character in a code span is a specimen" g_charset docs/_gate_probe.md \
+	"The rule bans \`${SECTION}\` and names its replacement."
 check "shell scripts parse" g_parse scripts/_gate_probe.sh \
 	'if [ 1 ; then'
 
