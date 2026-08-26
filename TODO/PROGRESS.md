@@ -42,9 +42,14 @@ Upstream adopted this project. The demo AppImage's `lib/foreign-dlopen.so` is
 gone, `lib/cross-libc-dlopen.so` is in its place, and it is a build of this
 project. So the "as shipped" arm of the A/B is no longer upstream's naive shim.
 
-E30 and E37a are the controls that predict that arm FAILS, and they are what
-make the patched arm a measurement rather than a coincidence. Both now
-MISMATCH, because both arms work. `docs/REPORT.md` 9.17 has the output.
+E30 and E37a are the controls for that arm, and they are what make the patched
+arm a measurement rather than a coincidence. Both now MISMATCH, because both
+arms work. `docs/REPORT.md` 9.17 has the output.
+
+⚠ **Their log lines say `predicted=OK` and that is about the exit status, not
+the verdict.** What they assert is the needle, and the needle is the complaint:
+`NO-DEVICES` for E30 and `zero accessible devices` for E37a. A MISMATCH there
+means the as-shipped arm found a device.
 
 ⛔ **Do not flip the predictions.** A control that has stopped contrasting has
 stopped measuring, and rewriting it to expect success converts two controls
@@ -55,19 +60,22 @@ dispatcher in `.preload`, not one carrying somebody else's. Adopting that
 changes what the suite claims about upstream, which is why it was left for a
 decision rather than taken.
 
-### 2. E49 and E50 on aarch64
+### 2. E50's aarch64 hazard count, which is now measurable and unmeasured
 
-**E49** goes MISMATCH on every aarch64 host stage. Its cause was unreadable
-until this session gave `experiments/40-appimage.sh` the full-output dump that
-`30-run-tests.sh` has had since T-13 closed. ⭐ The next completed aarch64 run
-prints the whole output; read it before touching anything.
+**E49 is diagnosed and fixed.** It aborted with SIGABRT on every aarch64 host
+stage, and the cause is a real limitation rather than a harness fault: musl's
+`pthread_mutex_t` is 40 bytes on aarch64 and glibc's is 48, so a musl object
+that allocates one with its own `sizeof` and calls `pthread_mutex_init` gets
+glibc's init writing 48 bytes into 40. ⚠ No crossing is involved. The probe
+declines that call now and reports it as a live hazard. `docs/REPORT.md` 9.18
+and section 11.
 
-**E50** requires exactly two live musl-against-glibc ABI hazards and aarch64
-measures zero. That would be a real architectural difference worth recording.
-⛔ It is NOT recorded as one, because E49 failed in the same stage and a hazard
-count taken from a crossing that did not happen measures nothing. Fix E49
-first, then decide whether E50's assertion should become architecture-aware
-the way E22's condvar probe is.
+**E50 is the open half.** It requires exactly **two** live hazards, that is an
+x86-64 number, and aarch64's is not established. ⛔ Its earlier zero was never
+a finding: the count came from a process that had already aborted. With the
+guard in place the scan completes, so the next run states a real number.
+⭐ Take that number and decide whether the assertion should become
+architecture-aware the way E22's condvar probe is. **Do not pin a guess.**
 
 ### 3. The pin is a maintained act now. Expect it to go stale again
 
@@ -84,12 +92,18 @@ demo AppImage comes from Samueru-sama's fork and **cannot move**, because
 `host-drivers` appears 0 times in the upstream's code and its
 `vkcube+glxgears-demo-*` is the build that bundles its own drivers.
 
-### 4. T-12's table, which is one run away
+### 4. T-12 is answered for one half and unanswerable for the other
 
-`experiments/40-appimage.sh` now reports the per-case wall time it has been
-recording all along. ⭐ Take the numbers from the next completed run on BOTH
-runners and write the measured-versus-configured table into T-12's entry.
-⛔ Raise a timeout that is close, never shorten it.
+The table is in T-12's entry, both runners. ⭐ Every case that ends on its own
+is far under its timeout: the slowest is 11 seconds against a 25-second floor
+and the rest are at or below one second. The fear the entry was opened on is
+not in the data.
+
+⚠ **E61 and E62 measure 30 against a configured 30, and that is not a margin
+of zero.** A GL binary never exits on its own, so the timeout is how those two
+END. ⛔ Do not raise them on that reading. What stays open is that the
+instrumentation cannot tell "ran to its timeout on purpose" from "was killed
+before finishing", because both look identical.
 
 ### 5. T-10, T-11, T-16
 
@@ -156,7 +170,17 @@ meant re-pinning against a mutable tag, moving `gtk4-demo` to the true
 upstream, and teaching the suite to read the dispatcher slot out of the AppDir
 rather than spelling it.
 
+⭐ **And completing it found a real limitation nothing else could have.** On
+aarch64 a musl object cannot allocate and initialise its own `pthread_mutex_t`
+in a glibc process: 40 bytes allocated, 48 written, no crossing involved. It
+needed real ARM silicon, three chained reporting defects fixed before it was
+even legible, and one wrong fix before the right one. `docs/REPORT.md` 9.18.
+
 **`tests/bindprobe.c` builds on aarch64.**
+
+**T-12 answered**, and **T-10's entry now says which gates have been seen to
+refuse and where**, including four that were never planted because they went
+red on a runner against a real defect.
 
 ---
 
