@@ -2,7 +2,8 @@
 # Stage 1 -- runs in Alpine (musl). Produces a faithful musl-linked probe library.
 # Faithful matters: Debian's musl-gcc emits NEEDED "libc.so", which collides with
 # glibc's linker script of the same name. Only a real Alpine build gives us
-# NEEDED "libc.musl-x86_64.so.1", which is what a host driver on Alpine looks like.
+# NEEDED "libc.musl-x86_64.so.1" on x86-64 and "libc.musl-aarch64.so.1" on
+# aarch64, which is what a host driver on Alpine looks like.
 set -eu
 apk add --no-cache gcc musl-dev binutils >/dev/null 2>&1
 cd /work

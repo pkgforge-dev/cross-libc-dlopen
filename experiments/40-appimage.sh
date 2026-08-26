@@ -15,7 +15,18 @@ set -u
 
 APPDIR=/w/AppDir
 LP="$APPDIR/lib"
-LD="$LP/ld-linux-x86-64.so.2"
+# ⚠ The bundled loader's name and musl's soname carry the architecture.
+# Derived from uname -m, the same way scripts/suite-lib.sh derives the asset
+# suffix, so this stage runs on the aarch64 AppImage as well as the x86-64 one.
+# ⛔ $MUSL_SO is both an emitter and a MATCHER here: E48's needle is the musl
+# soname the bundled ld.so fails to find, so the two move together or E48 stops
+# asserting what it was written to assert.
+case "$(uname -m)" in
+    x86_64)  LDSO=ld-linux-x86-64.so.2 ; MUSL_SO=libc.musl-x86_64.so.1  ;;
+    aarch64) LDSO=ld-linux-aarch64.so.1; MUSL_SO=libc.musl-aarch64.so.1 ;;
+    *) echo "  FATAL: no loader and musl soname known for $(uname -m)"; exit 1 ;;
+esac
+LD="$LP/$LDSO"
 export APPDIR
 export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/tmp/xdg}
 mkdir -p "$XDG_RUNTIME_DIR"
@@ -233,7 +244,7 @@ else
         *)  ABS=no; LVP=$(ls /usr/lib/"$LVP" /usr/lib/*/"$LVP" 2>/dev/null | head -1) ;;
     esac
 fi
-HOSTLIBC=musl; [ -e /lib/libc.musl-x86_64.so.1 ] || HOSTLIBC=glibc
+HOSTLIBC=musl; [ -e "/lib/$MUSL_SO" ] || HOSTLIBC=glibc
 
 # Everything a Vulkan device is needed for. Named once so a host that cannot
 # provide one produces one reason repeated, rather than a different guess per
@@ -578,9 +589,12 @@ else
         skip E49 "depends on E48"; skip E50 "depends on E48"
     else
         # E48: the control that FAILS. With the feature off the bundled ld.so
-        # goes looking for libc.musl-x86_64.so.1 and does not find it, which is
-        # what makes E49 a measurement rather than a coincidence.
-        run E48 FAIL "libc.musl-x86_64.so.1" under 0 /w/build/abi-host \
+        # goes looking for musl's soname and does not find it, which is what
+        # makes E49 a measurement rather than a coincidence. ⛔ The needle is
+        # $MUSL_SO, not a literal: the guest is built on Alpine for THIS
+        # architecture, so on aarch64 the name it fails to find is
+        # libc.musl-aarch64.so.1 and a hardcoded needle would never match.
+        run E48 FAIL "$MUSL_SO" under 0 /w/build/abi-host \
             /w/build/libabi_musl.so musl
         # E49: and with it on, every crossing holds -- allocator, errno, FILE*,
         # mutex and condvar -- with one libc in the process.

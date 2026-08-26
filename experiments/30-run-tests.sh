@@ -13,6 +13,31 @@ apt-get install -y -qq --no-install-recommends \
     gcc-aarch64-linux-gnu libc6-dev-arm64-cross qemu-user-static >/dev/null 2>&1
 cd /work
 
+# ⚠ The same three architecture-carrying names stage 2 derives, derived the
+# same way, because this stage is the MATCHER for what stage 2 emits: it runs
+# /work/newglibc/<loader> and copies out of the multiarch directory. The two
+# must agree, or the assertion is no longer the one that was written.
+#
+# CET is the fourth. -fcf-protection=full is x86-only, and on aarch64 gcc it
+# is a hard error rather than a warning, so the four helper builds in sections
+# M and N would not compile at all -- and a helper that does not build reports
+# itself as "./tramp2: No such file or directory", which names the wrong thing
+# entirely. It buys endbr64 on x86-64 and there is no endbr64 on aarch64, so
+# dropping it there removes nothing that was being measured.
+# ⚠ $CET is deliberately unquoted below: it is one word or none, and "" would
+# hand gcc an empty argument.
+case "$(uname -m)" in
+    x86_64)
+        LDSO=ld-linux-x86-64.so.2 ; TRIPLET=x86_64-linux-gnu
+        LIBDIR2=/lib64            ; CET=-fcf-protection=full ;;
+    aarch64)
+        LDSO=ld-linux-aarch64.so.1; TRIPLET=aarch64-linux-gnu
+        LIBDIR2=/lib              ; CET= ;;
+    *)
+        echo "stage 3: no loader and triplet known for $(uname -m)" >&2
+        exit 1 ;;
+esac
+
 BASE_GLIBC=$(ldd --version | head -1 | grep -oE '[0-9]+\.[0-9]+$')
 PASS=0; FAIL=0
 
@@ -156,10 +181,10 @@ echo "-- E. exec-time whole-runtime switch: the answer for symbols we cannot pre
 printf '#include <stdio.h>\nint main(void){puts("hello from switched runtime");return 0;}\n' > h.c
 gcc -O2 h.c -o h
 run E10 OK "hello from switched runtime" \
-    /work/newglibc/ld-linux-x86-64.so.2 --library-path /work/newglibc ./h
+    /work/newglibc/$LDSO --library-path /work/newglibc ./h
 
 echo "  E11    (informational) mixing an OLD libdl with a NEW libc:"
-/work/newglibc/ld-linux-x86-64.so.2 --library-path /work/newglibc:/lib/x86_64-linux-gnu \
+/work/newglibc/$LDSO --library-path /work/newglibc:/lib/$TRIPLET \
     ./loader /work/libnew.so newlib_answer >/dev/null 2>&1
 echo "         exit=$?  (139 = SIGSEGV: the runtime set must be switched WHOLE)"
 
@@ -167,7 +192,7 @@ echo "         exit=$?  (139 = SIGSEGV: the runtime set must be switched WHOLE)"
 # You do not shim it. You run under the host's own runtime, so the symbol resolves natively.
 # Note NO shim is preloaded here -- contrast with E5.
 run E12 OK "newlib_answer()=99" \
-    /work/hostrt/ld-linux-x86-64.so.2 --library-path /work/hostrt ./loader /work/libnew.so newlib_answer
+    /work/hostrt/$LDSO --library-path /work/hostrt ./loader /work/libnew.so newlib_answer
 
 echo
 echo "-- F. library search path: --library-path vs /etc/ld.so.cache ---"
@@ -187,8 +212,8 @@ int main(void){ void *h = dlopen("libfoo.so.1", RTLD_NOW);
     int (*f)(void) = dlsym(h,"foo_answer"); printf("OK: %d\n", f?f():-1); return 0; }
 CEOF
 gcc -O2 byname.c -o byname -ldl
-LD=/lib64/ld-linux-x86-64.so.2
-SHARUN_LIKE="/work:/usr/lib:/lib:/usr/lib64:/lib64:/usr/lib/x86_64-linux-gnu"   # no /usr/local/lib
+LD=$LIBDIR2/$LDSO
+SHARUN_LIKE="/work:/usr/lib:/lib:/usr/lib64:/lib64:/usr/lib/$TRIPLET"   # no /usr/local/lib
 
 run E13a OK   "OK: 55" $LD --library-path "$SHARUN_LIKE" ./byname
 run E13b FAIL "cannot open shared object file" $LD --library-path "$SHARUN_LIKE" --inhibit-cache ./byname
@@ -211,7 +236,7 @@ else
     # exercise the shipped predicates rather than a model of them.
     gcc -O2 -Wno-format-truncation /repo/tests/elf-selftest.c \
         -o elf-selftest -ldl 2>/dev/null
-    run E14 OK "ELF SELFTEST PASSED" ./elf-selftest /lib/x86_64-linux-gnu/libz.so.1
+    run E14 OK "ELF SELFTEST PASSED" ./elf-selftest /lib/$TRIPLET/libz.so.1
 
     # ---- Design B: the GENERATED shim ----
     # Generated here, in the container, for THIS process's glibc 2.31 floor --
@@ -253,9 +278,9 @@ else
     rm -rf app_old && mkdir -p app_old/lib
     for f in libc.so.6 libm.so.6 libdl.so.2 libpthread.so.0 librt.so.1 \
              libutil.so.1 libanl.so.1 libresolv.so.2; do
-        cp -L "/lib/x86_64-linux-gnu/$f" app_old/lib/ 2>/dev/null || true
+        cp -L "/lib/$TRIPLET/$f" app_old/lib/ 2>/dev/null || true
     done
-    cp -L /lib64/ld-linux-x86-64.so.2 app_old/lib/ 2>/dev/null || true
+    cp -L "$LIBDIR2/$LDSO" app_old/lib/ 2>/dev/null || true
     run E18 OK "runtime      : bundled" env APPDIR="$PWD/app_old" ./runtime-select --probe
 
     # E19: the override is real. Forcing bundled must be honoured verbatim.
@@ -272,7 +297,7 @@ else
     rm -rf mixedhost && mkdir -p mixedhost
     cp -L /work/hostrt/* mixedhost/ 2>/dev/null
     for f in libdl.so.2 libpthread.so.0 librt.so.1 libutil.so.1; do
-        cp -L "/lib/x86_64-linux-gnu/$f" mixedhost/ 2>/dev/null || true
+        cp -L "/lib/$TRIPLET/$f" mixedhost/ 2>/dev/null || true
     done
     run E20 OK "NOT internally consistent" \
         env APPDIR="$PWD/app_old" ./runtime-select --probe --host-dir "$PWD/mixedhost"
@@ -331,7 +356,7 @@ else
     # E26: the audit. A future glibc must not be able to add a trap that
     #      version-compat.c neither forwards nor explicitly declines.
     run E26 OK "every trap in this libc is forwarded" \
-        python3 /repo/tools/version_traps.py /lib/x86_64-linux-gnu/libc.so.6 \
+        python3 /repo/tools/version_traps.py /lib/$TRIPLET/libc.so.6 \
                 --check /repo/src/version-compat.c --quiet
 
     # ---- I. the failure report says the right thing ----------------------
@@ -515,7 +540,7 @@ int main(void) {
 }
 CEOF
 gcc -shared -fPIC -O2 tgt.c -o libtgt.so -Wl,-soname,libtgt.so
-gcc -O2 -fcf-protection=full tramp.c -o tramp -ldl
+gcc -O2 $CET tramp.c -o tramp -ldl
 # E58: eight integer registers, nine float registers, a varargs call whose %al
 #      carries the float count, and a struct returned through hidden memory --
 #      all through a jump that knows none of their shapes.
@@ -547,7 +572,7 @@ CEOF
 # t_absent is in the table and NOT in libtgt.so, which is the 1097-entry-point
 # case in miniature: a name the shim must export and the host cannot provide.
 cp /repo/src/gl-fwd.c /repo/src/ld-conf.h /repo/src/cld-env.h .
-gcc -shared -fPIC -O2 -Wall -Wextra -Wno-format-truncation -fcf-protection=full \
+gcc -shared -fPIC -O2 -Wall -Wextra -Wno-format-truncation $CET \
     -DGLFWD_TABLE='"tgt-fwd.h"' -DGLFWD_TAG='"tgt-fwd.so"' \
     -DGLFWD_GETPROC='"t_getproc"' \
     -Wl,-soname,libtgt.so gl-fwd.c -o tgt-fwd.so -ldl 2>/dev/null
@@ -612,8 +637,8 @@ CEOF
 # t_absent exists only in the shim, so this is also the only thing that links.
 # --no-as-needed because mapped.c with no argument references nothing, and the
 # default would drop the DT_NEEDED that the case is about.
-gcc -O2 -fcf-protection=full tramp2.c -o tramp2 ./tgt-fwd.so -Wl,-rpath,"$PWD"
-gcc -O2 -fcf-protection=full mapped.c -o mapped ./tgt-fwd.so -Wl,--no-as-needed \
+gcc -O2 $CET tramp2.c -o tramp2 ./tgt-fwd.so -Wl,-rpath,"$PWD"
+gcc -O2 $CET mapped.c -o mapped ./tgt-fwd.so -Wl,--no-as-needed \
     -Wl,-rpath,"$PWD"
 
 # The shim owns libtgt.so's soname, so the ONE name it is allowed to resolve
