@@ -71,12 +71,12 @@ The same source file, built with three different tables, is three shims:
 
 | built as | SONAME | table | entry points |
 |---|---|---|---|
-| `gl-fwd.so` | `libGL.so.1` | `gl-fwd-gl.h` | see [`REPORT.md`](REPORT.md) section 9 |
+| `gl-fwd.so` | `libGL.so.1` | `gl-fwd-gl.h` | see [`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) section 9 |
 | `egl-fwd.so` | `libEGL.so.1` | `gl-fwd-egl.h` | " |
 | `gles-fwd.so` | `libGLESv2.so.2` | `gl-fwd-gles2.h` | " |
 
 ⭐ **One fact, one home.** Every entry-point count and every suite total lives
-in [`REPORT.md`](REPORT.md) and is pointed at from everywhere else. A number
+in [`report/README.md`](report/README.md) and is pointed at from everywhere else. A number
 that appears in two documents disagrees with itself within a month, and the
 reader has no way to tell which one is stale.
 

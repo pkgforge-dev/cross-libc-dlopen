@@ -32,7 +32,7 @@ resolves to 0 and the bug is latent.
 
 Note that this is the union over the **Mesa and LLVM closure**. Over the whole
 Alpine `/usr/lib` one more musl-only symbol is load-bearing: `issetugid`, which
-blocks `libX11.so.6` and `libdbus-1.so.3`. See REPORT.md section 5.3.
+blocks `libX11.so.6` and `libdbus-1.so.3`. See [`report/05-design-b-generated-shim.md`](report/05-design-b-generated-shim.md) section 5.3.
 
 ---
 
@@ -48,7 +48,7 @@ mutable tag and the asset was replaced. The hash above is left as written
 because it names the binary these answers were taken from, which is the only
 thing that makes them checkable, and the **verdict** column below says what
 each row is against the build the suite pins today.
-[`REPORT.md`](REPORT.md) 9.15 has the pin policy and 9.17 has the
+[`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) 9.15 has the pin policy and 9.17 has the
 re-measurement, including why two rows are UNVERIFIED rather than corrected.
 
 | Question | Answer | against the build pinned today |
@@ -73,7 +73,7 @@ on a pre-2.34 glibc, but it is not what makes this artifact work and saying
 otherwise would be wrong.
 
 What **is** load-bearing here is the mirror image, which was not anticipated:
-musl folds `libm` into `libc` while glibc splits it out. See REPORT.md
+musl folds `libm` into `libc` while glibc splits it out. See [`report/03-defects-found-by-measurement.md`](report/03-defects-found-by-measurement.md)
 section 3.1.
 
 ---
@@ -141,7 +141,7 @@ closure:
 
 **Three sonames.** These are exactly what the "bundled wins" invariant must
 guard, and exactly where the pre-fix implementation was violating it. See
-REPORT.md section 3.2.
+[`report/03-defects-found-by-measurement.md`](report/03-defects-found-by-measurement.md) section 3.2.
 
 Host-only, so they must come from the host: `libLLVM.so.20.1`,
 `libgallium-25.1.9.so`, `libvulkan_lvp.so`, `libc.musl-x86_64.so.1`.

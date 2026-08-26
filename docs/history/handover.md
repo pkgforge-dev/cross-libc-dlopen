@@ -44,7 +44,7 @@ defect reported in a PR, and the PR's own follow-up made the better argument:
 the shim's hardcoded directory list was a guess about somebody else's
 packaging, it had drifted, and the repair is to read `/etc/ld.so.conf` --
 which `runtime-select.c` already did, so the two now share one walk
-([`src/ld-conf.h`](../src/ld-conf.h)). B10 is a host limitation to record rather
+([`src/ld-conf.h`](../../src/ld-conf.h)). B10 is a host limitation to record rather
 than patch, and it is in 4.2.
 
 **One harness lesson is worth more than any of the code.** Sections 5's new

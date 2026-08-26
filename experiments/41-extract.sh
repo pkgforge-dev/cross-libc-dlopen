@@ -6,7 +6,7 @@
 # says the bytes are the ones somebody reviewed. It says nothing about the
 # LAYOUT inside them, and 40-appimage.sh's whole A/B is one cp into one path.
 # Upstream rebuilt this AppImage and the layout moved under it, twice over.
-# docs/REPORT.md 9.17 has both, measured.
+# docs/report/09-the-second-boundary.md 9.17 has both, measured.
 set -eu
 apt-get update -qq >/dev/null 2>&1
 apt-get install -y -qq --no-install-recommends file >/dev/null 2>&1
@@ -71,7 +71,7 @@ if [ -n "$removed" ]; then
     echo "  ⚠ removed from the restore baseline: $removed"
     echo "    They are this project's own forwarding shims and section J adds"
     echo "    back the one under test. Leaving them in makes the absence cases"
-    echo "    measure their presence. docs/REPORT.md 9.17."
+    echo "    measure their presence. docs/report/09-the-second-boundary.md 9.17."
 else
     echo "  baseline is the shipped list unchanged: it names no forwarding shim"
 fi

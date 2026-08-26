@@ -13,7 +13,7 @@ that document pointing at nothing.
 
 | tool | what it is for | who cites it |
 |---|---|---|
-| [`trap_users.py`](trap_users.py) | intersects an object's imports with the version-trap set, so you can ask which traps a specific driver would actually hit | [`../../docs/REPORT.md`](../../docs/REPORT.md) |
+| [`trap_users.py`](trap_users.py) | intersects an object's imports with the version-trap set, so you can ask which traps a specific driver would actually hit | [`../../docs/report/README.md`](../../docs/report/README.md) |
 
 ```bash
 python3 tools/manual/trap_users.py /lib/x86_64-linux-gnu/libc.so.6 /lib/x86_64-linux-gnu/libm.so.6
@@ -40,7 +40,7 @@ moment one did not. It now inserts the parent as well.
 ⭐ **Both classes are checked now.** `sh scripts/check-drift.sh` fails when a
 document cites a path that does not exist, and when a tool imports a module
 that is not reachable from its own directory or the one above it.
-[`../../TODO/infrastructure.md`](../../TODO/infrastructure.md) T-14 has the
+[`../../docs/todo/infrastructure.md`](../../docs/todo/infrastructure.md) T-14 has the
 full record, including the corrected premise.
 
 The tools that stay in [`../`](../) are reached by `make shim`, `make gl-syms`,

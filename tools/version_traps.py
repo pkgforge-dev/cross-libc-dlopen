@@ -20,7 +20,7 @@ Measured, glibc 2.41, x86-64:
 An object whose versions were stripped -- and equally, ANY musl-built object,
 which never had versions -- gets the first one and every conditional-variable
 initialisation with an attribute fails with EINVAL.  That is the whole reason
-Mesa reported VK_ERROR_OUT_OF_HOST_MEMORY and zero devices.  See REPORT.md T3.2.
+Mesa reported VK_ERROR_OUT_OF_HOST_MEMORY and zero devices.  See ../docs/report/README.md T3.2.
 
 The criterion
 -------------

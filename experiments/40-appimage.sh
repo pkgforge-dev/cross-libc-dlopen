@@ -118,7 +118,7 @@ reset_appdir
 # nothing in src/ reads it: the markers were removed and the feature is on by
 # default whenever the object is preloaded. Whether upstream's own binary
 # still reads it is not measured here and no case below depends on the answer,
-# because every arm sets the variable explicitly. docs/REPORT.md 9.16.
+# because every arm sets the variable explicitly. docs/report/09-the-second-boundary.md 9.16.
 #
 # And every `env` below sets the OLD variable spelling beside the new one,
 # because upstream's binary only understands the old one. Losing it does not
@@ -463,7 +463,7 @@ else
     # not now: the markers were removed, nothing in src/ reads that file, and
     # the case has been passing for the other reason since. The claim the case
     # makes did not change and got stronger, which is exactly why nobody
-    # noticed. docs/REPORT.md 9.16.
+    # noticed. docs/report/09-the-second-boundary.md 9.16.
     #
     # Every other case here forces something: the feature, the ICD, the
     # loader. This one forces nothing, which is the only version of the claim
@@ -681,7 +681,7 @@ else
         # left as a worry. The guest's compiled-in offsets and constants are
         # its own; where they disagree with glibc's, a musl object reads the
         # wrong field out of a struct glibc filled. Two of the six hazards
-        # REPORT.md listed turn out to be live and the rest benign, and this
+        # ../docs/report/README.md listed turn out to be live and the rest benign, and this
         # case fails if that ever stops being true.
         # The names come out of the same run as the count. Hardcoding them
         # beside a measured number is how a report ends up describing a
@@ -693,7 +693,7 @@ else
         # 48, so a mutex the guest allocates and initialises overflows by eight
         # bytes inside the guest. tests/abi-host.c declines that call now and
         # reports it as a hazard, so the scan completes and the count means
-        # something. docs/REPORT.md 9.18.
+        # something. docs/report/09-the-second-boundary.md 9.18.
         hazout=$(under 1 /w/build/abi-host /w/build/libabi_musl.so musl 2>&1)
         haz=$(printf '%s' "$hazout" | grep -c 'LIVE HAZARD')
         hazwhat=$(printf '%s' "$hazout" | grep -E '^ *DIFF ' |
@@ -1151,7 +1151,7 @@ else
     # E74/E74b: what the shims cost a process that never draws. The old
     #      constructor loaded the host GL stack in EVERY process that had the
     #      shims in .preload, Vulkan-only ones included, is 30 MB of host Mesa
-    #      mapped into something that would never call it (REPORT.md 9.9).
+    #      mapped into something that would never call it (../docs/report/09-the-second-boundary.md 9.9).
     #      Nothing resolves until something calls now, and this is that claim at
     #      AppImage scale rather than in the four-symbol object E71 uses.
     #      Both sides, because "no GL was loaded" is also what a broken shim
@@ -1216,7 +1216,7 @@ fi
 # machine, and ⚠ a timeout is scored as a FAILURE rather than a skip, so a slow
 # shared runner reads as a regression. ⛔ The rule when one is close is RAISE,
 # never shorten: shortening hides the problem and makes the failure mode less
-# legible. TODO/infrastructure.md T-12 holds the measured-versus-configured
+# legible. docs/todo/infrastructure.md T-12 holds the measured-versus-configured
 # table, per runner, taken from these lines.
 #
 # ⚠ The margin column is against the SMALLEST timeout in this file, not against

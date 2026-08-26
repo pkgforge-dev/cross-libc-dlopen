@@ -946,7 +946,7 @@ echo "-- P. the aarch64 trampolines, RUN -----------------------------"
 # on aarch64 silicon. .github/workflows/gates.yml added that runner saying in
 # so many words that qemu "emulates the instructions and not a memory model",
 # so the one host where the memory model is real was the one host still not
-# using it. docs/REPORT.md 9.16.
+# using it. docs/report/09-the-second-boundary.md 9.16.
 #
 # The prediction is identical on both paths. Only the vehicle differs, and the
 # vehicle is PRINTED, because a reader looking at one log has no other way to

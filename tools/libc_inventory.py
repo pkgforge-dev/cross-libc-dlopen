@@ -8,9 +8,9 @@ records every dynamically exported symbol together with the LOWEST GLIBC_x.y
 version that defines it -- the version floor a consumer must clear.
 
 Used three ways:
-  * REPORT.md A4 -- what does the *actual bundled* runtime provide
-  * REPORT.md A6 -- newer/older/complete, per distro, for the Design R matrix
-  * REPORT.md B2 -- the generator's input: symbols a newer glibc has and
+  * ../docs/report/README.md A4 -- what does the *actual bundled* runtime provide
+  * ../docs/report/README.md A6 -- newer/older/complete, per distro, for the Design R matrix
+  * ../docs/report/README.md B2 -- the generator's input: symbols a newer glibc has and
                     an older one does not
 
 No third-party modules; ELF parsing comes from elfsym.py beside this file.

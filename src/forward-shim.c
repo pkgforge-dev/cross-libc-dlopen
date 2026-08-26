@@ -4,7 +4,7 @@
  *
  * Covers the ENUMERABLE gap: symbols a newer glibc exports that the runtime
  * we bundle does not.  It does NOT and cannot cover symbols invented after
- * this file was generated. That is Design R's job (REPORT.md, and E12).
+ * this file was generated. That is Design R's job (../docs/report/README.md, and E12).
  *
  * Anything outside the covered set aborts naming the symbol.  Solo's
  * discipline: silent corruption is worse than a loud failure.

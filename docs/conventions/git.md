@@ -86,7 +86,7 @@ this repository; touching account settings, keys, gists or organisation
 membership.
 
 Read-only elsewhere is fine, and is how the sweeps in
-[`../../HISTORY/references/`](../../HISTORY/references/) were done.
+[`../history/references/`](../history/references/) were done.
 ⛔ If a task seems to need a write outside this repository, stop and ask.
 
 ---
@@ -124,7 +124,7 @@ specific operation, once. When that happens:
 4. Only then rewrite.
 
 ⛔ **No document narrates what happened to THIS repository's history.** Not the
-README, not the reference pages, not `TODO/`. A repository that explains its own
+README, not the reference pages, not `docs/todo/`. A repository that explains its own
 git history in its documentation is telling the reader about its process
 instead of its purpose. The commit message is where that is recorded, and it is
 the only place.

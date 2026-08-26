@@ -30,10 +30,10 @@ say()  { printf '  %s\n' "$*"; }
 bad()  { printf '  FAIL %s\n' "$*"; fail=1; }
 head_() { printf '\n== %s ==\n' "$*"; }
 
-# Documents that describe the CURRENT tree. HISTORY/ is excluded everywhere in
+# Documents that describe the CURRENT tree. docs/history/ is excluded everywhere in
 # this script on purpose: it records what was true when it was written, and
 # says so at the top of every file.
-docs() { git ls-files '*.md' ':(exclude)HISTORY/*'; }
+docs() { git ls-files '*.md' ':(exclude)docs/history/*'; }
 
 # ------------------------------------- 1. the controls, both directions -----
 head_ "environment controls: code against documents"
@@ -106,7 +106,7 @@ head_ "cited paths"
 foreign=" docs/guide/cross-libc.md src/main.rs src/utils.rs docs/methodology/references.md tests/bindprobe "
 
 # ⚠ A FENCED BLOCK IS A TRANSCRIPT, NOT A CITATION, and this check skips one.
-# docs/REPORT.md's evidence is quoted command output, and output that records a
+# docs/report/README.md's evidence is quoted command output, and output that records a
 # failure names the path that was wrong. Without this, the one document whose
 # job is to record a broken-path finding is the one document that cannot quote
 # it. Measured before the exemption went in: 88 paths cited with fences read,
@@ -122,7 +122,14 @@ unfenced() {
 	' 2>/dev/null
 }
 
-anchor='(src|scripts|tests|tools|docs|experiments|examples|TODO|HISTORY|inventories)/[A-Za-z0-9_./*-]+'
+# ⚠ `docs` COVERS docs/todo AND docs/history, because the character class that
+# follows includes a slash. Naming them again would be two more chances for the
+# list to drift from the tree. When those two moved under docs/ this line was
+# the one that could have failed in silence: a top-level name that no longer
+# exists does not refuse anything, it simply stops recognising a class of
+# citation and reports success over a smaller set. The count is the guard, and
+# it went 89 -> 90 across the move.
+anchor='(src|scripts|tests|tools|docs|experiments|examples|inventories)/[A-Za-z0-9_./*-]+'
 missing=0
 unfenced |
 	grep -hoE "\`([^\` ]+ )*$anchor" 2>/dev/null |
@@ -232,7 +239,7 @@ elif [ "$sh_pins" != "$ps_pins" ]; then
 	bad "the two orchestrators pin different bytes."
 	say "       scripts/run-appimage.sh   x86_64: $sh_pins"
 	say "       experiments/appimage.ps1        : $ps_pins"
-	say "       Both drive the same stages. docs/REPORT.md 9.15 has the policy."
+	say "       Both drive the same stages. docs/report/09-the-second-boundary.md 9.15 has the policy."
 else
 	say "both orchestrators pin the same two assets"
 fi
@@ -242,7 +249,7 @@ head_ "dashes used as punctuation"
 
 # ⛔ This refuses. No pin, no budget, no tolerance. It was a counting ratchet
 # and the ratchet drifted eight under the tree and then admitted a planted
-# dash; docs/REPORT.md 9.14 proves both halves.
+# dash; docs/report/09-the-second-boundary.md 9.14 proves both halves.
 #
 # ⚠ Prose only. prose.md exempts `--` doing its own job:
 #
@@ -281,7 +288,7 @@ prose_c() {
 }
 
 prose_hash() {
-	{ git ls-files '*.sh' '*.yml' '*.py' '*.ps1' ':(exclude)HISTORY/*'
+	{ git ls-files '*.sh' '*.yml' '*.py' '*.ps1' ':(exclude)docs/history/*'
 	  git ls-files 'src/Makefile'; } |
 	tr '\n' '\0' | xargs -0 awk '
 		/^[ \t]*#([ \t]|$)/ { gsub(/`[^`]*`/, ""); print FILENAME ":" FNR ":" $0 }
@@ -311,7 +318,7 @@ else
 fi
 
 # ------------------------------- 5. INDEX agrees with the entries -----------
-head_ "TODO/INDEX.md against the entries"
+head_ "docs/todo/INDEX.md against the entries"
 
 # ⛔ THIS CHECK EXISTS BECAUSE IT DRIFTED. docs/AGENTS.md scenario 10 says a
 # session reconciles INDEX.md's counts on the way out. Two entries closed in
@@ -327,8 +334,8 @@ head_ "TODO/INDEX.md against the entries"
 # bullet: the old form was split on a punctuation dash, which prose.md no
 # longer permits.
 badx=0
-entries=$(git ls-files 'TODO/*.md' |
-          grep -vE 'TODO/(INDEX|PROGRESS|RULES)\.md')
+entries=$(git ls-files 'docs/todo/*.md' |
+          grep -vE 'docs/todo/(INDEX|PROGRESS|RULES)\.md')
 # shellcheck disable=SC2086
 awk '
 	/^## T-[0-9]+/            { id = $2; next }
@@ -343,14 +350,14 @@ awk '
 
 while IFS="$(printf '\t')" read -r id st; do
 	[ -n "$id" ] || continue
-	row=$(grep -E "^\| $id \|" TODO/INDEX.md | head -1)
+	row=$(grep -E "^\| $id \|" docs/todo/INDEX.md | head -1)
 	if [ -z "$row" ]; then
-		bad "$id has an entry and no row in TODO/INDEX.md"; badx=1; continue
+		bad "$id has an entry and no row in docs/todo/INDEX.md"; badx=1; continue
 	fi
 	idx=$(printf '%s' "$row" | awk -F'|' '{print $6}' |
 	      sed 's/^ *//; s/ *$//' | tr 'A-Z' 'a-z')
 	if [ "$idx" != "$st" ]; then
-		bad "$id: the entry says '$st', TODO/INDEX.md says '$idx'"
+		bad "$id: the entry says '$st', docs/todo/INDEX.md says '$idx'"
 		say "       The entry is the authority. It is where the acceptance"
 		say "       command was run. Fix the row, not the entry."
 		badx=1

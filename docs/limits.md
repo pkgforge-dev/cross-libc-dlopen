@@ -7,7 +7,7 @@ design space.** That rule, and the session it cost this project, are in
 [`conventions/prose.md`](conventions/prose.md).
 
 Open items with a route to closing them are in
-[`TODO/blocked.md`](../TODO/blocked.md). This page is what a *user* needs.
+[`docs/todo/blocked.md`](todo/blocked.md). This page is what a *user* needs.
 
 ---
 
@@ -15,7 +15,7 @@ Open items with a route to closing them are in
 
 | limit | the measurement |
 |---|---|
-| **Two glibc-vs-musl struct hazards are live** | `regoff_t` is 4 bytes on glibc and 8 on musl, so a musl object reading back a glibc-filled `regmatch_t[]` reads at its own stride; the `FTW_*` constants are off by one, so an `nftw` walk classifies entries wrongly. E50, [`REPORT.md`](REPORT.md) section 7.4. An offset compiled into an object is not reachable from a preload |
+| **Two glibc-vs-musl struct hazards are live** | `regoff_t` is 4 bytes on glibc and 8 on musl, so a musl object reading back a glibc-filled `regmatch_t[]` reads at its own stride; the `FTW_*` constants are off by one, so an `nftw` walk classifies entries wrongly. E50, [`report/07-closed-source-driver-and-abi.md`](report/07-closed-source-driver-and-abi.md) section 7.4. An offset compiled into an object is not reachable from a preload |
 | **Two further hazards are argued, not measured** | `ucontext_t` and `O_LARGEFILE`. Nothing here crosses them, so there is no crossing to test. They stay labelled rather than counted |
 | **Entry points the host does not implement stay unimplemented** | on one measured host, 1097 of the GL entry points are extensions glvnd knows the names of and Mesa has no code for. What this project does is make the absent case **observable**: a call to one produces a line naming it, not a silent zero (E72, E73). Making Mesa implement them is not this project's work |
 | **A host with no EGL implementation cannot be given one** | Mesa 8.0.4 ships EGL 1.4 and `eglInitialize` fails there even with the right directory. Measured natively, with no bundle in the process at all: 16.04's EGL fails the same probe with nothing of this project loaded (E79) |
@@ -27,7 +27,7 @@ Open items with a route to closing them are in
 | **Vulkan on real hardware** | every ICD result in the record is lavapipe. Mesa's Vulkan-on-D3D12 driver is `microsoft-experimental` and is not packaged. OpenGL *is* on hardware (E53), through the `d3d12` Gallium driver |
 | **DRM-native drivers (`radv`, `anv`, `radeonsi`)** | the measuring machine publishes no `/dev/dri`. Reported working from outside on an RX 580 by @Samueru-sama; not reproduced here, and not adopted as if it were |
 | **aarch64 on real silicon** | the trampolines assemble and **run under qemu-user** (E76, E76b). qemu emulates the instructions, not a memory model. CI's `ubuntu-24.04-arm` runner is what closes this, and it is the one place CI is stronger than the machine this was built on |
-| **NVIDIA's closed-source stack in CI** | nothing stands in for it. The local result, 4096 bytes round-tripped through an RTX 3050 Ti and verified (E41), is in [`REPORT.md`](REPORT.md) section 7.1 |
+| **NVIDIA's closed-source stack in CI** | nothing stands in for it. The local result, 4096 bytes round-tripped through an RTX 3050 Ti and verified (E41), is in [`report/07-closed-source-driver-and-abi.md`](report/07-closed-source-driver-and-abi.md) section 7.1 |
 
 ---
 
@@ -45,6 +45,6 @@ to true to be repeated, and wrong in the way that matters here.
 ⛔ **UNVERIFIED, all three.** No measurement of any of them has been taken in
 this repository. They are written down as three distinct questions, with the
 reasoning that distinguishes them, and **not** as three answers.
-[`TODO/`](../TODO/INDEX.md) carries them as work. An "N/A" here without a
-measurement behind it would be the same mistake [`REPORT.md`](REPORT.md) section 10's
+[`docs/todo/`](todo/INDEX.md) carries them as work. An "N/A" here without a
+measurement behind it would be the same mistake [`report/10-measured-versus-assumed.md`](report/10-measured-versus-assumed.md) section 10's
 last entry is about.

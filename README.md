@@ -26,7 +26,7 @@ against an ordinary binary with no AppDir anywhere.
 
 ⚠ **What has not been measured** is a non-AppImage process against a real GPU
 driver, so this page does not claim one.
-[`TODO/measurement.md`](TODO/measurement.md) T-03 is that work.
+[`docs/todo/measurement.md`](docs/todo/measurement.md) T-03 is that work.
 
 ---
 
@@ -80,7 +80,7 @@ nothing else. [`docs/reproducing.md`](docs/reproducing.md).
 ## What was demonstrated, and on what
 
 ⭐ **Every count and every suite total lives in
-[`docs/REPORT.md`](docs/REPORT.md) and nowhere else.** This table says what was
+[`docs/report/README.md`](docs/report/README.md) and nowhere else.** This table says what was
 shown and where; REPORT says how much.
 
 | result | the host it was measured on |
@@ -111,7 +111,7 @@ list rather than a silence.
 | [`docs/limits.md`](docs/limits.md) | what it cannot do, with the measurement behind each |
 | [`docs/reproducing.md`](docs/reproducing.md) | how to re-run every number here yourself |
 | [`docs/environment.md`](docs/environment.md) | the machine the numbers were measured on |
-| [`docs/REPORT.md`](docs/REPORT.md) | ⭐ **the measured record.** Every count and every suite total lives here |
+| [`docs/report/README.md`](docs/report/README.md) | ⭐ **the measured record.** Every count and every suite total lives here |
 | [`docs/ground-truth.md`](docs/ground-truth.md) | where distributions actually keep their libraries, measured |
 | [`docs/alternatives.md`](docs/alternatives.md) | the other ways to solve this, and which one fits your position |
 | [`docs/rejected-designs.md`](docs/rejected-designs.md) | three designs evaluated and refused, with evidence |
@@ -120,10 +120,10 @@ list rather than a silence.
 | [`docs/HUMANS.md`](docs/HUMANS.md) | ⭐ what a **person** pastes to get useful work out of a session |
 | [`docs/conventions/`](docs/conventions/README.md) | ⛔ how this repository is written. Binding, and half of it is checked by CI |
 
-Not on this list, and not deleted: [`HISTORY/`](HISTORY/README.md) is why things
-are the way they are, in the original wording. [`TODO/`](TODO/INDEX.md) is what
+Not on this list, and not deleted: [`docs/history/`](docs/history/README.md) is why things
+are the way they are, in the original wording. [`docs/todo/`](docs/todo/INDEX.md) is what
 is open, and the work order is in
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md) and nowhere else.
+[`docs/todo/PROGRESS.md`](docs/todo/PROGRESS.md) and nowhere else.
 
 ---
 
@@ -168,8 +168,8 @@ tools/             generators and analysis
 scripts/           build and orchestration
 docs/              what it does, how to use it, what it cannot do
 examples/          scripts that run and print a before and an after
-HISTORY/           why things are the way they are
-TODO/              what is open
+docs/history/           why things are the way they are
+docs/todo/              what is open
 ```
 
 ---

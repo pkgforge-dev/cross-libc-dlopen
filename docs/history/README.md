@@ -1,4 +1,4 @@
-# HISTORY
+# docs/history
 
 Why things are the way they are.
 
@@ -22,10 +22,10 @@ several `experiments/*.sh` lines look odd for reasons written down only here.
 
 Not here:
 
-- [`../docs/`](../docs/AGENTS.md) -- what the project does and how to use it.
-  The map of every page is in [`../README.md`](../README.md).
-- [`../TODO/`](../TODO/INDEX.md) -- what is still open. The work order is in
-  `TODO/PROGRESS.md` and nowhere else.
+- [`../`](../AGENTS.md) -- what the project does and how to use it.
+  The map of every page is in [`../../README.md`](../../README.md).
+- [`../todo/`](../todo/INDEX.md) -- what is still open. The work order is in
+  `docs/todo/PROGRESS.md` and nowhere else.
 
 ---
 

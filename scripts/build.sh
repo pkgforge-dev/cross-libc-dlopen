@@ -39,7 +39,7 @@ KEEP_GOING=0
 VARIANT=default
 EXTRA_CFLAGS=
 # ⭐ The portable variant also drops -fcf-protection=full. Measured in
-# docs/REPORT.md 9.13: the flag emits endbr64 and no IBT property note, the
+# docs/report/09-the-second-boundary.md 9.13: the flag emits endbr64 and no IBT property note, the
 # note cannot be emitted honestly because glibc's crti.o carries none, and
 # without it a CET-enforcing loader does not turn IBT on for the object. So the
 # instructions do no protective work, and a consumer targeting a kernel or an

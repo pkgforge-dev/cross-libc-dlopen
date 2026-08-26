@@ -268,7 +268,7 @@ __asm__(".text\n"
 	        ".size " #n ", .-" #n "\n");
 #elif defined(__aarch64__)
 /* Assembled here, and RUN under qemu-user on an aarch64 image. See
- * `make gl-fwd-qemu-check` and REPORT.md 10. Not run on aarch64 silicon. */
+ * `make gl-fwd-qemu-check` and ../docs/report/10-measured-versus-assumed.md 10. Not run on aarch64 silicon. */
 __asm__(".text\n"
         ".globl  glfwd_absent\n"
         ".hidden glfwd_absent\n"
@@ -641,7 +641,7 @@ static void *glfwd_open_target(const char **how) {
  * A process that links this shim and never draws, such as a Vulkan-only binary
  * in an AppDir that also ships a GL one, pays for the mapping of this object
  * and nothing else. Measured cost of the old eager constructor, and therefore
- * of what this removes, is in REPORT.md 9.9.
+ * of what this removes, is in ../docs/report/09-the-second-boundary.md 9.9.
  */
 
 static void *glfwd_target;                 /* the object every slot forwards to */

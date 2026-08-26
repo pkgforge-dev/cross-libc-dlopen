@@ -10,7 +10,7 @@ Build, CI and orchestration.
 - **Category** infrastructure, **Priority** high, **Effort** low,
   **Status** open
 - **Problem.** ⭐ **A gate never seen to refuse is a gate nobody knows works.**
-  The workflows in [`../.github/workflows/`](../.github/workflows/) were written
+  The workflows in [`../../.github/workflows/`](../../.github/workflows/) were written
   and reasoned about; only some of them have been watched to go red.
 - **Premise.** Measured locally for three of them: a stale generated table, a
   wrong SONAME and a CR in a `.sh` each make the corresponding check exit
@@ -29,7 +29,7 @@ plant: nobody chose the shape of the failure.
 
 | gate | on a runner | evidence |
 |---|---|---|
-| every headline number has one home | ⭐ yes, unplanted | run [32948974925](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32948974925), hygiene, step `every headline number has exactly one home`: `46/46 appears in 2 files: TODO/PROGRESS.md docs/REPORT.md`. The commit was a `PROGRESS.md` rewrite whose sentence warning that the number lives in two places contained the number |
+| every headline number has one home | ⭐ yes, unplanted | run [32948974925](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32948974925), hygiene, step `every headline number has exactly one home`: `46/46 appears in 2 files: docs/todo/PROGRESS.md docs/report/README.md`. The commit was a `PROGRESS.md` rewrite whose sentence warning that the number lives in two places contained the number |
 | the evidence table refuses a broken stage | ⭐ yes, unplanted | run [32947794151](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32947794151), `evidence table (aarch64)`: `cp: cannot stat '/lib64/libc.so.6'`, `suite: stage 2 failed`, exit 1. That is pull request #9 against `main`, where the loader path is still hardcoded |
 | the AppImage suite's sha256 pin | ⭐ yes, unplanted | run [32948154287](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32948154287): the upstream asset had been replaced and the suite refused rather than measuring an unknown binary |
 | the AppImage suite's AppDir shape | ⭐ yes, unplanted | run [32951892766](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32951892766): `cp: cannot stat 'AppDir/lib/foreign-dlopen.so'`, on both architectures, after upstream renamed the dispatcher slot |
@@ -241,7 +241,7 @@ not.
 - `tools/libc_inventory.py` **stays in `tools/`**. It is a library the shim
   generator imports, not a manual tool.
 - `tools/manual/trap_users.py` moved, with its `sys.path` corrected to reach
-  `tools/`, and [`../tools/manual/README.md`](../tools/manual/README.md) says
+  `tools/`, and [`../../tools/manual/README.md`](../../tools/manual/README.md) says
   what it is for and who cites it.
 
 ⭐ **Both halves measured, by running them rather than by grepping for them:**
@@ -264,7 +264,7 @@ cites exists, and every module a tool imports is reachable from that tool's own
 ## T-15 A corpus test with a fresh process per library
 
 - **Source.** Reference sweep of `pg83/solo`, at
-  [`HISTORY/references/solo-usable.md`](../HISTORY/references/solo-usable.md) section 3.
+  [`docs/history/references/solo-usable.md`](../history/references/solo-usable.md) section 3.
 - **Category** infrastructure, **Priority** medium, **Effort** medium,
   **Status** open
 - **Problem.** `tests/corpus.c` loads every library in the host's library
@@ -312,7 +312,7 @@ cites exists, and every module a tool imports is reachable from that tool's own
 ## T-16 Delete the path that would mask the failure
 
 - **Source.** Reference sweep of `pg83/solo`, at
-  [`HISTORY/references/solo-usable.md`](../HISTORY/references/solo-usable.md) section 4.
+  [`docs/history/references/solo-usable.md`](../history/references/solo-usable.md) section 4.
 - **Category** infrastructure, **Priority** medium, **Effort** low,
   **Status** open
 - **Problem.** Several cases here *force* a path (`VK_DRIVER_FILES`,
@@ -340,7 +340,7 @@ cites exists, and every module a tool imports is reachable from that tool's own
   a build over it, and the refusal turned out to be right.
 - **Category** infrastructure, **Priority** medium, **Effort** medium,
   **Status** open
-- **Problem.** [`docs/REPORT.md`](../docs/REPORT.md) 9 said the shims are built
+- **Problem.** [`../report/09-the-second-boundary.md`](../report/09-the-second-boundary.md) 9 said the shims are built
   `-fcf-protection=full` "so the object carries the matching IBT property note".
   ⛔ **They do not.** The shipped `gl-fwd.so` has only `.note.gnu.build-id`;
   there is no `.note.gnu.property` section at all.

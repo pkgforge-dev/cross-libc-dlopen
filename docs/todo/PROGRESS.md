@@ -6,7 +6,7 @@ order. [`INDEX.md`](INDEX.md) carries the list; this carries the order and the
 baseline.
 
 ⚠ **Rewritten every session. It carries no history.** That is
-[`../HISTORY/`](../HISTORY/README.md)'s job.
+[`../history/`](../history/README.md)'s job.
 
 ---
 
@@ -53,7 +53,7 @@ session starts from a list rather than a re-run:
 | the gates, planted | `sh scripts/verify-gates.sh` | 8 proven, 0 not |
 | the documents | `sh scripts/check-drift.sh` | exit 0, six sections |
 
-⛔ **Totals live in [`../docs/REPORT.md`](../docs/REPORT.md)**, not here. Do not
+⛔ **Totals live in [`../report/README.md`](../report/README.md)**, not here. Do not
 copy one into this file: both are on the one-home list and a second copy turns
 the gate red, which is exactly how commit `f6d126e` broke the branch.
 
@@ -71,7 +71,7 @@ project. So the "as shipped" arm of the A/B is no longer upstream's naive shim.
 
 E30 and E37a are the controls for that arm, and they are what make the patched
 arm a measurement rather than a coincidence. Both now MISMATCH, because both
-arms work. `docs/REPORT.md` 9.17 has the output.
+arms work. `docs/report/09-the-second-boundary.md` 9.17 has the output.
 
 ⚠ **Their log lines say `predicted=OK` and that is about the exit status, not
 the verdict.** What they assert is the needle, and the needle is the complaint:
@@ -108,14 +108,14 @@ nobody should assume it is the corpus's fault rather than this project's.
 ⭐ **E49 and E50 are done.** E49 MATCHes on aarch64, and E50 reports 2 live
 hazards on x86-64 and 3 on aarch64, the third being the mutex. E50 reads the
 condition out of `abi-host`'s size table instead of carrying a per-architecture
-number. `docs/REPORT.md` 9.18.
+number. `docs/report/09-the-second-boundary.md` 9.18.
 
 ### 3. The pin is a maintained act now. Expect it to go stale again
 
 Both AppImages are pinned by sha256 against a **mutable** `demo` tag, and the
 assets were replaced twice inside two minutes. ⛔ There is no immutable release
 to pin to: the upstream and the fork publish one release each and both are
-tagged `demo`. `docs/REPORT.md` 9.15 has the policy and the reasoning.
+tagged `demo`. `docs/report/09-the-second-boundary.md` 9.15 has the policy and the reasoning.
 
 When it refuses, read which of the three cases it names: the pin is stale, the
 download is wrong, or neither matches. They call for different things.
@@ -181,7 +181,7 @@ range took its "First release" branch. The `prev..TAG` branch is untested.
 
 ## What this session did
 
-Every claim below has its measurement in `docs/REPORT.md` 9.14 through 9.18.
+Every claim below has its measurement in `docs/report/09-the-second-boundary.md` 9.14 through 9.18.
 
 **Three deep review passes**, each with a different question.
 
@@ -219,7 +219,7 @@ rather than spelling it.
 aarch64 a musl object cannot allocate and initialise its own `pthread_mutex_t`
 in a glibc process: 40 bytes allocated, 48 written, no crossing involved. It
 needed real ARM silicon, three chained reporting defects fixed before it was
-even legible, and one wrong fix before the right one. `docs/REPORT.md` 9.18.
+even legible, and one wrong fix before the right one. `docs/report/09-the-second-boundary.md` 9.18.
 
 **`tests/bindprobe.c` builds on aarch64.**
 

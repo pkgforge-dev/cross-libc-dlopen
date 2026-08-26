@@ -11,12 +11,12 @@ Entries whose deliverable is a number that does not exist yet.
   be repeated and wrong in the way that matters.
 - **Category** measurement, **Priority** high, **Effort** medium,
   **Status** open
-- **Problem.** [`docs/limits.md`](../docs/limits.md) states three cases and
+- **Problem.** [`docs/limits.md`](../limits.md) states three cases and
   labels all three UNVERIFIED. A user linking a portable release binary has no
   answer.
 - **Premise**, and how far it was checked: **read, not measured.** The three
   cases and what is believed about each are the static rows in
-  [`docs/limits.md`](../docs/limits.md), which is where they are stated and
+  [`docs/limits.md`](../limits.md), which is where they are stated and
   where the closure rewrites them. ⚠ Nothing there was confirmed against a
   specific musl or glibc version.
 - **Approach.** ⚠ The suspected blocker is **not** `dlopen`: it is that a
@@ -30,7 +30,7 @@ Entries whose deliverable is a number that does not exist yet.
   ```
   ⛔ Write down which of the three was measured, on what, and what happened. An
   "N/A" without a measurement behind it is the mistake
-  [`docs/REPORT.md`](../docs/REPORT.md) section 10's last entry is about.
+  [`../report/10-measured-versus-assumed.md`](../report/10-measured-versus-assumed.md) section 10's last entry is about.
 
 ---
 
@@ -48,7 +48,7 @@ Entries whose deliverable is a number that does not exist yet.
   as a dispatcher is **inferred from its API**, not yet measured in a process.
 - **Approach.** `libepoxy.so.0` first, then the other eight.
 - ⛔ **Do not assume it is benign because GTK4 rendered.** `libdecor-0.so.0` was
-  benign; `libGLX.so.0` was the whole of [`docs/REPORT.md`](../docs/REPORT.md)
+  benign; `libGLX.so.0` was the whole of [`../report/09-the-second-boundary.md`](../report/09-the-second-boundary.md)
   section 9.
 - **Prove.**
   ```bash
@@ -65,7 +65,7 @@ Entries whose deliverable is a number that does not exist yet.
   sentence.
 - **Category** measurement, **Priority** high, **Effort** medium,
   **Status** partially done
-- **Where it stands.** [`../examples/plain-preload/`](../examples/plain-preload/)
+- **Where it stands.** [`../../examples/plain-preload/`](../../examples/plain-preload/)
 - **Problem.** Every measured result in the record was obtained through an
   AppImage. "Standalone" is therefore a claim about a case nobody has run.
 - **Premise.** The code no longer *requires* an AppDir: `CROSS_LIBC_DLOPEN_ROOT`
@@ -90,7 +90,7 @@ Entries whose deliverable is a number that does not exist yet.
 
 ## T-04 Two struct sizes where this project and solo disagree
 
-- **Source.** Reference sweep of `pg83/solo`, [`HISTORY/references/solo-findings.md`](../HISTORY/references/solo-findings.md) F2.
+- **Source.** Reference sweep of `pg83/solo`, [`HISTORY/references/solo-findings.md`](../history/references/solo-findings.md) F2.
 - **Category** measurement, **Priority** medium, **Effort** low,
   **Status** open
 - **Problem.** solo's `dev/abi-diff.txt` lists `struct_rusage` as 144 bytes on
@@ -136,10 +136,10 @@ Entries whose deliverable is a number that does not exist yet.
 ## T-06 Translate the two live struct hazards at the call
 
 - **Source.** Reference sweep of `pg83/solo`, at
-  [`HISTORY/references/solo-usable.md`](../HISTORY/references/solo-usable.md) section 1.
+  [`HISTORY/references/solo-usable.md`](../history/references/solo-usable.md) section 1.
 - **Category** measurement, **Priority** high, **Effort** medium,
   **Status** open
-- **Problem.** [`docs/limits.md`](../docs/limits.md) states the two live
+- **Problem.** [`docs/limits.md`](../limits.md) states the two live
   hazards are not fixable, and gives the reason as "an offset compiled into an
   object is not reachable from a preload".
 - **Premise.** ⛔ **The measurement is right and the reason is imprecise.** It

@@ -1,7 +1,7 @@
 # Traps when you are USING this
 
 Each of these cost somebody real time once. The much longer list of traps that
-apply to working *on* this repository is in [`HISTORY/traps.md`](../HISTORY/traps.md);
+apply to working *on* this repository is in [`docs/history/traps.md`](history/traps.md);
 this page is only the ones a consumer hits.
 
 ---

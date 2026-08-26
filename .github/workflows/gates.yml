@@ -141,13 +141,24 @@ jobs:
 
       # ⭐ One fact, one home. A count in two documents agrees on the day it is
       # written and disagrees within a month, and a reader has no way to tell
-      # which is stale. HISTORY/ is excluded ON PURPOSE: it records what was
+      # which is stale. docs/history/ is excluded ON PURPOSE: it records what was
       # true when it was written and says so.
+      #
+      # ⚠ docs/report/ IS ONE DOCUMENT, and it is collapsed to one home rather
+      # than excluded. It was a single file until it was split by section, and
+      # a summary section restating a total that a results section measures is
+      # a cross-reference inside one document, which is what it always was.
+      # Counting its pages separately would have failed this gate on the split
+      # commit while nothing had drifted. Collapsing rather than excluding is
+      # the difference that matters: a number that appears in the report AND in
+      # any other document still refuses, which is the case this gate exists
+      # for.
       - name: every headline number has exactly one home
         run: |
           fail=0
           for n in 3470 358 53/53 50/50 45/45 40/40 26/26; do
-            homes=$(git grep -lF "$n" -- '*.md' ':(exclude)HISTORY/*' | tr '\n' ' ')
+            homes=$(git grep -lF "$n" -- '*.md' ':(exclude)docs/history/*' |
+                    sed 's|^docs/report/.*|docs/report/|' | sort -u | tr '\n' ' ')
             count=$(printf '%s' "$homes" | wc -w)
             if [ "$count" -gt 1 ]; then
               echo "$n appears in $count files: $homes"

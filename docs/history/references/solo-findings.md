@@ -42,7 +42,7 @@ almost every divergence below**, including the one finding that matters most.
 
 ⭐ **The most valuable thing in the sweep, and it corrects a claim here.**
 
-[`docs/limits.md`](../../docs/limits.md) says two glibc-vs-musl struct hazards
+[`docs/limits.md`](../../limits.md) says two glibc-vs-musl struct hazards
 are live and "an offset compiled into an object is not reachable from a
 preload". solo repairs both:
 
@@ -88,7 +88,7 @@ project measured them as crossing harmlessly.
 ⛔ **That last pair is a genuine disagreement and it is not resolved here.** It
 is very likely a difference of question -- solo probes `sizeof`, this project
 probes whether the *fields it uses* sit at the same offsets -- but "likely" is
-not a measurement. Written up as [`TODO/measurement.md`](../../TODO/measurement.md) T-04.
+not a measurement. Written up as [`docs/todo/measurement.md`](../../todo/measurement.md) T-04.
 
 ### F3 -- the corpus test -- **adopt**
 
@@ -116,7 +116,7 @@ did not fetch the corpus to count them. See F6.
 (`:305`), `searchScope` (`:403`), and its own `glibc-ld.so.cache` reader
 (`:1401`).
 
-This is the design [`docs/rejected-designs.md`](../../docs/rejected-designs.md)
+This is the design [`docs/rejected-designs.md`](../../rejected-designs.md)
 refuses, with a measurement. **Both positions are defensible and they are
 answers to different questions**: solo owns the process, so replacing the loader
 costs it nothing it was not already paying; this project is a preload inside a
@@ -135,7 +135,7 @@ looking for a `libGLX_<vendor>.so.0` the host was supposed to ship.
 
 ### F6 -- the prior-art claim in this repository was written from reading -- **correct it**
 
-[`docs/REPORT.md`](../../docs/REPORT.md):2128 says solo has *"CI across Alpine,
+[`docs/report/README.md`](../../report/README.md):2128 says solo has *"CI across Alpine,
 Fedora, NixOS and Termux plus a 2100-object corpus test per commit."*
 
 Checked against `.github/workflows/ci.yml` at the commit above:
@@ -166,7 +166,7 @@ can satisfy the test by accident.
 
 ⭐ **That last move is the technique worth having**: remove the path that would
 mask the failure, so a pass means what it says. This project's host matrix has
-no NixOS in it. Work: [`TODO/measurement.md`](../../TODO/measurement.md) T-05.
+no NixOS in it. Work: [`docs/todo/measurement.md`](../../todo/measurement.md) T-05.
 
 ### F8 -- solo's tracker is small and its PRs are substantive -- **no action**
 

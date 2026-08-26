@@ -42,7 +42,7 @@
 #define ABI_VIEW_VERSION 2u
 
 struct abi_view {
-	/* Sizes: the glibc-vs-musl divergences REPORT.md T1.7 lists, plus the
+	/* Sizes: the glibc-vs-musl divergences ../docs/report/README.md T1.7 lists, plus the
 	 * ones any cross-libc call would move through. */
 	uint64_t sz_regmatch_t, sz_regex_t, sz_rusage, sz_sched_param;
 	uint64_t sz_ucontext_t, sz_jmp_buf, sz_sigset_t, sz_glob_t;

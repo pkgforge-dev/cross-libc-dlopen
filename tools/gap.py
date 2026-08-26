@@ -6,7 +6,7 @@ closure import that glibc cannot provide?
 Self-contained: no third-party modules, no readelf, no dpkg, no Linux.
 Run `python3 tools/gap.py --fetch` once to download the artifacts, then `python3 gap.py`.
 
-Reproduces the musl-gap measurement in REPORT.md.
+Reproduces the musl-gap measurement in ../docs/report/README.md.
 """
 import glob
 import io

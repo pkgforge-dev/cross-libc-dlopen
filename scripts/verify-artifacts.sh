@@ -99,7 +99,7 @@ done
 # FALSE: _init and _fini come from crti.o/crtn.o, ld.so reaches them through
 # DT_INIT and DT_FINI, an indirect call, and neither begins with endbr64.
 # Forcing the note would assert a property the object does not have, which is
-# worse than not having the note. docs/REPORT.md 9.13 has the full table.
+# worse than not having the note. docs/report/09-the-second-boundary.md 9.13 has the full table.
 #
 # ⚠ The `portable` variant asks for NO CET, so there the expectation inverts:
 # endbr64 present would mean --portable did not reach the compile. Both arms
@@ -121,7 +121,7 @@ if [ -f "$DIR/gl-fwd.so" ] && [ "$ARCH" = x86_64 ]; then
 	#
 	# So a count over zero says nothing about whether the flag arrived, and a
 	# guard that cannot fail is worse than no guard. The number is printed and
-	# the manifest records the variant; docs/REPORT.md 9.13 has both figures.
+	# the manifest records the variant; docs/report/09-the-second-boundary.md 9.13 has both figures.
 	if command -v readelf >/dev/null 2>&1 &&
 	   readelf -n "$DIR/gl-fwd.so" 2>/dev/null | grep -qi 'propert'; then
 		say "gl-fwd.so: IBT property note present"

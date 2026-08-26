@@ -67,6 +67,6 @@ implementation. Treat it as a trade-off to check for your workload, not as a
 number from this repository.
 
 The full sweep of solo's code, at the commit it was read at, is in
-[`../HISTORY/references/solo-findings.md`](../HISTORY/references/solo-findings.md).
+[`history/references/solo-findings.md`](history/references/solo-findings.md).
 What was found in it that this project could adopt is in
-[`../HISTORY/references/solo-usable.md`](../HISTORY/references/solo-usable.md).
+[`history/references/solo-usable.md`](history/references/solo-usable.md).

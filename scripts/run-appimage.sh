@@ -60,7 +60,7 @@ esac
 #
 # ⛔ NEITHER TAG IS IMMUTABLE. Both repositories publish exactly one release
 # and its tag is `demo`, so there is no version to pin to instead. Re-pinning
-# is therefore a maintained act rather than a failure, and docs/REPORT.md 9.15
+# is therefore a maintained act rather than a failure, and docs/report/09-the-second-boundary.md 9.15
 # is the policy. The refusal in suite-lib.sh says which of the pin, the bytes
 # and the published asset disagreed, so a re-pin is a decision and not a shrug.
 ARCH=$(asset_suffix)

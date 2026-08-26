@@ -37,6 +37,6 @@ musl-built object, which never had version information at all. That is why the
 same failure showed up on Alpine, on Gentoo with a glibc `radv`, and on Debian
 once the ICD manifest named an absolute path.
 
-The fix is [`src/version-compat.c`](../src/version-compat.c) plus
-[`tools/version_traps.py`](../tools/version_traps.py); REPORT.md 6.2 has the whole
+The fix is [`src/version-compat.c`](../../src/version-compat.c) plus
+[`tools/version_traps.py`](../../tools/version_traps.py); ../report/06-goal-2-the-last-blocker.md 6.2 has the whole
 chain with the commands.
