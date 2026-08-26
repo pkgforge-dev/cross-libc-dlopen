@@ -687,22 +687,34 @@ else
         # beside a measured number is how a report ends up describing a
         # different result from the one it counted.
         #
-        # ⚠ TWO IS AN x86-64 NUMBER AND THE AARCH64 ONE IS NOT ESTABLISHED.
-        # aarch64 reported 0, and that was not a finding: abi-host ABORTED at
-        # T1.6 before the scan, because musl's pthread_mutex_t is 40 bytes
-        # there and glibc's is 48, so a mutex the guest allocates is eight
-        # bytes short of what the host writes into it. tests/abi-host.c now
-        # declines that write and reports it as a hazard, so the scan
-        # completes and the count means something. ⛔ Leave the 2 alone until
-        # a completed aarch64 run says what the number is there. Pinning a
-        # guess is how a measured figure becomes an estimate.
-        # docs/REPORT.md 9.18.
+        # ⚠ THE COUNT IS ARCHITECTURE DEPENDENT, and aarch64 once reported 0.
+        # That zero was never a finding: abi-host ABORTED at T1.6 before the
+        # scan, because musl's pthread_mutex_t is 40 bytes there and glibc's is
+        # 48, so a mutex the guest allocates and initialises overflows by eight
+        # bytes inside the guest. tests/abi-host.c declines that call now and
+        # reports it as a hazard, so the scan completes and the count means
+        # something. docs/REPORT.md 9.18.
         hazout=$(under 1 /w/build/abi-host /w/build/libabi_musl.so musl 2>&1)
         haz=$(printf '%s' "$hazout" | grep -c 'LIVE HAZARD')
         hazwhat=$(printf '%s' "$hazout" | grep -E '^ *DIFF ' |
                   sed 's/^ *DIFF  *//; s/  */ /g; s/ host=.*//' | tr '\n' ';')
-        [ "$haz" -eq 2 ] && r50=1 || r50=0
-        verdict E50 "$r50" "reading back a glibc-filled struct: $haz live hazard(s) -- ${hazwhat:-none}"
+        # ⭐ THE EXPECTED COUNT IS PROBED, NOT SPELLED PER ARCHITECTURE, which
+        # is E22's shape applied here. Two hazards are live on a pair whose
+        # pthread_mutex_t agree: regexec's stride and nftw's FTW_D. Where the
+        # two sizes DIVERGE there is a third, because the guest then cannot
+        # allocate and initialise one of its own at all, and abi-host prints
+        # that divergence in its own size table before any of the hazards.
+        #
+        # ⚠ Measured on one run, 32957101324: x86-64 reports 2, aarch64 reports
+        # 3, and the extra one is exactly the mutex. Reading the condition out
+        # of the same output that carries the count is what keeps this a
+        # measurement rather than a per-arch table somebody has to maintain.
+        expect_haz=2
+        if printf '%s' "$hazout" | grep -qE '^ +pthread_mutex_t .*DIVERGES'; then
+                expect_haz=3
+        fi
+        [ "$haz" -eq "$expect_haz" ] && r50=1 || r50=0
+        verdict E50 "$r50" "reading back a glibc-filled struct: $haz live hazard(s), expected $expect_haz -- ${hazwhat:-none}"
     fi
 fi
 

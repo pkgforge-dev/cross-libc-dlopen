@@ -2774,11 +2774,25 @@ guard is not simply always firing. ⭐ The run reaches the end now, which matter
 E50's hazard scan are downstream of the abort and had never executed on aarch64
 at all.
 
-⚠ **E50's `2` is an x86-64 number and aarch64's is UNVERIFIED.** It will not be
-zero, because the mutex hazard alone is one, and the aarch64 size table also
-shows `regoff_t` at 8 against 4 and the `FTW_*` constants each off by one. The
-number is left unpinned until a completed aarch64 run states it. Pinning a
-guess is how a measured figure becomes an estimate.
+**Both numbers now measured, one run,
+[32957101324](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32957101324):**
+
+| | E49 | E50, live hazards |
+|---|---|---|
+| x86-64 | MATCH, 26 checks | **2**: `regexec` stride, `nftw` FTW_D |
+| aarch64 | MATCH, 24 checks, on all four host stages | **3**: those two, plus `a mutex the guest allocates and inits` |
+
+⭐ **The difference is exactly the mutex, so E50 probes for it rather than
+carrying a table of architectures.** Two is the count where the two
+`pthread_mutex_t` sizes agree; where they diverge there is a third, and the
+divergence is printed by `abi-host`'s own size table in the same output that
+carries the count. That is E22's shape: read the condition, then assert
+against it. A per-architecture number would have been a second thing to
+maintain and the first to go stale.
+
+⚠ Two aarch64 checks fewer than x86-64, 24 against 26, and that is the guard:
+the two `ok()` calls it skips are the allocation and the lock it declines to
+perform.
 
 ---
 

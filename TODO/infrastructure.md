@@ -276,8 +276,31 @@ cites exists, and every module a tool imports is reachable from that tool's own
     failed at the first call;
   - the output is a count, not a per-symbol view of which ABI entries the
     corpus demands.
-- **Premise.** Measured by reading `tst/corpus.py` and `tst/corpus_load.cpp` at
-  the recorded commit. ⚠ solo's corpus was **not** run.
+- **Premise.** ⭐ **No longer inferred. Observed here, on two hosts, in run
+  [32957101324](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32957101324).**
+  The first weakness above does not merely change the verdict on the libraries
+  after the corrupting one: it truncates the result to **nothing**, and E33 and
+  E34 are then scored against a total of zero.
+
+  | host | feature ON | feature OFF |
+  |---|---|---|
+  | `alpine:3.22` | ⛔ `Segmentation fault (core dumped)`, 0 verdict lines | `TOTAL=298 OK=3` |
+  | `debian:trixie-slim` | `FATAL: HWAddressSanitizer requires a kernel with tagged address ABI.`, 0 verdict lines | 99 OK lines, then the same FATAL |
+
+  ⚠ **Both causes were invisible until this session**, because the sweep's
+  stderr went to `/dev/null`. That is T-13's shape, and it is why the two
+  entries are related: the crash had presumably been happening for as long as
+  the corpus cases have existed, and the AppImage suite had never completed to
+  show it.
+
+  ⛔ The two causes are different in kind and the design above covers both. The
+  Alpine one is a crash somewhere in a 298-library sweep and is not yet
+  attributed to a library. The Debian one is a library that calls the process
+  dead on load, which no fault handler catches and only a fresh process per
+  library survives.
+
+  The original reading of `tst/corpus.py` and `tst/corpus_load.cpp` stands, and
+  ⚠ solo's corpus was still **not** run.
 - **Approach.** One fresh process per library, `RTLD_NOW`, a fault handler
   installed before the load so a crash is a report rather than a silence, and
   per-library JSON merged afterwards.
