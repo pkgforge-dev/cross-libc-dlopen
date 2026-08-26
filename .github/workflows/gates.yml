@@ -157,6 +157,19 @@ jobs:
           [ $fail -eq 0 ] && echo "each headline number has one home"
           exit $fail
 
+      # ⭐ More than one agent works on this repository and they do not all
+      # have the same care. A convention that is only written down is followed
+      # by whoever read it. This is the half a check can carry: the controls
+      # the code reads against the ones the documents name, in BOTH
+      # directions, every cited path, every module a tool imports, and every
+      # documented make target.
+      #
+      # ⚠ It caught two real defects the day it was written: a tool moved out
+      # from under an import that CI runs on every push, and two stale
+      # citations left behind by the same move.
+      - name: the documents still describe the tree
+        run: sh scripts/check-drift.sh
+
       - name: template checks
         run: |
           T=https://raw.githubusercontent.com/Azathothas/TEMPLATE/main

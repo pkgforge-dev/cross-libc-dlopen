@@ -126,6 +126,23 @@ python3 strip_ver.py libnew.so  libnew_s.so
 python3 strip_ver.py libthr.so  libthr_s.so
 
 # ---------------------------------------------------------------- harness
+#
+# ⛔ T-13. A helper build whose stderr goes to /dev/null turns a compiler error
+# into a cascade of cases reporting "No such file or directory", which names
+# the wrong thing entirely. It cost a debugging cycle once when an include
+# broke tgt-fwd.so, and it cost another when a moved Python module broke the
+# shim generator: ten cases and two cases respectively, neither naming a cause.
+#
+# ⚠ The stderr is captured rather than shown, and printed ONLY when the
+# command fails. A passing run is exactly as quiet as before, and no assertion
+# changes: this runs after the build, and the cases still score themselves.
+BERR=/work/.build-stderr
+bfail() {                     # bfail <label>; always returns 1
+    printf '  BUILD FAILED: %s\n' "$1"
+    [ -s "$BERR" ] && sed 's/^/           | /' "$BERR"
+    return 1
+}
+
 run() {                       # run <id> <expect: OK|FAIL> <expect-substring> <cmd...>
     local id="$1" want="$2" needle="$3"; shift 3
     local out rc
@@ -245,7 +262,7 @@ else
     # tests/elf-selftest.c #includes cross-libc-dlopen.c, so T0.4/T0.5/T0.7/T0.8
     # exercise the shipped predicates rather than a model of them.
     gcc -O2 -Wno-format-truncation /repo/tests/elf-selftest.c \
-        -o elf-selftest -ldl 2>/dev/null
+        -o elf-selftest -ldl 2>"$BERR" || bfail elf-selftest
     run E14 OK "ELF SELFTEST PASSED" ./elf-selftest /lib/$TRIPLET/libz.so.1
 
     # ---- Design B: the GENERATED shim ----
@@ -255,7 +272,7 @@ else
         python3 /repo/tools/gen_forward_shim.py \
             --floor /repo/inventories/glibc-2.31.json \
             --target /repo/inventories/glibc-2.44.json \
-            --out gen-shim.c --manifest gen-shim.json --quiet 2>/dev/null
+            --out gen-shim.c --manifest gen-shim.json --quiet 2>"$BERR" || bfail gen-shim.c
 
         # E15: it compiles clean against the floor it claims to target.
         run E15 OK "compiled" sh -c \
@@ -264,7 +281,7 @@ else
         # E16: and the implementations are CORRECT, not merely present --
         #      ~40 documented behaviours, on a glibc that really lacks them.
         gcc -O2 /repo/tests/shim-selftest.c -o shimtest \
-            -L"$PWD" -l:gen-shim.so -Wl,-rpath,"$PWD" >/dev/null 2>&1
+            -L"$PWD" -l:gen-shim.so -Wl,-rpath,"$PWD" >"$BERR" 2>&1 || bfail shimtest
         run E16 OK "SHIM TEST PASSED" ./shimtest
     else
         echo "  E15    SKIPPED - no python3 in this image"
@@ -273,7 +290,7 @@ else
 
     # ---- Design R: the host-runtime selector ----
     gcc -O2 -Wno-format-truncation /repo/src/runtime-select.c \
-        -o runtime-select -ldl 2>/dev/null
+        -o runtime-select -ldl 2>"$BERR" || bfail runtime-select
 
     # An AppDir bundling glibc 2.41 -- NEWER than this container's 2.31 host.
     rm -rf app_new && mkdir -p app_new/lib && cp -L /work/hostrt/* app_new/lib/ 2>/dev/null
@@ -369,7 +386,7 @@ else
     #      unversioned definitions sitting in the global lookup scope.
     gcc -shared -fPIC -O2 -Wall -Wextra -Wno-format-truncation -I/repo/src \
         /repo/src/cross-libc-dlopen.c /repo/src/forward-shim.c /repo/src/version-compat.c \
-        -o cross-libc-dlopen.so -ldl 2>/dev/null
+        -o cross-libc-dlopen.so -ldl 2>"$BERR" || bfail cross-libc-dlopen.so
     # ⛔ E23 is skipped WITH E22, not left running. E22's comment above says
     # why: with no trap in this libc the stripped object already returns 0, so
     # E23 passes whether or not version-compat.c does anything at all. It was
@@ -385,6 +402,65 @@ else
         echo "         exists; without it the unstripped answer is already 0."
     fi
 
+    # ---- the deprecated ANYLINUX_* spellings, and that they are gone ------
+    #
+    # Every control here used to have a second spelling, read as a deprecated
+    # alias so that a bundle built before the rename kept working. No such
+    # bundle exists: this project has never published a release, so nothing
+    # sets one, and carrying the aliases meant every control had two names and
+    # one of them appeared in no document.
+    #
+    # ⛔ These two are a PAIR and neither means anything alone. E84 says the
+    # debug control works, so E85's silence is the alias being gone rather than
+    # the preload failing to load at all. E85 MISMATCHED before the aliases
+    # were removed, which is what makes it a measurement.
+    #
+    # ⚠ E85 asserts an ABSENCE, and `run` can only assert that a string is
+    # present, so the absence is turned into a word. Reading grep's status
+    # inside the case is deliberate and is not the "exit code through a pipe"
+    # trap: the pipeline IS the assertion here, not a check whose code is being
+    # misread.
+    #
+    # ⚠ ANYLINUX_LIB_DEBUG is still set by experiments/40-appimage.sh and by
+    # scripts/_upstream-controls-inner.sh, and must stay. Those drive
+    # UPSTREAM's binary, which understands only the old names, and
+    # scripts/verify-upstream-controls.sh measures the difference.
+    # E84: the control, and both halves are needed. "global-scope lib" is
+    #      printed only from the ENABLED path; "dlopen pass-through" is
+    #      printed from both, and a case needling that would pass with the
+    #      feature off. Measured on debian:bullseye-slim before this needle
+    #      was chosen.
+    run E84 OK "global-scope lib" \
+        env CROSS_LIBC_DLOPEN=1 CROSS_LIBC_DLOPEN_DEBUG=1 \
+            LD_PRELOAD=/work/cross-libc-dlopen.so \
+            ./loader /work/verprobe.so probe_cond_init
+
+    # E85: the DEBUG alias is gone. Feature on under its new name, so the
+    #      interposer IS running and E84 proves it prints; only the debug
+    #      control is spelled the old way, so one variable is under test.
+    #      ⚠ An absence, and `run` can only assert presence, so the absence is
+    #      turned into a word. Reading grep's answer inside the case is the
+    #      assertion here, not an exit code being read through a pipe.
+    run E85 OK "debug-alias-is-silent" sh -c \
+        'out=$(env CROSS_LIBC_DLOPEN=1 ANYLINUX_LIB_DEBUG=1 \
+                   LD_PRELOAD=/work/cross-libc-dlopen.so \
+                   ./loader /work/verprobe.so probe_cond_init 2>&1)
+         case "$out" in
+             *"[cross-libc-dlopen.so]"*) echo "debug-alias-STILL-READ" ;;
+             *)                          echo "debug-alias-is-silent" ;;
+         esac'
+
+    # E86: the ENABLE alias is gone, which is the one a consumer would feel.
+    #      Debug under its NEW name so the object still reports, the feature
+    #      asked for under the OLD name only, and the object says mode=0 in
+    #      its own words. ⚠ There is no marker file in this container, and
+    #      cross_libc_dlopen_mode() falls back to one, so the absent marker is
+    #      part of why this reads off rather than an accident of the alias.
+    run E86 OK "attempt bail: mode=0" \
+        env ANYLINUX_LIB_FOREIGN_DLOPEN=1 CROSS_LIBC_DLOPEN_DEBUG=1 \
+            LD_PRELOAD=/work/cross-libc-dlopen.so \
+            ./loader /work/verprobe.so probe_cond_init
+
     # E24: the trap stated in terms of libc alone -- the obsolete definition
     #      really does reject the attribute Mesa passes.
     # E25: the memcpy exclusion is justified, not assumed.
@@ -392,7 +468,7 @@ else
     #      with the obsolete definition on glibc 2.31 and the default one on
     #      2.41, which is exactly why version-compat.c reads the version name
     #      out of the ELF and uses dlvsym.
-    gcc -O2 /repo/tests/vertrap.c -o vertrap -ldl -lpthread 2>/dev/null
+    gcc -O2 /repo/tests/vertrap.c -o vertrap -ldl -lpthread 2>"$BERR" || bfail vertrap
     run E24 OK "e24 PASSED" ./vertrap e24
     run E25 OK "e25 PASSED" ./vertrap e25
     run E27 OK "e27 PASSED" ./vertrap e27
@@ -637,7 +713,7 @@ cp /repo/src/gl-fwd.c /repo/src/ld-conf.h /repo/src/cld-env.h .
 gcc -shared -fPIC -O2 -Wall -Wextra -Wno-format-truncation $CET \
     -DGLFWD_TABLE='"tgt-fwd.h"' -DGLFWD_TAG='"tgt-fwd.so"' \
     -DGLFWD_GETPROC='"t_getproc"' \
-    -Wl,-soname,libtgt.so gl-fwd.c -o tgt-fwd.so -ldl 2>/dev/null
+    -Wl,-soname,libtgt.so gl-fwd.c -o tgt-fwd.so -ldl 2>"$BERR" || bfail tgt-fwd.so
 
 cat > tramp2.c <<'CEOF'
 /* Calls each entry point TWICE. The first call goes through the resolver with
@@ -812,12 +888,12 @@ else
     cp gl-fwd.c ld-conf.h cld-env.h tgt.c tgt-fwd.h tramp2.c /work/a64/
     cd /work/a64
     A64=aarch64-linux-gnu-gcc
-    $A64 -shared -fPIC -O2 tgt.c -o libtgt.so -Wl,-soname,libtgt.so 2>/dev/null
+    $A64 -shared -fPIC -O2 tgt.c -o libtgt.so -Wl,-soname,libtgt.so 2>"$BERR" || bfail "libtgt.so (aarch64)"
     $A64 -shared -fPIC -O2 -Wall -Wextra -Wno-format-truncation \
          -DGLFWD_TABLE='"tgt-fwd.h"' -DGLFWD_TAG='"tgt-fwd.so"' \
          -DGLFWD_GETPROC='"t_getproc"' \
-         -Wl,-soname,libtgt.so gl-fwd.c -o tgt-fwd.so -ldl 2>/dev/null
-    $A64 -O2 tramp2.c -o tramp2 ./tgt-fwd.so 2>/dev/null
+         -Wl,-soname,libtgt.so gl-fwd.c -o tgt-fwd.so -ldl 2>"$BERR" || bfail tgt-fwd.so
+    $A64 -O2 tramp2.c -o tramp2 ./tgt-fwd.so 2>"$BERR" || bfail "tramp2 (aarch64)"
     qemu() {
         qemu-aarch64-static -L /usr/aarch64-linux-gnu \
             -E LD_PRELOAD="$PWD/tgt-fwd.so" -E CROSS_LIBC_DLOPEN_GL_HOST_DIR="$PWD" "$@"

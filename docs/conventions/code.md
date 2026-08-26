@@ -52,8 +52,14 @@ build by name when the host is newer.
 
 ⛔ `$APPDIR/lib/foreign-dlopen.so` is the slot `quick-sharun` writes and
 `.preload` names. `.foreign-dlopen-enabled` is the marker it creates. Both stay
-spelled upstream's way, and `src/cld-env.h` still accepts the old
-`ANYLINUX_*` variables as deprecated aliases.
+spelled upstream's way.
+
+⚠ **The `ANYLINUX_*` environment names are a different case and they are
+gone.** `src/cld-env.h` no longer reads any of them, because nothing consumed
+them. What still sets them is `experiments/40-appimage.sh`, for UPSTREAM's own
+binary, which understands no other spelling. Removing them from the harness is
+what turns the three controls below into silent passes; removing them from
+`src/` did not.
 
 ⚠ **Renaming any of them turns E30, E37a and E43a into silent passes**, because
 those three drive upstream's own binary and a case that stops receiving the

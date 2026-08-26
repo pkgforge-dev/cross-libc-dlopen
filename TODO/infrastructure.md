@@ -92,7 +92,7 @@ Build, CI and orchestration.
     Now compiled and smoke-run by the same job, against a real lavapipe ICD.
     ⚠ **Compiling is not running it against an ICD**, and the `orphans` job
     now fails rather than passing when no ICD is present.
-  - `tools/manual/libc_inventory.py` -- what produced `inventories/*.json`. Not run by
+  - `tools/libc_inventory.py` -- what produced `inventories/*.json`. Not run by
     anything. It is a regeneration tool, not a test.
   - `tools/manual/trap_users.py` -- not run by anything.
 - **Approach.** Give `icd-harness` a real case in the AppImage suite, or move it
@@ -104,27 +104,55 @@ Build, CI and orchestration.
 - **Prove.** `git grep -l` for each name resolves to either a CI job or a
   `tools/manual/README.md` line.
 
+### ⛔ Correction: the premise above is wrong about `libc_inventory.py`
+
+The premise says it is "not run by anything". ⛔ **It is run on every push.**
+`tools/gen_forward_shim.py:37` does `from libc_inventory import version_key`,
+and `make shim` runs that generator, and the `generated artefacts are not
+stale` job runs `make shim` and diffs the result.
+
+⚠ **The premise says "Measured, by grep over the tree", and the grep was
+real.** It searched for the FILENAME, and an import names the module. That is
+the whole error, and it is worth writing down because the same grep would miss
+the same thing again.
+
+⭐ It was caught by moving the file and running the suite: E15 went MISMATCH
+with `gcc: error: gen-shim.c: No such file or directory`, and E16 followed with
+`./shimtest: No such file or directory`. ⚠ **The generator's own error was
+invisible**, because the E15 line ends in `2>/dev/null`. What made it findable
+was T-13's shape being applied to the harness first: the `run` helper now
+prints a MISMATCH's whole output, so E16's message named E15 as the cause
+rather than only its own symptom.
+
+`trap_users.py` was wrong in a second way. Its two `sys.path.insert` lines both
+inserted its own directory, which was harmless while every tool sat together
+and became an `ImportError` for `elfsym` and `version_traps` the moment it did
+not.
+
 ### Closure
 
-The two probes were already covered by the `orphans` job. The two Python tools
-moved to [`../tools/manual/`](../tools/manual/README.md), which states what each
-is for and who cites it, and every citation moved with them in the same change.
+- `tests/allocprobe.c` and `tests/icd-harness.c` were already covered by the
+  `orphans` job, against a real lavapipe ICD.
+- `tools/libc_inventory.py` **stays in `tools/`**. It is a library the shim
+  generator imports, not a manual tool.
+- `tools/manual/trap_users.py` moved, with its `sys.path` corrected to reach
+  `tools/`, and [`../tools/manual/README.md`](../tools/manual/README.md) says
+  what it is for and who cites it.
 
-⭐ **The citations are now checked rather than remembered.**
-`sh scripts/check-drift.sh` fails when a document cites a repository path that
-does not exist, which is exactly the failure mode the "do not delete" rule
-above was guarding against by hand. It found both stale citations during this
-move, before anything was pushed.
+⭐ **Both halves measured, by running them rather than by grepping for them:**
 
 ```
-$ sh scripts/check-drift.sh
-== cited paths ==
-  every cited path exists (75 checked)
+$ python3 tools/gen_forward_shim.py --floor ... --target ... --musl ... --quiet
+  OK: generated 2388 lines
+$ python3 tools/manual/trap_users.py /lib/x86_64-linux-gnu/libc.so.6 /lib/x86_64-linux-gnu/libm.so.6
+libc /lib/x86_64-linux-gnu/libc.so.6: 21 trap(s), 10 benign re-versioning(s)
+$ python3 tools/libc_inventory.py scan /lib/x86_64-linux-gnu --name smoke
+{ "counts": { "ld-linux-x86-64.so.2": 33, ...
 ```
 
-⚠ **What is still not covered:** neither Python tool has been re-run since the
-move, so "it still works" is UNVERIFIED. The check proves the path resolves,
-not that the tool produces correct output.
+`sh scripts/check-drift.sh` now checks both classes: every path a document
+cites exists, and every module a tool imports is reachable from that tool's own
+`sys.path`. The second check exists because of this entry.
 
 ---
 

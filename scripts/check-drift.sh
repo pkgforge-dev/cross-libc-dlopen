@@ -94,6 +94,38 @@ while IFS= read -r p; do
 done < /tmp/cd_paths.txt
 [ "$missing" = 0 ] && say "every cited path exists ($(wc -l < /tmp/cd_paths.txt | tr -d ' ') checked)"
 
+# ------------------------------------ 2b. every tool import is reachable ----
+head_ "python imports"
+
+# ⛔ THIS CHECK EXISTS BECAUSE OF T-14. tools/libc_inventory.py was recorded as
+# "not run by anything", measured by grep over the tree. The grep was real and
+# it searched for the FILENAME; tools/gen_forward_shim.py imports it by MODULE
+# name, and `make shim` runs that generator on every push. Moving the file
+# broke the generator, and the generator's own error was hidden behind a
+# 2>/dev/null two layers away.
+#
+# A module is reachable if it sits in the importer's own directory or in one of
+# the directories that file inserts into sys.path. Both forms below appear in
+# this tree: __file__'s directory, and its parent.
+badi=0
+for f in $(git ls-files 'tools/*.py'); do
+	d=$(dirname "$f")
+	for m in $(sed -n 's/^from \([a-z_][a-z_0-9]*\) import .*/\1/p' "$f"); do
+		# Standard library and packages are not ours to resolve.
+		case "$m" in
+			os|sys|re|json|struct|io|lzma|tarfile|urllib|argparse|shutil|\
+			hashlib|glob|tempfile|textwrap|collections|itertools|pathlib|typing|subprocess)
+				continue ;;
+		esac
+		if [ -f "$d/$m.py" ] || [ -f "$(dirname "$d")/$m.py" ]; then
+			continue
+		fi
+		bad "$f imports '$m' and no $m.py is reachable from $d/ or its parent"
+		badi=1
+	done
+done
+[ "$badi" = 0 ] && say "every module a tool imports is beside it or one level up"
+
 # ----------------------------------------------- 3. make targets exist ------
 head_ "make targets"
 

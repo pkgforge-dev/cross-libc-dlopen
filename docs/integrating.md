@@ -45,11 +45,14 @@ APPDIR=/path/to/bundle                     # one consumer's spelling, still acce
 CROSS_LIBC_DLOPEN_LIBDIR=lib               # default; the directory under the root
 ```
 
-⚠ **The old `ANYLINUX_*` variable names are all still read**, as deprecated
-aliases, for exactly one reason: a bundle built before the rename sets them from
-its own launcher, and dropping them would make this object load and do nothing --
-silently, because "the feature was off" and "the feature was never asked for"
-produce an identical run. See [`src/cld-env.h`](../src/cld-env.h).
+⛔ **Every control has exactly one name.** The `ANYLINUX_*` spellings this
+project used before it was renamed are no longer read by anything in `src/`.
+Nothing consumed them: there has never been a published release, so no bundle
+sets one. E84 and E85 in `experiments/30-run-tests.sh` are the pair that keeps
+that true. See [`src/cld-env.h`](../src/cld-env.h).
+
+⚠ `APPDIR` above is not one of those. It is a consumer's spelling of the bundle
+root and it stays accepted.
 
 ---
 

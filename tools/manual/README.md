@@ -1,26 +1,47 @@
 # tools/manual
 
-⭐ **Tools nothing runs on a schedule, kept because their output is cited.**
+⭐ **A tool nothing runs on a schedule, kept because its output is cited.**
 
 A test no runner runs is a test that has already stopped working and nobody has
-noticed. These two are not tests. They are regeneration and analysis tools that
-a person invokes when the thing they read has changed, and moving them here
-says so, rather than leaving them beside the generators CI does run.
+noticed. What is here is not a test. It is an analysis tool a person invokes
+when the thing it reads has changed, and putting it here says so rather than
+leaving it beside the generators CI runs on every push.
 
-⛔ **Neither was deleted, and "nothing runs it" is not on its own a reason to.**
-Both are cited from documents, and deleting the file without the citation
-leaves a document pointing at nothing.
+⛔ **Nothing was deleted, and "nothing runs it" is not on its own a reason to.**
+It is cited from a document, and deleting the file without the citation leaves
+that document pointing at nothing.
 
 | tool | what it is for | who cites it |
 |---|---|---|
-| [`libc_inventory.py`](libc_inventory.py) | produced `inventories/*.json`, the measured symbol inventories `tools/gen_forward_shim.py` consumes. Run it again when the bundled glibc changes, not before | [`../../docs/ground-truth.md`](../../docs/ground-truth.md) |
 | [`trap_users.py`](trap_users.py) | intersects an object's imports with the version-trap set, so you can ask which traps a specific driver would actually hit | [`../../docs/REPORT.md`](../../docs/REPORT.md) |
 
-⚠ **Being here is not permission to rot.** `sh scripts/check-drift.sh` fails if
-a document cites a path that does not exist, so a rename breaks a check rather
-than a reader. What it cannot check is whether either still produces correct
-output, and neither has been re-run since it was moved.
+```bash
+python3 tools/manual/trap_users.py /lib/x86_64-linux-gnu/libc.so.6 /lib/x86_64-linux-gnu/libm.so.6
+```
 
-The two tools `tools/` keeps are different: `gen_forward_shim.py` and
-`gen_gl_fwd.py` are run by `make shim`, `make gl-syms` and `make gles-syms`,
-and CI re-runs the first and diffs the result on every push.
+---
+
+## ⚠ What this directory nearly broke
+
+`tools/libc_inventory.py` was moved here too, on the recorded premise that
+nothing ran it. ⛔ **That premise was wrong, and it is worth reading why.**
+`tools/gen_forward_shim.py` imports it by MODULE name, `make shim` runs that
+generator, and CI runs `make shim` and diffs the result on every push. The
+premise had been measured by grepping the tree for the FILENAME, and an import
+never spells one.
+
+It is back in [`../`](../), where it belongs.
+
+`trap_users.py` broke a second way in the same move. Both its `sys.path.insert`
+lines inserted its own directory, which was harmless while every tool sat
+together and became an `ImportError` for `elfsym` and `version_traps` the
+moment one did not. It now inserts the parent as well.
+
+⭐ **Both classes are checked now.** `sh scripts/check-drift.sh` fails when a
+document cites a path that does not exist, and when a tool imports a module
+that is not reachable from its own directory or the one above it.
+[`../../TODO/infrastructure.md`](../../TODO/infrastructure.md) T-14 has the
+full record, including the corrected premise.
+
+The tools that stay in [`../`](../) are reached by `make shim`, `make gl-syms`,
+`make gles-syms` or `make traps`, and CI runs the first of those on every push.

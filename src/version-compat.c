@@ -160,7 +160,7 @@ static void *vc_resolve(const char *sym) {
 	if (!p)
 		p = dlsym(RTLD_NEXT, sym);
 
-	if (cld_getenv("CROSS_LIBC_DLOPEN_DEBUG", "ANYLINUX_LIB_DEBUG"))
+	if (cld_getenv("CROSS_LIBC_DLOPEN_DEBUG", NULL))
 		fprintf(stderr, " [cross-libc-dlopen.so] >> version-compat: %s@%s -> %p\n",
 		        sym, versioned ? ver : "(unversioned)", p);
 	return p;

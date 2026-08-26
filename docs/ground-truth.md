@@ -72,8 +72,8 @@ section 3.1.
 ## The forward-compatibility surface for this AppImage is empty
 
 ```
-python3 tools/manual/libc_inventory.py scan <appdir>/lib --name appdir-bundled -o inventories/appdir.json
-python3 tools/manual/libc_inventory.py matrix <distro-runtimes>/
+python3 tools/libc_inventory.py scan <appdir>/lib --name appdir-bundled -o inventories/appdir.json
+python3 tools/libc_inventory.py matrix <distro-runtimes>/
 ```
 
 Bundled is glibc **2.44**, 4 287 dynamic symbols across the runtime set.

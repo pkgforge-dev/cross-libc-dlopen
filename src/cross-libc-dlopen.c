@@ -45,7 +45,7 @@ typedef void *(*dlopen_func_t)(const char *filename, int flags);
 
 // print to stderr when CROSS_LIBC_DLOPEN_DEBUG=1
 static int cross_libc_dlopen_debug_enabled(void) {
-	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_DEBUG", "ANYLINUX_LIB_DEBUG");
+	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_DEBUG", NULL);
 	return v && strcmp(v, "1") == 0;
 }
 
@@ -85,7 +85,7 @@ static int cross_libc_dlopen_debug_enabled(void) {
 #endif
 
 static int cross_libc_dlopen_mode(void) {
-	const char *v = cld_getenv("CROSS_LIBC_DLOPEN", "ANYLINUX_LIB_FOREIGN_DLOPEN");
+	const char *v = cld_getenv("CROSS_LIBC_DLOPEN", NULL);
 	if (v && *v)
 		return strcmp(v, "1") == 0 ? 1 : 0;
 
@@ -1022,7 +1022,7 @@ static int cld_apply_renames(struct cld_elf *e, int dry_run) {
 	// Escape hatch: renaming is the one rewrite that changes SEMANTICS rather
 	// than just relaxing a check, so it needs to be switchable when bisecting
 	// a misbehaving driver. CROSS_LIBC_DLOPEN_NORENAME=1 turns it off.
-	const char *off = cld_getenv("CROSS_LIBC_DLOPEN_NORENAME", "ANYLINUX_LIB_FOREIGN_NORENAME");
+	const char *off = cld_getenv("CROSS_LIBC_DLOPEN_NORENAME", NULL);
 	if (off && strcmp(off, "1") == 0) {
 		DEBUG_PRINT("cross-libc-dlopen: symbol renaming disabled by "
 		            "CROSS_LIBC_DLOPEN_NORENAME=1\n");
@@ -1347,7 +1347,7 @@ static int cld_report_unresolved(const struct cld_elf *e, const char *what,
 }
 
 static int cld_dryrun_enabled(void) {
-	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_DRYRUN", "ANYLINUX_LIB_FOREIGN_DRYRUN");
+	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_DRYRUN", NULL);
 	return v && strcmp(v, "1") == 0;
 }
 
@@ -1657,7 +1657,7 @@ static void *cld_load(dlopen_func_t dlopen_orig, const char *canon, int flags, i
 	// "being loaded from a different path broke it" in a single A/B. Purely a
 	// diagnostic: with the tags intact a genuinely unsatisfiable object just
 	// fails to load, and the plain fallback below then reports why.
-	const char *nostrip_env = cld_getenv("CROSS_LIBC_DLOPEN_NOSTRIP", "ANYLINUX_LIB_FOREIGN_NOSTRIP");
+	const char *nostrip_env = cld_getenv("CROSS_LIBC_DLOPEN_NOSTRIP", NULL);
 	int strip_disabled = nostrip_env && strcmp(nostrip_env, "1") == 0;
 
 	void *handle = NULL;
