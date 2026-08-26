@@ -20,14 +20,47 @@ MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' sh scripts/build.sh
 
 ## The floor rule
 
-⛔ **Build on the OLDEST glibc you intend to support, never the newest.**
+⛔ **Build on a glibc no newer than the oldest BUNDLED glibc you intend to
+load into.**
 
-Everything else here follows from this, and it is the one that looks like a
-detail. A build on glibc 2.41 emits references to `GLIBC_2.34` symbols. The
-artefact loads perfectly on the machine that built it, and then fails to load
-inside a bundle whose glibc is older. That happens at `dlopen` time, in
-somebody else's application, with a message about a symbol version rather
-than about a build.
+⚠ **The host's glibc is not what decides this, and reading it as the host is
+the mistake the rule invites.** These artefacts are preloaded into somebody
+else's process, and what has to satisfy their symbol version requirements is
+the glibc that process CARRIES. A host running a fifteen-year-old distribution
+is irrelevant to it.
+
+Measured, building on glibc 2.43:
+
+```
+$ objdump -T cross-libc-dlopen.so | grep -oE 'GLIBC_2\.[0-9]+' | sort -uV | tail -1
+GLIBC_2.34
+```
+
+`dlopen`, `dlsym`, `dlclose`, `dladdr`, `dlvsym` and `dlinfo` moved into libc at
+glibc 2.34, and `stat` and `fstat` at 2.33. A build on any glibc at or above
+2.34 therefore needs `GLIBC_2.34`, and a bundle carrying glibc 2.31 does not
+have it. The artefact loads perfectly on the machine that built it and then
+fails at `dlopen` time in somebody else's application, with a message about a
+symbol version rather than about a build.
+
+The same source built on `debian:bullseye-slim` needs at most `GLIBC_2.16`.
+
+⭐ **glibc's backward compatibility is real, and it runs one way.** Both
+directions were measured, by preloading the built object onto `/bin/true`:
+
+| built on | requires | loaded into glibc 2.31 | loaded into glibc 2.43 |
+|---|---|---|---|
+| glibc 2.31 | `GLIBC_2.16` | yes | yes |
+| glibc 2.43 | `GLIBC_2.34` | ⛔ `version 'GLIBC_2.34' not found` | yes |
+
+That asymmetry is the whole rule. An old build runs everywhere, which is why
+the floor is 2.31 and why the container is the default.
+
+⭐ **So building on the newest glibc is correct whenever every bundle you
+target is at least as new.** A build on Arch loads into a bundle carrying
+glibc 2.44, and the host underneath can be as old as it likes: that is the gap
+this project exists to close. It is only the BUNDLE being older than the build
+that breaks, which is why the default is a container and the floor is 2.31.
 
 The floor is a **property of the build environment**, which is why the default
 is a container: it is the only portable way to pin one. The shipped builds use
@@ -76,6 +109,46 @@ compiler and the floor.
 
 ---
 
+## Building without the script
+
+⭐ **`make portable` is the packager's target**, and it needs no container, no
+script and no patch to this repository:
+
+```bash
+cd src && make portable
+```
+
+It is `sh scripts/build.sh --portable` with the orchestration taken away, and
+it produces the same objects: built with `-DCLD_STRICT_ENV`, and without
+`-fcf-protection=full`.
+
+⛔ **`make portable` says nothing about which glibc you build on.** The floor
+rule above still decides whether the result loads.
+
+### What the two flags do
+
+| flag | effect |
+|---|---|
+| `-DCLD_STRICT_ENV` | the objects read `CROSS_LIBC_DLOPEN_ROOT` and ignore `APPDIR`. The default reads both, because an AppImage runtime exports `APPDIR` into every process it starts, and a consumer who wants one spelling asked for this |
+| no `-fcf-protection=full` | the build stops REQUESTING CET |
+
+⚠ **Dropping the CET flag removes the request, not always the instructions.** A
+toolchain that enables CET by default still emits `endbr64`, and that is the
+distribution's choice rather than this project's. Measured on a gcc whose
+`-Q --help=common` reports `-fcf-protection=full`: the default and portable
+builds carry 202 each, identical. The flag is dropped because it does no
+protective work here, which
+[`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) 9.13
+measures, and because a toolchain that does not support it treats being asked
+as a hard error.
+
+⚠ **The Makefile now asks the compiler rather than assuming from the
+architecture.** Targeting x86 is not the same as supporting the flag, and the
+architecture test alone let an unsupported flag reach a compiler that refuses
+it. Most callers therefore never need `portable` for that reason at all.
+
+---
+
 ## Options
 
 ```bash
@@ -83,6 +156,7 @@ sh scripts/build.sh --check                 # detect and report, build nothing
 sh scripts/build.sh --arch aarch64          # cross-build
 sh scripts/build.sh --arch both             # both, sequentially
 sh scripts/build.sh --engine docker
+sh scripts/build.sh --portable              # -DCLD_STRICT_ENV, and no CET flag
 sh scripts/build.sh --floor-image debian:bookworm-slim --floor-glibc 2.36
 ```
 

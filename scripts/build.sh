@@ -1,21 +1,20 @@
 #!/bin/sh
 # Build every artefact, from any host libc, for any target libc.
 #
-# THE FLOOR RULE, which is the one that gets got wrong: build on the OLDEST
-# glibc you intend to support, never the newest. A build on glibc 2.41 emits
-# references to GLIBC_2.34 symbols and then fails to load inside a bundle whose
-# glibc is older: at dlopen time, in somebody else's application, with a
-# message about a symbol version rather than about a build. The floor is a
-# property of the BUILD ENVIRONMENT, which is why this script defaults to a
-# container: it is the only portable way to pin one.
+# THE FLOOR RULE, and it is about the BUNDLE rather than the host: build on a
+# glibc no newer than the oldest bundled glibc you will load into. A build on
+# glibc 2.41 needs GLIBC_2.34 and then fails to load inside a bundle carrying
+# 2.31, at dlopen time and in somebody else's application. The host underneath
+# can be as old as it likes. docs/building.md has the measurement.
 #
 #   scripts/build.sh                     container build for the host arch
 #   scripts/build.sh --arch aarch64      cross-build, container
 #   scripts/build.sh --arch both         both, sequentially
 #   scripts/build.sh --engine native     no container; refuses if the host
 #                                        libc is newer than --floor-glibc
-#   scripts/build.sh --portable        a variant that reads only
-#                                        CROSS_LIBC_DLOPEN_ROOT, never APPDIR
+#   scripts/build.sh --portable          reads only CROSS_LIBC_DLOPEN_ROOT and
+#                                        no CET flag. `make portable` is the
+#                                        same build without this script
 #   scripts/build.sh --check             detect and report, build nothing
 #
 # Everything it produces lands in build/<arch>/ with a manifest beside it.
