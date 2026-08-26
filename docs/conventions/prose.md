@@ -7,16 +7,26 @@ is a reading.
 
 ## The rule
 
-Short sentences. No dashes as punctuation, in either spelling. No marketing
-adjectives. No emoji beyond the three below. Present tense. Every claim backed
-by a command a reader can run or a path a reader can open.
+Short sentences, each with a subject and a verb. No dashes as punctuation, in
+any spelling. ASCII only, apart from the five markers below. No marketing
+adjectives. Present tense. Every claim backed by a command a reader can run or
+a path a reader can open.
+
+⛔ **A rule is a complete sentence.** Not a fragment, not a slogan, not a noun
+phrase standing in for an instruction. `Generated files: never edited` is a
+label; `Generated files are regenerated and never edited by hand` is a rule,
+and only the second one tells a reader what to do. Where a rule exists because
+something went wrong, it says what went wrong in a sentence that can be
+checked.
 
 ---
 
 ## Dashes, and why `--` is not the fix
 
-⛔ **No em dash.** ⛔ **And `--` is not what replaces it.** Substituting one
-dash for another keeps the sentence that wanted a dash and makes it read worse:
+⛔ **No dash as punctuation, in any spelling.** Not an em dash, not ` -- `, not
+` - ` between two words. ⛔ **And `--` is not what replaces an em dash.**
+Substituting one dash for another keeps the sentence that wanted a dash and
+makes it read worse:
 a reader meets what looks like a subtraction in the middle of a clause, and
 `--` is also how every command-line flag in this repository begins, so the page
 now has two meanings for one token.
@@ -36,29 +46,74 @@ mark that is not a dash:
 horizontal rule are all `--` or `---` doing their own job. The rule is about
 prose.
 
-⚠ **The ratchet is section 4 of `scripts/check-drift.sh`**, which CI runs on
-every push. `HISTORY/` is excluded because it records original wording, and a
-single change that rewrote every dash in the tree would be a change nobody
-could review, so they go as the files they live in are touched for other
-reasons.
+⚠ **The check is section 4 of `scripts/check-drift.sh`**, which CI runs on
+every push. It refuses. It carries no budget, no pin and no tolerance, and it
+does not pass because a count fell: it was a ratchet once, and
+[`../REPORT.md`](../REPORT.md) 9.14 records the ratchet drifting eight under
+the tree and then admitting a planted dash.
 
-⛔ **The pin is exact, and a FALL refuses as loudly as a rise.** That looks
-like pedantry and is the whole mechanism: the pin is a number in the script,
-nothing lowers it on its own, and a version of this check that merely
-suggested lowering it was ignored three commits running until it had drifted
-eight under the tree. A planted dash then landed inside the slack and passed,
-and the ratchet was recorded as broken when it was only unarmed. Lower the
-number in the same change that lowers the count. `docs/REPORT.md` 9.14 has
-both halves proven.
+It covers Markdown prose, C comments, and shell, YAML, Python and Makefile
+comments, and it counts a dash that wraps at the end of a line. Four shapes are
+not punctuation and are permitted: a fenced block or a code span, an
+end-of-options separator such as `cd --`, a command synopsis such as
+`NAME -- CMD [ARGS...]`, and a banner line such as `# ----- name --`.
+
+⚠ **Prose a program prints is out of scope**, and the check says so in its own
+comments rather than reporting a coverage it does not have. Two reasons, both
+local: five occurrences sit on `verdict` lines that
+[`code.md`](code.md) forbids tidying, and `src/gl-fwd.c` emits a string whose
+spelling [`../diagnostics.md`](../diagnostics.md) documents as the debug line a
+reader greps for.
+
+`HISTORY/` is excluded because it records original wording.
+
+⛔ **A specimen is not a violation.** A dash inside a code span is being named
+rather than used, which is what makes this page writable: a rule that banned
+its own subject could not show what it bans, and
+[`../../scripts/verify-gates.sh`](../../scripts/verify-gates.sh) could not
+record the planted case that proves the check fires. That exemption is itself
+proven on every run, because an exemption nobody checks is one that can stop
+applying in silence.
 
 Write for an agent with no memory of the session that wrote the file, and for a
 person looking for one fact.
 
 ---
 
-## The five markers, and nothing else
+## ASCII, and the five markers
 
-⛔ ⭐ ⚠ ✅ ❌ and no others.
+⛔ **Every file this repository authors is ASCII**, with exactly five
+exceptions: ⛔ ⭐ ⚠ ✅ ❌ and no others.
+
+A glyph outside that set is one a reader cannot type, cannot grep for, and may
+not see rendered the way its author saw it. Once one carries meaning in a rule
+or a table, the rule is unreadable to somebody. Each has an ASCII spelling:
+
+| removed | what replaces it |
+|---|---|
+| a middle dot separating items | a comma, or a line break where the list is a sequence of steps |
+| a section sign | the word `section` |
+| a greater-or-equal sign | `>=` |
+| an ellipsis spanning a range | the word `to`, as in `B-01 to B-09` |
+| an ellipsis trailing a sentence | three full stops, or a rewrite that does not trail off |
+| an em dash | one of the four rewrites above |
+| a box-drawing character | `+`, `-` and `|`, inside a fenced block |
+| an arrow glyph | `->` |
+| a tick or cross other than the two below | ✅ and ❌, which are the state-table markers |
+
+⛔ **A character being NAMED rather than used belongs in a code span**, which is
+how the table above is written at all.
+
+⚠ **The check is [`../../scripts/check-charset.sh`](../../scripts/check-charset.sh)**,
+and it takes its file list from version control. A file this repository does
+not track is a file it does not author, so it is not scanned and does not need
+naming in the check. A hardcoded list of directories to skip drifts from what
+is tracked, and each stale entry then reads as a rule about a path that may
+not exist.
+
+---
+
+## What each marker means
 
 | marker | meaning |
 |---|---|

@@ -6,7 +6,7 @@
 # it; a convention with a check behind it is followed by everyone. This is the
 # mechanical half of "documentation ships with the code it describes".
 #
-# Four questions, each reported separately so the failure names itself:
+# Five questions, each reported separately so the failure names itself:
 #
 #   1. Every CROSS_LIBC_DLOPEN_* control the code reads is documented, and
 #      every one the documents name is actually read. ⭐ This is the one that
@@ -14,7 +14,8 @@
 #      documented name and the read name look identical from either side.
 #   2. Every repository path a document cites exists.
 #   3. Every `make` target a document names exists in src/Makefile.
-#   4. The dash ratchet. See docs/conventions/prose.md.
+#   4. No dash is used as punctuation, in markdown prose or in a comment.
+#      See docs/conventions/prose.md.
 #
 #   sh scripts/check-drift.sh
 #
@@ -236,61 +237,77 @@ else
 	say "both orchestrators pin the same two assets"
 fi
 
-# ------------------------------------------------- 4. the dash ratchet ------
+# ------------------------------------------------ 4. no dash as punctuation -
 head_ "dashes used as punctuation"
 
-# ⛔ A RATCHET, AND THE PIN IS EXACT. The count may fall and may not rise, and
-# a FALL refuses too. That second half is not pedantry: it is the only thing
-# that carries the pin down, and without it the ratchet stops ratcheting.
+# ⛔ This refuses. No pin, no budget, no tolerance. It was a counting ratchet
+# and the ratchet drifted eight under the tree and then admitted a planted
+# dash; docs/REPORT.md 9.14 proves both halves.
 #
-# ⚠ MEASURED, AND THIS IS WHY. The pin was set to 236 at bc29fce, when the
-# tree carried 236. e09e128 took the tree to 235 and f6d126e took it to 228,
-# and neither lowered the pin, because the only thing asking them to was a
-# suggestion this script printed and nobody read. Eight of slack later, a
-# planted dash raises 228 to 229, which is under 236, so the check reports
-# "down from a budget" and exits 0. A session planted exactly that dash, read
-# exactly that, and recorded the ratchet as broken. The count was never wrong.
-# The guard was unarmed, and a ratchet that only ever suggests tightening
-# never tightens. docs/REPORT.md 9.14 has both halves proven.
+# ⚠ Prose only. prose.md exempts `--` doing its own job:
 #
-# Rewriting every dash in one change would be a change nobody could review, so
-# they go as the files they live in are touched for other reasons, and each
-# such change lowers the number below in the same commit.
-# docs/conventions/prose.md says why `--` is not the fix for an em dash.
-# ⚠ PROSE ONLY, and the rule is the reason. docs/conventions/prose.md exempts
-# `--` doing its own job: a command-line flag, a literal inside a code block, a
-# shell comment. The first version of this counted those too, so a document
-# that added a correct shell snippet was refused, and a rewrite that traded a
-# prose dash for a code one netted to zero and passed. Measured on the tree
-# this was written against: 233 counted raw, 15 of them inside a fence or a
-# span, 218 actually prose. It also made this section unwritable, because
-# recording the planted sentence puts the planted sentence in a document.
+#   refused                     permitted
+#   ------------------          ------------------------
+#   markdown outside a fence    a fenced block or a code span
+#   a C comment                 an end-of-options separator: `cd --`
+#   a shell/YAML/python         a command synopsis: `NAME -- CMD [ARGS...]`
+#     comment                   a banner line: `# ----- name --`
+#   a line ending in ` --`      a string a program prints
 #
-# A fence toggles on ``` or ~~~ and resets per file. Both are markdown, and a
-# transcript that quotes one has to open with the other. A code span is
-# stripped from the lines that are left.
-count_dashes() {
+# ⚠ A string a program prints is OUT OF SCOPE and the gap is recorded rather
+# than papered over: 71 occurrences. Five sit on `verdict` lines that code.md
+# forbids tidying, and src/gl-fwd.c emits a string whose spelling
+# docs/diagnostics.md documents, so emitter and matcher change together.
+#
+# ⚠ A `#` opens a comment only when followed by space or end of line:
+# gen_forward_shim.py emits C `#define` lines out of python strings.
+prose_md() {
 	docs | tr '\n' '\0' | xargs -0 awk '
 		FNR == 1           { fence = 0 }
 		/^[ \t]*(```|~~~)/ { fence = !fence; next }
 		fence              { next }
-		                   { gsub(/`[^`]*`/, ""); print }
-	' 2>/dev/null | grep -oF ' -- ' | wc -l | tr -d ' '
+		                   { gsub(/`[^`]*`/, ""); print FILENAME ":" FNR ":" $0 }
+	' 2>/dev/null
 }
 
-BUDGET=0
-have=$(count_dashes)
-if [ "$have" -gt "$BUDGET" ]; then
-	bad "$have dashes used as punctuation, and the pin is $BUDGET."
+# C comments: a line whose first non-space token opens or continues a block
+# comment, or is a //. Backtick spans are stripped here too, so a comment
+# discussing `--library-path` does not register.
+prose_c() {
+	git ls-files 'src/*.c' 'src/*.h' 'tests/*.c' 'tests/*.h' |
+	tr '\n' '\0' | xargs -0 awk '
+		/^[ \t]*(\/\/|\*|\/\*)/ { gsub(/`[^`]*`/, ""); print FILENAME ":" FNR ":" $0 }
+	' 2>/dev/null
+}
+
+prose_hash() {
+	{ git ls-files '*.sh' '*.yml' '*.py' '*.ps1' ':(exclude)HISTORY/*'
+	  git ls-files 'src/Makefile'; } |
+	tr '\n' '\0' | xargs -0 awk '
+		/^[ \t]*#([ \t]|$)/ { gsub(/`[^`]*`/, ""); print FILENAME ":" FNR ":" $0 }
+	' 2>/dev/null
+}
+
+# A banner divides sections and is not a sentence; a synopsis documents an
+# end-of-options separator. Both are dropped before the dash is looked for.
+dashes() {
+	{ prose_md; prose_c; prose_hash; } |
+		grep -vE '\-{4,}' |
+		grep -vE ' -- [A-Z][A-Z_]*( |$|\[)' |
+		grep -E ' -- | --$'
+}
+
+hits=$(dashes)
+if [ -n "$hits" ]; then
+	n=$(printf '%s\n' "$hits" | wc -l | tr -d ' ')
+	bad "$n dash(es) used as punctuation."
+	printf '%s\n' "$hits" | cut -c1-110 | while IFS= read -r h; do
+		say "       $h"
+	done
 	say "       Rewrite the sentence rather than swapping one dash for another."
 	say "       docs/conventions/prose.md has the four replacements."
-elif [ "$have" -lt "$BUDGET" ]; then
-	bad "$have dashes used as punctuation, and the pin is still $BUDGET."
-	say "       The count fell, which is the point of the ratchet. Set BUDGET to"
-	say "       $have in scripts/check-drift.sh, in this same change. Left alone"
-	say "       the slack accumulates and the ratchet stops being able to refuse."
 else
-	say "$have, at the pin. It may fall, and a fall lowers the pin with it."
+	say "no dash used as punctuation"
 fi
 
 # ------------------------------- 5. INDEX agrees with the entries -----------
@@ -306,9 +323,9 @@ head_ "TODO/INDEX.md against the entries"
 # The entry is the authority: it is where the acceptance command was run and
 # the output recorded. INDEX is a view of it.
 #
-# ⚠ An entry's status once carried a trailing pointer clause, and the strip
-# below still tolerates one. No entry writes it that way now: the pointer is
-# its own bullet, so the status line is the status and nothing else.
+# ⚠ A status line is the status and nothing else. A pointer goes on its own
+# bullet: the old form was split on a punctuation dash, which prose.md no
+# longer permits.
 badx=0
 entries=$(git ls-files 'TODO/*.md' |
           grep -vE 'TODO/(INDEX|PROGRESS|RULES)\.md')
@@ -319,7 +336,6 @@ awk '
 		s = $0
 		sub(/.*\*\*Status\*\*[ ]*/, "", s)
 		gsub(/[⭐*]/, "", s)
-		sub(/ -- .*/, "", s)
 		gsub(/^[ ]+|[ ]+$/, "", s)
 		print id "\t" tolower(s)
 		id = ""

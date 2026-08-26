@@ -170,6 +170,18 @@ jobs:
       - name: the documents still describe the tree
         run: sh scripts/check-drift.sh
 
+      # ⭐ Its own step, and named for its own rule. Folded into the drift
+      # check above, a failure would say "the documents drifted" about a file
+      # that describes the tree perfectly and merely spells one character in a
+      # way nobody can type.
+      #
+      # ⚠ The template's check-docs.sh below refuses characters outside a
+      # patched marker allowlist, which overlaps this and does not replace it:
+      # it reads docs/ only, and this reads every tracked file, including
+      # src/, scripts/ and the workflows.
+      - name: ASCII, apart from the five markers
+        run: sh scripts/check-charset.sh
+
       # ⛔ THE EMOJI ALLOWLIST IS WIDENED IN OUR COPY OF THE TEMPLATE'S CHECK,
       # and that is a deliberate local divergence rather than a workaround.
       #

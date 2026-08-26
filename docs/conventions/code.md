@@ -79,6 +79,47 @@ proves the difference by counting upstream's own debug lines in both arms.
 
 ---
 
+## What a comment is for
+
+⛔ **A comment carries what the code cannot say.** A reason, a constraint, a
+trap, or a citation of the measurement that established a behaviour. A comment
+that restates the line below it is deleted: it costs a reader a line and tells
+them nothing the code did not.
+
+```c
+/* wrong: the line already says this */
+count++;                     // increment the counter
+
+/* right: the code cannot say why */
+cld_strip_versions(e);       // every tag at once; a verdef without its
+                             // versym table segfaults ld.so
+```
+
+⛔ **A file states its purpose once.** One block, at the top. No block lower
+down restates it in different words, because the two then drift and a reader
+has no way to tell which is current. Where the purpose depends on a rule this
+directory owns, the header cites the rule rather than repeating it.
+
+⛔ **A comment is not a changelog.** It describes the code as it is, never what
+it used to be, what a change did, or which commit did it. That belongs in the
+commit message, or in [`../../HISTORY/`](../../HISTORY/README.md) when the
+superseded wording is worth keeping. A comment beginning "Before this change"
+is a comment that will outlive the reader who needed it.
+
+⚠ **One comment syntax per file.** Whichever already carries the majority of
+that file's comments is the one that stays, so bringing a file into line never
+produces a diff larger than the change it accompanies.
+
+⛔ **A comment defect in a generated file is fixed at its generator.** The four
+files above are output. Editing one directly is refused by the regeneration
+checks, because regenerating no longer reproduces it.
+
+⚠ **A comment in `experiments/*.sh` is edited only where it is provably a
+comment.** Those files carry the assertions, and the rule below governs
+everything else in them.
+
+---
+
 ## Naming
 
 - New environment variables take the `CROSS_LIBC_DLOPEN_` prefix and go through
