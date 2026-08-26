@@ -97,12 +97,17 @@ gles-fwd.so
 ⚠ `.preload` is **sharun's** file, not this project's. Its ordering does not
 matter, for the reason above.
 
-⚠ **That list is for a bundle you are building.** A bundle built *before* this
-rename already names `foreign-dlopen.so` in its `.preload`, and `quick-sharun`
-still writes that name. To retrofit one, copy the built
-`cross-libc-dlopen.so` **over** `lib/foreign-dlopen.so` rather than adding a
-second entry -- which is exactly what `experiments/40-appimage.sh` does, and
-why that path is spelled upstream's way throughout the harness.
+⚠ **That list is for a bundle you are building.** An older bundle names
+`foreign-dlopen.so` in its `.preload` instead. To retrofit one, copy the built
+`cross-libc-dlopen.so` **over whichever name that bundle's `.preload` already
+carries**, rather than adding a second entry.
+
+⛔ **Do not assume the name, and do not hardcode either spelling.** Upstream has
+changed it once: the demo AppImage this repository's suite pins shipped
+`lib/foreign-dlopen.so` and now ships `lib/cross-libc-dlopen.so`. Read the
+bundle's own `.preload` and use what is in it, which is what
+`experiments/41-extract.sh` does before `experiments/40-appimage.sh` touches
+anything. [`REPORT.md`](REPORT.md) 9.17.
 
 ⚠ **`SHARUN_FALLBACK_LIBRARY_PATH` is how the harness talks to THIS launcher**,
 not an interface of this project. It extends the library path sharun assembles,
