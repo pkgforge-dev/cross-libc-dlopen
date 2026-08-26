@@ -2568,8 +2568,20 @@ distinct sonames over 55 regular files and 35 symlinks.
 The "as shipped" arm used to be upstream's own shim, which could not load a
 host driver. It is now a build of this project, older than the working tree,
 still carrying the `ANYLINUX_*` aliases this branch removed. E30 and E37a are
-the controls that predict that arm FAILS, and they are what make the patched
-arm a measurement rather than a coincidence. Run
+the controls for that arm, and they are what make the patched arm a
+measurement rather than a coincidence.
+
+⚠ **Read their predictions carefully, because the log line is misleading on
+its own.** Both are `predicted=OK`, which is about the exit status: the
+program is expected to run cleanly. What they assert is the NEEDLE, and the
+needle is the complaint being reproduced:
+
+| case | asserts the output contains |
+|---|---|
+| `run E30 OK "NO-DEVICES" probe_verdict 1` | `NO-DEVICES` |
+| `run E37a OK "zero accessible devices" render_verdict vkcube --c 20` | `zero accessible devices` |
+
+So a MISMATCH here means the as-shipped arm found a device. Run
 [32953461170](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32953461170),
 x86-64, the suite's first completed run:
 
