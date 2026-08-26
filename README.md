@@ -119,6 +119,8 @@ list rather than a silence.
 | [`docs/AGENTS.md`](docs/AGENTS.md) | ⭐ the single entry point for an agent working here |
 | [`docs/HUMANS.md`](docs/HUMANS.md) | ⭐ what a **person** pastes to get useful work out of a session |
 | [`docs/conventions/`](docs/conventions/README.md) | ⛔ how this repository is written. Binding, and half of it is checked by CI |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | what to run and what to read before opening a pull request |
+| [`SECURITY.md`](SECURITY.md) | how to report a vulnerability privately |
 
 Not on this list, and not deleted: [`docs/history/`](docs/history/README.md) is why things
 are the way they are, in the original wording. [`docs/todo/`](docs/todo/INDEX.md) is what
@@ -161,16 +163,24 @@ is open, and the work order is in
 ## Layout
 
 ```
-src/               the implementation
-experiments/       the shell stages. These are the tests
-tests/             the probes
-tools/             generators and analysis
-scripts/           build and orchestration
-docs/              what it does, how to use it, what it cannot do
-examples/          scripts that run and print a before and an after
-docs/history/           why things are the way they are
-docs/todo/              what is open
+src/            the implementation
+tests/          the probes
+experiments/    the shell stages. These are the tests
+tools/          generators and analysis
+scripts/        build and orchestration
+examples/       scripts that run and print a before and an after
+inventories/    measured symbol inventories the generators consume
+docs/           every document
+  report/       the measured record, one file per section
+  conventions/  how this repository is written
+  history/      why things are the way they are
+  todo/         what is open
 ```
+
+The root holds code, tooling, and three documents a visitor opens without
+following a link: this one, [`CONTRIBUTING.md`](CONTRIBUTING.md) and
+[`SECURITY.md`](SECURITY.md). Everything else written for a reader is under
+`docs/`.
 
 ---
 

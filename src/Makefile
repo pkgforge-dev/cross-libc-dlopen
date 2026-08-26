@@ -100,7 +100,8 @@ cross-libc-dlopen.so: cross-libc-dlopen.c forward-shim.c version-compat.c cld-en
 # crti.o carries no property, and the linker ANDs that absence across the link.
 # ⚠ -Wl,-z,ibt DOES emit a note, and the note is FALSE: _init and _fini come
 # from crti.o/crtn.o, ld.so reaches them through DT_INIT/DT_FINI, an indirect
-# call, and neither begins with endbr64. docs/REPORT.md 9.13 has the table.
+# call, and neither begins with endbr64. docs/report/09-the-second-boundary.md
+# 9.13 has the table.
 gl-fwd.so: gl-fwd.c gl-fwd-gl.h ld-conf.h cld-env.h
 	$(CC) $(SOFLAGS) $(CFLAGS) $(CET_CFLAGS) $(EXTRA_CFLAGS) \
 		-DGLFWD_TABLE='"gl-fwd-gl.h"' -DGLFWD_TAG='"gl-fwd.so"' \

@@ -2,6 +2,10 @@
 
 What a pull request can and cannot do here, and the settings that decide it.
 
+⚠ **Reporting a vulnerability is a different question**, and
+[`../SECURITY.md`](../SECURITY.md) answers it. This page is about what CI
+grants; that one is about a defect in the code.
+
 ⭐ **Everything else in this repository is checked by a file a reviewer can
 read.** The settings below are not in the tree. They live on GitHub, they are
 invisible from a clone, and they change without a commit, so they are written

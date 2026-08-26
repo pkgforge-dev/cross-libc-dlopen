@@ -741,6 +741,15 @@ costs on a host that does not implement CET is the four bytes.
 Deep review pass 1 asked whether every guard added on this branch can actually
 refuse. Two could not, and neither was broken in the way it looked.
 
+⭐ **Corrected after the fact: the ratchet described below no longer exists.**
+Everything measured in this section stands and is why it was replaced. Section
+4 now refuses any occurrence and carries no pin, no budget and no tolerance,
+so the drift recorded here has nothing left to accumulate in. Its scope also
+widened from Markdown to C, shell, Python, YAML and Makefile comments, and it
+counts a dash that wraps at the end of a line, which the counting version never
+saw. The measurements below are the reason for that change and are left in the
+present tense they were written in.
+
 **The dash ratchet.** `scripts/check-drift.sh` section 4 counts ` -- ` across
 every tracked `.md` outside `docs/history/` and compares it to a number written in
 the script. A previous session appended `A sentence -- with a dash.` to

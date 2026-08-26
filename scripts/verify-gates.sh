@@ -39,11 +39,8 @@ plant() {                              # plant <path> <content>
 	git add -f "$1" >/dev/null 2>&1
 }
 
-# ⛔ AN EXEMPTION IS A CLAIM AND IT NEEDS PROVING TOO. check() asserts that a
-# plant makes the gate refuse. This asserts the opposite: the gate stays green
-# with the content present, which is what an exemption means. Without it an
-# exemption could quietly stop applying and nothing would say so, and the two
-# checks here would become unwritable at the same moment.
+# An exemption is a claim too: this asserts the gate stays GREEN with the
+# content present. Without it an exemption can stop applying in silence.
 check_exempt() {                       # check_exempt <name> <gate-fn> <path> <content>
 	name=$1; fn=$2; path=$3; body=$4
 	"$fn" >/dev/null 2>&1; clean=$?
@@ -133,9 +130,8 @@ echo "== each gate, against a clean tree and against its own defect =="
 # THIS file, and every one of them would then refuse a clean tree, which is
 # precisely the defect this script exists to catch, reproduced one level up.
 # It happened on the first run of this script.
-# ⚠ THE DASH AND THE CHARACTER ARE ASSEMBLED TOO, for the same reason as the
-# names below: written plainly they would make THIS file a violation of the two
-# checks it is proving, and both would then refuse a clean tree.
+# ⚠ Assembled for the same reason as the names below: written plainly they
+# would make THIS file violate the checks it proves.
 DASH2="-""- "
 DASH1="-""-"
 SECTION=$(printf '\302\247')
@@ -162,20 +158,21 @@ check "every headline number has one home" g_onehome docs/_gate_probe.md \
 # scripts/check-drift.sh section 4.
 check "a dash used as punctuation is refused" g_drift docs/_gate_probe.md \
 	"A sentence ${DASH2}with a dash."
-# ⚠ THE WRAPPED FORM IS A SEPARATE CASE. The check matched only a dash with a
-# space after it, so a paragraph breaking straight after the dash was invisible
-# to it for the whole life of the ratchet. 17 were in the tree when that was
-# found, one of them in docs/conventions/git.md.
+# ⚠ A separate case: the check matched only a dash with a space after it, so a
+# paragraph breaking straight after one was invisible. 17 were in the tree.
 check "  the same, wrapping at end of line" g_drift docs/_gate_probe.md \
 	"A sentence ending ${DASH1}
 and continuing here."
+# The two shapes each exemption used to hide.
+check "  a dash beside a dash run is still prose" g_drift docs/_gate_probe.md \
+	"See the table ${DASH1}${DASH1} above ${DASH2}it lists every host."
+check "  a dash before an upper-case word is still prose" g_drift docs/_gate_probe.md \
+	"The check refuses ${DASH2}ALWAYS and says so."
 check "a banned character is refused" g_charset docs/_gate_probe.md \
 	"A planted section sign ${SECTION} in running prose."
 
-# ⛔ AND THE RULE MUST STAY WRITABLE. A dash or a character inside a code span
-# is being NAMED, not used. Without these two exemptions the page that states
-# each rule cannot show what it bans, and this file cannot record the plants
-# above. docs/conventions/prose.md depends on both.
+# ⛔ The rule must stay writable: a dash or character in a code span is being
+# NAMED, not used, and prose.md depends on both exemptions.
 check_exempt "  a dash in a code span is a specimen" g_drift docs/_gate_probe.md \
 	"The rule bans \`${DASH2}\` and names its replacement."
 check_exempt "  a character in a code span is a specimen" g_charset docs/_gate_probe.md \
