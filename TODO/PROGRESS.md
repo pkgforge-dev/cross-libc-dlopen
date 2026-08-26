@@ -11,11 +11,15 @@ baseline.
 
 ## Where the work is right now
 
-⛔ **Everything below is on branch `aarch64-real-and-release`, in
-[pull request #8](https://github.com/pkgforge-dev/cross-libc-dlopen/pull/8).**
-Its body was rewritten to match the tree. All ten required checks are green;
-it is BLOCKED only on an approving code-owner review, which branch protection
-requires on purpose.
+⭐ **[Pull request #8](https://github.com/pkgforge-dev/cross-libc-dlopen/pull/8)
+is MERGED**, squashed to `e82fd62` on `main`, with all ten required checks
+green and an admin override of the code-owner review that branch protection
+requires. Its body was rewritten to match the tree before it went in, and it
+is the readable account of what landed.
+
+⚠ **The old `main` had failing gates and a failing secret sweep.** Both are
+green on `e82fd62`, so this is also the first time the default branch has been
+green. Work from here starts on a NEW branch.
 
 | suite | command | state |
 |---|---|---|
@@ -128,15 +132,25 @@ branch. `package-release.sh`'s two were planted this session and both refuse.
 T-11 and T-16's cheaper half were not started. T-16's is a `glprobe` change,
 and it can only be verified by a GL-capable suite run.
 
-### 6. Then the release
+### 6. The release, which is now unblocked and not done
 
-Nothing is published. The build and package path is proven by pull request #8;
-the publish path cannot be until `release.yml` is on the default branch. After
-merge, push a `v*` tag and watch it.
+⭐ **`release.yml` is on the default branch**, so the thing that made this
+impossible is gone. Nothing is published. The build and package path ran green
+on every commit of pull request #8, and `package-release.sh`'s two refusals
+were planted this session and both fire.
 
-⚠ **Publishing was outside the last session's permissions**, so the tag was
-not pushed even though everything up to it is ready. Check the permissions
-block before assuming it is yours to do.
+To publish: push a `v*` tag on `e82fd62` or later and watch the run.
+
+⛔ **The last session did not push it, and the reason was a permission rather
+than a doubt.** The operator's block said publishing a release was not
+permitted, and pushing a `v*` tag runs `release.yml`, which publishes. That is
+a conflict between an instruction to release and a permission not to, and the
+permission won because publishing is irreversible and outward facing. ⚠ Check
+the block you were given before assuming it is yours to do.
+
+⚠ **`release.yml`'s ancestor refusal is still the one unproven guard in this
+family**, and firing it needs a tag whose commit is NOT an ancestor of `main`,
+which is a deliberate act with a real publish behind it if the guard fails.
 
 ---
 
