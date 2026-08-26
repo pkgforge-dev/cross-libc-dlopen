@@ -9,128 +9,198 @@ baseline.
 
 ---
 
-## The measured baseline
+## Where the work is right now
 
-Everything below was green at the time this file was written. ⛔ **If a number
-here disagrees with [`../docs/REPORT.md`](../docs/REPORT.md), REPORT is right
-and this file is stale** -- one fact, one home.
+⛔ **Everything below is on branch `aarch64-real-and-release`, in
+[pull request #8](https://github.com/pkgforge-dev/cross-libc-dlopen/pull/8).**
+Its body was rewritten to match the tree. All ten required checks are green;
+it is BLOCKED only on an approving code-owner review, which branch protection
+requires on purpose.
 
 | suite | command | state |
 |---|---|---|
-| evidence table | `sh scripts/run-evidence.sh` | exit 0, every prediction held |
-| AppImage, all five stages | `sh scripts/run-appimage.sh` | exit 0, every prediction held, skips all named |
-| standalone, no AppDir | `sh examples/plain-preload/run.sh` | before FAILS, after succeeds, feature-off control FAILS |
+| evidence table, x86-64 | `sh scripts/run-evidence.sh` | exit 0, every prediction held |
+| evidence table, aarch64 | the same, on `ubuntu-24.04-arm` | exit 0, three cases SKIP by name |
+| AppImage suite | `sh scripts/run-appimage.sh` | ⚠ **completes on both architectures for the first time.** Mismatches remain and they are findings, below |
+| build, all four | `sh scripts/build.sh --arch both` and again `--portable` | exit 0 |
+| the gates, planted | `sh scripts/verify-gates.sh` | 8 proven, 0 not |
+| the documents | `sh scripts/check-drift.sh` | exit 0, six sections |
 
-⛔ **The totals are deliberately not repeated here.** They live in
-[`../docs/REPORT.md`](../docs/REPORT.md) §8, with the host each one came from.
-A count in two files agrees on the day it is written and disagrees within a
-month, and a reader has no way to tell which is stale.
-
-Measured on the machine described in
-[`../docs/environment.md`](../docs/environment.md). ⚠ **Every one of those
-numbers came from that one machine.** CI has never run.
-
----
-
-## What the last session did
-
-Ported the repository from a measured experiment to a project: new owner, new
-name, one identifier prefix, portable build scripts, CI on two architectures, a
-docs tree, a standalone example, and this work record. Both suites were re-run
-before and after and their totals are unchanged.
-
-Two regressions were introduced during the port and both were caught by the
-suites and fixed before the commit: a new header missing from three copy lists,
-and a handshake fallback referencing the wrong variable.
-
-One claim in this repository was **corrected** rather than carried over: the
-prior-art description of `pg83/solo`'s CI, which had been written from reading
-rather than from checking. See [`../docs/REPORT.md`](../docs/REPORT.md) §11 and
-[`../HISTORY/references/solo-findings.md`](../HISTORY/references/solo-findings.md).
+⛔ **Totals live in [`../docs/REPORT.md`](../docs/REPORT.md)**, not here. Do not
+copy one into this file: both are on the one-home list and a second copy turns
+the gate red, which is exactly how commit `f6d126e` broke the branch.
 
 ---
 
 ## ⛔ The work order
 
-Do these in this order. The reason for the order is under each one, because an
-order with no argument behind it is somebody's preference.
+### 1. The A/B's control arm no longer contrasts. This needs a decision
 
-### 1. T-18 -- a release, built on the floor, for both architectures
+⭐ **Start here. It is the only item that changes what the project claims.**
 
-**First, because everything this repository produces is currently unreachable
-to anyone who will not build it themselves.** It is also the item that forces
-the two things after it: a release cannot publish without CI running the
-suites, and CI cannot be trusted to gate a release until its gates have been
-seen to refuse.
+Upstream adopted this project. The demo AppImage's `lib/foreign-dlopen.so` is
+gone, `lib/cross-libc-dlopen.so` is in its place, and it is a build of this
+project. So the "as shipped" arm of the A/B is no longer upstream's naive shim.
 
-⚠ **The aarch64 half has never been built anywhere.** The cross-build path is a
-property of `scripts/build.sh`'s code and not of any artefact that exists.
+E30 and E37a are the controls for that arm, and they are what make the patched
+arm a measurement rather than a coincidence. Both now MISMATCH, because both
+arms work. `docs/REPORT.md` 9.17 has the output.
 
-### 2. T-10 -- prove every CI gate can fail
+⚠ **Their log lines say `predicted=OK` and that is about the exit status, not
+the verdict.** What they assert is the needle, and the needle is the complaint:
+`NO-DEVICES` for E30 and `zero accessible devices` for E37a. A MISMATCH there
+means the as-shipped arm found a device.
 
-**Second, and it is what makes the first one mean anything.** A release gated
-on a green suite is worth exactly as much as the gate. `sh scripts/verify-gates.sh`
-already proves seven of them locally and names what it cannot reach; the rest
-need a runner.
+⛔ **Do not flip the predictions.** A control that has stopped contrasting has
+stopped measuring, and rewriting it to expect success converts two controls
+into two cases that pass whatever the shim does.
 
-⭐ Three gates written during the port were defective and two of them refused
-every build. All three were found by running them against a clean tree as well
-as a planted defect. Do both halves.
+⚠ The honest control for "the feature is absent" is an AppDir with **no**
+dispatcher in `.preload`, not one carrying somebody else's. Adopting that
+changes what the suite claims about upstream, which is why it was left for a
+decision rather than taken.
 
-### 3. T-12 -- measure the stage timeouts on a runner
+### 2. The corpus sweep dies partway, and E33/E34 are scored against nothing
 
-**Third, because a timeout is scored as a FAILURE, not a skip.** Until this is
-measured, the first genuinely red CI run cannot be told apart from a slow
-runner. ⛔ Raise rather than shorten.
+⛔ **New, and it had been invisible.** `tests/corpus.c` loads every library in
+the host's directory in ONE process. On two hosts that process dies partway and
+produces no verdict line at all, so the total is 0 and both cases are scored
+against nothing:
 
-### 4. The easy wins, in any order
+| host | feature ON | feature OFF |
+|---|---|---|
+| `alpine:3.22` | `Segmentation fault (core dumped)` | `TOTAL=298 OK=3` |
+| `debian:trixie-slim` | `FATAL: HWAddressSanitizer requires a kernel with tagged address ABI.` | 99 OK lines, then the same |
 
-T-13 (a build error hidden by `2>/dev/null`), T-14 (the two Python tools that
-nothing runs), T-16's cheaper half (assert the frame by hash, not one pixel),
-T-11 (a machine-readable suite result). None is blocked and none needs
-hardware this project does not have.
+Both causes went to `/dev/null` until this session. ⭐ This is **T-15's**
+premise, which was inferred from reading another project and is now observed
+here. Its fresh-process-per-library design covers both. ⚠ The Alpine
+segmentation fault is **not yet attributed to a library**, and until it is,
+nobody should assume it is the corpus's fault rather than this project's.
 
-### 5. T-06 -- translate the two live struct hazards at the call
+⭐ **E49 and E50 are done.** E49 MATCHes on aarch64, and E50 reports 2 live
+hazards on x86-64 and 3 on aarch64, the third being the mutex. E50 reads the
+condition out of `abi-host`'s size table instead of carrying a per-architecture
+number. `docs/REPORT.md` 9.18.
 
-**Then this, because it closes a documented limit and the mechanism is already
-written down** at file and line in
-[`../HISTORY/references/solo-usable.md`](../HISTORY/references/solo-usable.md)
-§1. Sharp acceptance: E50 goes from `2 live hazard(s)` to 0 while E47 and E49
-still pass.
+### 3. The pin is a maintained act now. Expect it to go stale again
 
-### 6. T-02 -- `libepoxy.so.0`
+Both AppImages are pinned by sha256 against a **mutable** `demo` tag, and the
+assets were replaced twice inside two minutes. ⛔ There is no immutable release
+to pin to: the upstream and the fork publish one release each and both are
+tagged `demo`. `docs/REPORT.md` 9.15 has the policy and the reasoning.
 
-**The cheapest lead in the tree**, and it is a *dispatcher* -- the class of
-failure that took a whole session to see the first time. ⛔ Do not assume it is
-benign because GTK4 rendered.
+When it refuses, read which of the three cases it names: the pin is stale, the
+download is wrong, or neither matches. They call for different things.
 
-### 7. T-03 -- a second consumer, with a real driver on the far end
+⚠ `gtk4-demo` comes from `pkgforge-dev/Anylinux-AppImages`, the upstream. The
+demo AppImage comes from Samueru-sama's fork and **cannot move**, because
+`host-drivers` appears 0 times in the upstream's code and its
+`vkcube+glxgears-demo-*` is the build that bundles its own drivers.
 
-**This is what allows the README's opening sentence to widen.** Today it is
-about AppImages, which is what every measured result is about.
-[`../examples/plain-preload/`](../examples/plain-preload/) is the shape and it
-works; what it lacks is a host GPU driver rather than a stand-in.
-⚠ Build it, measure it, *then* rewrite the sentence. In that order.
+### 4. T-12 is answered for one half and unanswerable for the other
 
-Then T-01, T-04, T-05, T-15, T-17 as they come. T-17 in particular is bounded
-and its approach is written: emit the note from `src/gl-fwd.c` rather than
-raising the glibc floor to get one.
+The table is in T-12's entry, both runners. ⭐ Every case that ends on its own
+is far under its timeout: the slowest is 11 seconds against a 25-second floor
+and the rest are at or below one second. The fear the entry was opened on is
+not in the data.
+
+⚠ **E61 and E62 measure 30 against a configured 30, and that is not a margin
+of zero.** A GL binary never exits on its own, so the timeout is how those two
+END. ⛔ Do not raise them on that reading. What stays open is that the
+instrumentation cannot tell "ran to its timeout on purpose" from "was killed
+before finishing", because both look identical.
+
+### 5. T-10, T-11, T-16
+
+T-10's entry now carries which gates have been seen to refuse and where, and
+⭐ four of them were not planted: they went red on a runner against a real
+defect, which is stronger than a plant because nobody chose the shape of the
+failure. ⛔ Four are still unproven and the entry names them: the endings gate,
+which `.gitattributes` makes unplantable from the working tree; the two
+`generated` steps; and the artefact verifier's floor rule. Those need a runner
+and a deliberate push.
+
+⛔ **One guard remains unproven and cannot be proven without publishing:**
+`release.yml` refuses a tag whose commit is not an ancestor of the default
+branch. `package-release.sh`'s two were planted this session and both refuse.
+
+T-11 and T-16's cheaper half were not started. T-16's is a `glprobe` change,
+and it can only be verified by a GL-capable suite run.
+
+### 6. Then the release
+
+Nothing is published. The build and package path is proven by pull request #8;
+the publish path cannot be until `release.yml` is on the default branch. After
+merge, push a `v*` tag and watch it.
+
+⚠ **Publishing was outside the last session's permissions**, so the tag was
+not pushed even though everything up to it is ready. Check the permissions
+block before assuming it is yours to do.
 
 ---
 
-## In progress
+## What this session did
 
-Nothing. The port session ended cleanly.
+Every claim below has its measurement in `docs/REPORT.md` 9.14 through 9.18.
+
+**Three deep review passes**, each with a different question.
+
+*Pass 1, can every guard added here refuse?* The dash ratchet was recorded as
+having failed to fire. It had not: the refusal condition was `count > pin`,
+nothing ever lowered the pin, and the tree had drifted eight under, so the
+planted dash landed inside the slack. The pin is exact now and a fall refuses
+too. It also counted the `--` that the prose rule exempts inside a code block,
+which made the section recording the fix unwritable. The cited-path check
+could not see a path cited in front of a command, and so never noticed that
+`conventions/prose.md` named a ratchet script that has never existed.
+
+*Pass 2, what did this branch stop measuring?* The ARM runner was added saying
+qemu "emulates the instructions and not a memory model", and section P went on
+running the aarch64 trampolines under qemu **on aarch64 silicon**. It picks its
+vehicle from the host now and prints it. The marker was removed and four
+documents went on calling it load-bearing.
+
+*Pass 3, does every claim hold when the command is run?* T-13's
+"print a MISMATCH in full" was in one harness and not the other, and it was
+found by the failure it describes. The corpus cases were the same shape a
+third time, reporting a zero total with the reason in a discarded stderr.
+`INDEX.md` listed two entries as open that declare themselves DONE.
+
+**Three new checks, each planted and seen to refuse.** The dash ratchet in
+`verify-gates.sh`; the two orchestrators pinning the same bytes; every
+`INDEX.md` row against its entry's declared status.
+
+**The AppImage suite completes**, having never done so before. Getting there
+meant re-pinning against a mutable tag, moving `gtk4-demo` to the true
+upstream, and teaching the suite to read the dispatcher slot out of the AppDir
+rather than spelling it.
+
+⭐ **And completing it found a real limitation nothing else could have.** On
+aarch64 a musl object cannot allocate and initialise its own `pthread_mutex_t`
+in a glibc process: 40 bytes allocated, 48 written, no crossing involved. It
+needed real ARM silicon, three chained reporting defects fixed before it was
+even legible, and one wrong fix before the right one. `docs/REPORT.md` 9.18.
+
+**`tests/bindprobe.c` builds on aarch64.**
+
+**T-12 answered**, and **T-10's entry now says which gates have been seen to
+refuse and where**, including four that were never planted because they went
+red on a runner against a real defect.
 
 ---
 
 ## ⚠ What a new session should distrust
 
-- **CI has never run.** The workflows are written and reasoned about; no run
-  exists. T-10 is first for that reason.
-- **Every number in the baseline is from one machine.** An aarch64 result, a
-  NixOS result and a real-DRM result do not exist anywhere in this repository.
-- **`scripts/run-appimage.sh`'s aarch64 path is untested.** The per-architecture
-  sha256 pins were computed from the real assets, and the loader name and musl
-  soname now derive from `uname -m`, but no aarch64 run of that suite has
-  happened.
+- **The `.preload` baseline is DERIVED, not shipped.** The AppImage ships this
+  project's own forwarding shims in its `.preload`, and restoring that list
+  would make every absence case measure a presence. `41-extract.sh` prints what
+  it drops on every extraction. If that line disappears, look at it.
+- **`ground-truth.md`'s inventory carries a verdict column now.** Two rows are
+  UNVERIFIED and say why. Do not quietly re-attach them to the new binary.
+- **The tracker is evidence, not instruction.** Pull request #9's premise, that
+  `-fcf-protection=full` breaks aarch64, is true of `main` and already fixed on
+  this branch; what remains of it is a policy question about the default.
+- **A guard that has never been seen to refuse is a guard nobody knows works.**
+  Three were found decorative or unarmed this session and every one of them
+  looked fine.

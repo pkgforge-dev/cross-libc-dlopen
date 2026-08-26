@@ -126,9 +126,16 @@ E53  the same, plus the conf dirs      GL_RENDERER = D3D12 (NVIDIA RTX 3050 Ti)
 ```
 
 E40 is the one to look at first. Every other case forces something -- the
-feature, the ICD, the loader. E40 replaces `lib/foreign-dlopen.so` inside the
-AppDir and runs it with no `CROSS_LIBC_DLOPEN_*` and no `VK_DRIVER_FILES` at all, which
-is the only form of the claim that matches what was asked.
+feature, the ICD, the loader. E40 replaces the AppDir's **dispatcher slot** and
+runs it with no `CROSS_LIBC_DLOPEN_*` and no `VK_DRIVER_FILES` at all, which is
+the only form of the claim that matches what was asked.
+
+⚠ **That slot's name is upstream's, and upstream has changed it.** It was
+`lib/foreign-dlopen.so` and the AppImage pinned today ships
+`lib/cross-libc-dlopen.so` instead, so `experiments/41-extract.sh` reads the
+name out of the extracted AppDir and writes it to `AppDir/.cld-slot`. The
+commands below read that file rather than spelling either name, and so should
+yours. [`REPORT.md`](REPORT.md) 9.17.
 
 ### 3.4 Driving it by hand
 
@@ -147,13 +154,16 @@ export APPDIR=/w/AppDir XDG_RUNTIME_DIR=/tmp/xdg
 export VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json
 mkdir -p $XDG_RUNTIME_DIR
 
+# The dispatcher slot, read rather than spelled: upstream has renamed it once.
+SLOT=$(cat "$APPDIR/.cld-slot")
+
 # A/B: the same command, feature off then on. Never trust a single-sided run.
 CROSS_LIBC_DLOPEN=0 \
   "$APPDIR/lib/ld-linux-x86-64.so.2" --library-path "$APPDIR/lib" ./vkprobe
 
 CROSS_LIBC_DLOPEN=1 \
   "$APPDIR/lib/ld-linux-x86-64.so.2" --library-path "$APPDIR/lib" \
-  --preload "$APPDIR/lib/foreign-dlopen.so" ./vkprobe
+  --preload "$APPDIR/lib/$SLOT" ./vkprobe
 ```
 
 > Use `ld.so --preload` rather than `LD_PRELOAD` when a musl binary is anywhere
@@ -185,10 +195,10 @@ the library path, none of which is guessable:
 MSYS_NO_PATHCONV=1 "$PODMAN" run --rm \
   --device /dev/dxg -v /usr/lib/wsl:/usr/lib/wsl:ro \
   -v "$PWD:/repo:ro" -v "$PWD/.tmp:/w" alpine:3.22 sh -c '
-    APPDIR=/w/AppDir; LP=$APPDIR/lib
+    APPDIR=/w/AppDir; LP=$APPDIR/lib; SLOT=$(cat $APPDIR/.cld-slot)
     CROSS_LIBC_DLOPEN=1 APPDIR=$APPDIR \
       "$LP/ld-linux-x86-64.so.2" --library-path "$LP:/usr/lib/wsl/lib" \
-      --preload "$LP/foreign-dlopen.so" \
+      --preload "$LP/$SLOT" \
       /w/build/cudaprobe /usr/lib/wsl/lib/libcuda.so.1'
 ```
 

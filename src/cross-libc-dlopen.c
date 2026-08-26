@@ -4,10 +4,9 @@
  * the HOST system even when those were built against a different libc, like
  * a newer glibc or musl, instead of shipping any driver in the AppImage.
  *
- * Enabled at runtime with CROSS_LIBC_DLOPEN=1, or automatically when a
- * .cross-libc-dlopen-enabled marker sits in the root. The environment
- * variable alone is sufficient: a consumer with no marker file does not
- * have to create one.
+ * ON BY DEFAULT whenever this object is preloaded, because preloading it is
+ * already the deliberate act. CROSS_LIBC_DLOPEN=0 turns it off, which is what
+ * every A/B control uses for its "feature off" arm.
  *
  * REQUIREMENT, not advice about one consumer: this object's pass-throughs
  * must run AFTER any other dlopen interposer in the process, so that
@@ -45,7 +44,7 @@ typedef void *(*dlopen_func_t)(const char *filename, int flags);
 
 // print to stderr when CROSS_LIBC_DLOPEN_DEBUG=1
 static int cross_libc_dlopen_debug_enabled(void) {
-	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_DEBUG", "ANYLINUX_LIB_DEBUG");
+	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_DEBUG", NULL);
 	return v && strcmp(v, "1") == 0;
 }
 
@@ -66,9 +65,7 @@ static int cross_libc_dlopen_debug_enabled(void) {
 // versym table segfaults ld.so. musl drivers carry no version info, they
 // just ride along the same dependency resolver.
 //
-// Enabled with CROSS_LIBC_DLOPEN=1 or =0 to override, otherwise
-// automatic when $APPDIR/.foreign-dlopen-enabled exists, a marker file
-// quick-sharun creates for USE_HOST_DRIVERS_EXPERIMENTAL builds.
+// On by default when preloaded. CROSS_LIBC_DLOPEN=0 turns it off.
 //
 // Anything outside of $APPDIR counts as host library, sharun already hands
 // the dynamic linker the full search list so bundled libraries keep winning.
@@ -84,28 +81,27 @@ static int cross_libc_dlopen_debug_enabled(void) {
 #define MFD_CLOEXEC 1U
 #endif
 
+// ⭐ ON BY DEFAULT. Preloading this object is already an explicit, deliberate
+// act by whoever assembled the process: nothing loads it by accident. Asking
+// for a second opt-in on top of that -- an environment variable, or a marker
+// file at the bundle root -- bought nothing and cost a whole class of silent
+// failure, where a consumer preloads the object, forgets the marker, and gets
+// a run that does nothing and says nothing about why.
+//
+// ⛔ THE OFF SWITCH IS NOW LOAD-BEARING. CROSS_LIBC_DLOPEN=0 is what every A/B
+// control in experiments/40-appimage.sh sets for its "feature off" arm, and
+// what E23 sets to measure version-compat.c's definitions with no dlopen
+// interception in the process. Before this change those arms could rely on the
+// variable being unset; now they must say 0, and they do.
+//
+// Anything other than 0 is on, including an empty value, so
+// CROSS_LIBC_DLOPEN= reads as "present and not disabling" rather than as
+// "unset". =1 still forces it on and is still what the documents show.
 static int cross_libc_dlopen_mode(void) {
-	const char *v = cld_getenv("CROSS_LIBC_DLOPEN", "ANYLINUX_LIB_FOREIGN_DLOPEN");
-	if (v && *v)
-		return strcmp(v, "1") == 0 ? 1 : 0;
-
-	// No override. Honour a build-time opt-in marker if the consumer
-	// ships one -- both spellings, because quick-sharun writes the old
-	// one and bundles built before the rename carry it. A consumer with
-	// no marker at all sets CROSS_LIBC_DLOPEN=1 and never makes a file.
-	const char *root = cld_root();
-	if (!root || !*root)
+	const char *v = getenv("CROSS_LIBC_DLOPEN");
+	if (v && strcmp(v, "0") == 0)
 		return 0;
-
-	static const char *const markers[] = CLD_MARKER_NAMES;
-	char marker[PATH_MAX];
-	for (size_t i = 0; i < sizeof(markers) / sizeof(*markers); i++) {
-		snprintf(marker, sizeof(marker), "%s/%s", root, markers[i]);
-		if (access(marker, F_OK) == 0)
-			return 1;
-	}
-
-	return 0;
+	return 1;
 }
 
 // Rewritten images pile up on tmpfs across runs, clear out anything
@@ -1022,7 +1018,7 @@ static int cld_apply_renames(struct cld_elf *e, int dry_run) {
 	// Escape hatch: renaming is the one rewrite that changes SEMANTICS rather
 	// than just relaxing a check, so it needs to be switchable when bisecting
 	// a misbehaving driver. CROSS_LIBC_DLOPEN_NORENAME=1 turns it off.
-	const char *off = cld_getenv("CROSS_LIBC_DLOPEN_NORENAME", "ANYLINUX_LIB_FOREIGN_NORENAME");
+	const char *off = cld_getenv("CROSS_LIBC_DLOPEN_NORENAME", NULL);
 	if (off && strcmp(off, "1") == 0) {
 		DEBUG_PRINT("cross-libc-dlopen: symbol renaming disabled by "
 		            "CROSS_LIBC_DLOPEN_NORENAME=1\n");
@@ -1347,7 +1343,7 @@ static int cld_report_unresolved(const struct cld_elf *e, const char *what,
 }
 
 static int cld_dryrun_enabled(void) {
-	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_DRYRUN", "ANYLINUX_LIB_FOREIGN_DRYRUN");
+	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_DRYRUN", NULL);
 	return v && strcmp(v, "1") == 0;
 }
 
@@ -1657,7 +1653,7 @@ static void *cld_load(dlopen_func_t dlopen_orig, const char *canon, int flags, i
 	// "being loaded from a different path broke it" in a single A/B. Purely a
 	// diagnostic: with the tags intact a genuinely unsatisfiable object just
 	// fails to load, and the plain fallback below then reports why.
-	const char *nostrip_env = cld_getenv("CROSS_LIBC_DLOPEN_NOSTRIP", "ANYLINUX_LIB_FOREIGN_NOSTRIP");
+	const char *nostrip_env = cld_getenv("CROSS_LIBC_DLOPEN_NOSTRIP", NULL);
 	int strip_disabled = nostrip_env && strcmp(nostrip_env, "1") == 0;
 
 	void *handle = NULL;

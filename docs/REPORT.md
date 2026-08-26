@@ -20,7 +20,7 @@ Every claim is either backed by a command whose output is quoted, or labelled
 | Completion criterion | Status |
 |---|---|
 | Both goals demonstrated by a test that fails before and passes after | **Yes.** Goal 1: E5, E12. Goal 2: E22/E23 for the mechanism, E30/E32 and E37a/E37 for the end-to-end |
-| The evidence harness still reports all predictions held | **Yes, 46/46**, up from 22/22. The AppImage suite adds 45 on a glvnd glibc host, 40 on musl, 26 on each of two pre-glvnd glibc hosts and 7 on a real-application stage, with every unrunnable case SKIPPED by the capability it lacks |
+| The evidence harness still reports all predictions held | **Yes, 53/53** on x86-64 and **50/50** on aarch64, up from 22/22. The AppImage suite adds 45 on a glvnd glibc host, 40 on musl, 26 on each of two pre-glvnd glibc hosts and 7 on a real-application stage, with every unrunnable case SKIPPED by the capability it lacks |
 | No host file modified, verified by checksum | **Yes.** T4.3, identical sha256 before and after |
 | Bundled libraries still win, verified via `dladdr` | **Yes.** T4.2, all resolved under `$APPDIR` |
 | A forward-compatibility story that does not depend on foresight | **Yes.** Host-runtime selection for the unenumerable gap, a generated shim for the enumerable one, and a build-time audit (E26) for the version traps |
@@ -801,11 +801,11 @@ musl-built object, and to an object this project's own rewriter has stripped.
 one (section 7.5); it is shown here only because two independent vendor blobs
 being built this way is the point.
 
-[`tools/trap_users.py`](../tools/trap_users.py) intersects an object's imports with
+[`tools/manual/trap_users.py`](../tools/manual/trap_users.py) intersects an object's imports with
 the traps of the libc it will resolve against:
 
 ```
-$ python3 tools/trap_users.py $APPDIR/lib/libc.so.6 /usr/lib/wsl/lib/libdxcore.so
+$ python3 tools/manual/trap_users.py $APPDIR/lib/libc.so.6 /usr/lib/wsl/lib/libdxcore.so
 libc .../libc.so.6: 38 trap(s), 191 benign re-versioning(s)
 
 == libdxcore.so
@@ -1145,8 +1145,26 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`experiments/run.ps1` reports **46/46 predictions held**. E1 through E13
-measure the problem. E14 through E21 are one per fix from the first pass: the
+`sh scripts/run-evidence.sh` reports **53/53 predictions held on x86-64** and
+**50/50 on aarch64**, both measured in CI on the same commit, run
+[32952579071](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32952579071).
+`experiments/run.ps1` drives the same three stage scripts for a machine with
+PowerShell and no POSIX shell.
+
+⚠ **The two totals differ by exactly the three cases aarch64 SKIPS**, each
+naming the capability it lacks rather than the difference being unexplained:
+
+| case | why it skips on aarch64 |
+|---|---|
+| E22 | that libc exports `pthread_cond_init` at one symbol version. The trap needs an obsolete definition beside the current one |
+| E23 | skipped WITH E22 deliberately. With no trap present the stripped object already returns 0, so E23 would pass whether or not `version-compat.c` does anything |
+| E58 | section M's trampoline is hand-written x86-64 machine code. What the real aarch64 trampolines do is measured by E69 through E73 and E76/E76b, natively on the ARM runner |
+
+⭐ **E23's skip is the one worth reading.** It was reporting MATCH on the ARM
+runner while asserting nothing, and skipping it with E22 is what stopped that.
+53 minus 3 is 50, and no case is missing for a reason nobody wrote down.
+
+E1 through E13 measure the problem. E14 through E21 are one per fix from the first pass: the
 ELF self-test, the generated-shim compile and behaviour, and five selector
 decisions including the mixed-set guard and its control. E22 through E29 are
 the version-binding trap and the reporting defects; E54 through E58 and E69
@@ -1587,23 +1605,25 @@ Three details that are load-bearing:
   tried. Built in `debian:bullseye-slim` and read back with `readelf -n`, the
   shipped `gl-fwd.so` has only `.note.gnu.build-id`; there is no
   `.note.gnu.property` section at all. A trivial one-function shared object
-  compiled in the same image behaves identically, with the flag, without it,
-  and with `-Wl,-z,ibt,-z,shstk` added -- so it is a property of Debian's gcc,
-  not of this source. Repeated on `debian:bookworm-slim` (gcc 12.2) and
-  `debian:trixie-slim` (gcc 14.2): no note in any of them.
+  compiled in the same image behaves identically, with the flag and without
+  it. Repeated on `debian:bookworm-slim` (gcc 12.2) and `debian:trixie-slim`
+  (gcc 14.2): no note in any of them.
 
   ```
   gcc -shared -fPIC -O2 -fcf-protection=full t.c -o a.so && readelf -n a.so
   ```
 
-  The consequence is exactly what the original sentence warned about, and it is
-  live rather than hypothetical: without the note a CET-enforcing host turns
-  indirect-branch tracking off for the whole process, a mitigation quietly lost
-  rather than a crash. The `endbr64` instructions ARE emitted; what is missing
-  is the note that tells the loader the object is IBT-capable.
-  `scripts/verify-artifacts.sh` prints this on every build, and
-  [`../TODO/infrastructure.md`](../TODO/infrastructure.md) T-17 carries the
-  work.
+  ⛔ **SECOND CORRECTION, measured, and it reverses part of the first.** The
+  paragraph above used to say the note is absent "with `-Wl,-z,ibt,-z,shstk`
+  added" as well. **That clause was wrong on all three images.** With that
+  linker flag the note IS emitted, every time. The full table, and the reason
+  the note would be FALSE if it were forced, is in 9.13 below.
+
+  The `endbr64` instructions ARE emitted; what is missing is the note that
+  tells the loader the object is IBT-capable.
+  `scripts/verify-artifacts.sh` reports the note's absence on every build, and
+  refuses a build whose `endbr64` are missing, which is the part the flag
+  actually delivers.
 - **The shim refuses to forward to itself.** Its SONAME *is* the name it
   resolves, so anything that hands that name back -- ld.so matching a request
   against the shim's own libname list, an `CROSS_LIBC_DLOPEN_GL_HOST_DIR` pointing at the
@@ -1751,7 +1771,8 @@ AppDir, `vkcube` included, and the Vulkan path is unaffected.
 Totals with this section in: **40/40 on the musl host** with five named skips,
 **45/45 on the glvnd glibc host** with none, **26/26** on each of ubuntu:14.04
 and ubuntu:16.04 with nineteen named skips, **7/7** on the gtk4 stage, and
-**46/46** in the container suite.
+**53/53** in the container suite on x86-64, and **50/50** on aarch64 with the
+three skips named in section 8.
 
 ### 9.8 What the shim does not do, stated as a number
 
@@ -2051,10 +2072,734 @@ generated trampolines did not. One real application did, on the first run.
 
 ---
 
+### 9.13 The IBT property note: emitted after all, and it would be a lie
+
+T-17 recorded that no Debian gcc emits the note, tried three ways. ⛔ **One of
+those three ways was recorded wrong.** Re-measured on the same three images,
+with a control that must report nothing so that "found none" and "cannot see
+one" are distinguishable:
+
+| build | bullseye 10.2 | bookworm 12.2 | trixie 14.2 |
+|---|---|---|---|
+| `-fcf-protection=full` | none | none | none |
+| `-fcf-protection=full -Wl,-z,ibt,-z,shstk` | **IBT, SHSTK** | **IBT, SHSTK** | **IBT, SHSTK** |
+| a `.note.gnu.property` block in the source | none | none | none |
+| nothing asked for (control) | none | none | none |
+
+Two things follow, and the second is the one that matters.
+
+**The source-emitted note does not survive the link.** `GNU_PROPERTY_X86_FEATURE_1_AND`
+is ANDed across every input, and glibc's `crti.o` carries no property on any of
+the three images, so a note written by hand in `gl-fwd.c` is dropped. That is
+the approach T-17 proposed, and it does not work.
+
+**The linker flag does emit a note, and the note would be false.** Measured on
+the object it produces:
+
+| symbol | first instruction | reached by |
+|---|---|---|
+| `probe_answer` | `endbr64` | a normal call |
+| `_init` | `sub $0x8,%rsp` | `DT_INIT`, which `ld.so` calls through a pointer |
+| `_fini` | `sub $0x8,%rsp` | `DT_FINI`, the same |
+
+`_init` and `_fini` come from `crti.o` and `crtn.o`. An indirect call landing
+on an instruction that is not `endbr64` is exactly what IBT exists to fault on,
+so an object marked IBT-capable whose `DT_INIT` target is not `endbr64` is
+asserting a property it does not have.
+
+⭐ **So the absence of the note is the linker being right**, not a toolchain
+gap to work around. Forcing it with `-z ibt` would trade a real absence for a
+false claim, which is the forbidden pattern
+[`conventions/forbidden-patterns.md`](conventions/forbidden-patterns.md) calls
+"asserting a build property the toolchain does not deliver".
+
+⚠ **What is UNVERIFIED:** whether a CET-enforcing host actually faults on such
+an object. No host here enforces IBT, so the fault is reasoned from how IBT
+activation works and has not been observed. What IS measured is every row of
+both tables above.
+
+The measured consequence for this project: on x86-64 `gl-fwd.so` carries 3478
+`endbr64` and no note; on aarch64 it carries none of either, and CET is an x86
+feature so that is correct rather than a gap.
+
+⭐ **And the flag accounts for six of those 3478.** Built with
+`-fcf-protection=full` removed, the same object has **3472**. The other 3472
+are the trampolines' own, spelled as literal bytes in `gl-fwd.c` so the floor's
+assembler cannot be too old for them (9.4), and no compiler flag removes those.
+
+| x86-64 `gl-fwd.so` | `endbr64` |
+|---|---|
+| default build | 3478 |
+| built without `-fcf-protection=full` | 3472 |
+| aarch64, either way | 0 |
+
+Two things follow.
+
+⛔ **A check that refused a build with no `endbr64` could never have fired**, and
+`scripts/verify-artifacts.sh` briefly had one. The trampolines supply 3472
+whatever the flag does, so the count says nothing about whether the flag
+arrived. It reports the number now and asserts nothing about it.
+
+⚠ **Removing the flag does not remove `endbr64` from the shims**, which matters
+to anyone removing it in order to avoid the instruction. It removes six of
+them. The instruction is a four-byte NOP on any CPU without CET, so what it
+costs on a host that does not implement CET is the four bytes.
+
+---
+
+### 9.14 A guard that could not refuse, and a guard that could not see itself
+
+Deep review pass 1 asked whether every guard added on this branch can actually
+refuse. Two could not, and neither was broken in the way it looked.
+
+**The dash ratchet.** `scripts/check-drift.sh` section 4 counts ` -- ` across
+every tracked `.md` outside `HISTORY/` and compares it to a number written in
+the script. A previous session appended `A sentence -- with a dash.` to
+`docs/building.md`, ran the check, read "at the budget", and recorded the
+ratchet as broken.
+
+The counter was never wrong. Measured, per commit on this branch, counting
+every occurrence the way the check did at the time:
+
+| commit | ` -- ` in tracked `.md` outside `HISTORY/` | pin in the script |
+|---|---|---|
+| `b162b39` initial | 270 | none yet |
+| `bc29fce` front-door rewrite | 236 | set to 236 |
+| `e09e128` portable variant | 235 | still 236 |
+| `f6d126e` PROGRESS rewrite | 228 | still 236 |
+
+The refusal condition was `count > pin`. At `e09e128` the tree carried 235, so
+the planted dash took it to exactly 236, and 236 is not greater than 236. The
+check printed the truth. The expectation that it would print 237 assumed the
+tree was at the pin, and it was one under.
+
+⛔ **The defect is the slack, and the slack is structural.** Nothing lowered
+the pin when the count fell. The script printed a line asking the next reader
+to lower it, and three commits running the next reader did not, so a guard
+that refuses one dash too many silently became a guard that would accept eight
+more before saying anything.
+
+⚠ **A second defect surfaced while writing this section: the counter counted
+what the rule exempts.** `docs/conventions/prose.md` says a flag, a literal
+inside a code block and a shell comment are all `--` doing their own job. The
+counter read the file raw and counted those too. Measured on the tree with
+this section in it:
+
+| | count |
+|---|---|
+| every ` -- ` in tracked `.md` outside `HISTORY/` | 233 |
+| inside a fenced code block | 10 |
+| inside a code span | 5 |
+| actual prose, which is what the rule is about | 218 |
+
+Two consequences, and the second is the one that forced the change. A document
+that added a correct shell snippet was refused for being correct. And a
+rewrite that traded a prose dash for a code one netted to zero and passed
+unseen. ⛔ Together with an exact pin it also made this section unwritable:
+recording the planted sentence means putting the planted sentence in a
+document. The counter now skips fences and spans, and the pin is the prose
+number.
+
+Three runs against the script as it stands, on a tree that is otherwise clean:
+
+```
+$ printf 'A sentence -- with a dash.\n' >> docs/building.md
+$ sh scripts/check-drift.sh
+  FAIL 219 dashes used as punctuation, and the pin is 218.
+$ echo $?
+1
+
+$ perl -0pi -e 's/ -- / instead /' docs/building.md
+$ sh scripts/check-drift.sh
+  FAIL 217 dashes used as punctuation, and the pin is still 218.
+$ echo $?
+1
+
+$ printf '\n~~~\nrun this -- and that\n~~~\n' >> docs/building.md
+$ sh scripts/check-drift.sh
+  218, at the pin. It may fall, and a fall lowers the pin with it.
+$ echo $?
+0
+```
+
+The first is the rule. The second is what carries the pin down with the count,
+and it is the half that was missing. ⭐ **It caught its own author within the
+hour.** A rewrite of `docs/integrating.md` dropped one prose dash, the count
+fell to 217, and the check refused the commit until the pin came down with it.
+That is the whole mechanism working: under the old one-sided version the slack
+would simply have widened by one and nobody would have been told. The third is the exemption the rule
+always claimed and the check never honoured. `scripts/verify-gates.sh` plants
+the first of the three on every run, so the arming is checked rather than
+remembered.
+
+**The cited-path check, on the citation shape this repository actually uses.**
+Section 2 of the same script reads every repository path a document cites and
+opens it. It anchored the path on an opening backtick and required a closing
+backtick straight after, which matches `` `scripts/build.sh` `` and nothing
+else. The common form here is a command:
+
+```
+⚠ The ratchet is `sh scripts/check-prose-dashes.sh`, and it is a ratchet rather
+        docs/conventions/prose.md, line 39, before this change
+```
+
+No script of that name has ever existed in this repository. The ratchet is
+section 4 of `check-drift.sh`. The citation survived the entire branch because
+the check that exists to catch a stale citation could not see one written in
+front of a command, and the citation it could not see was a citation of
+itself.
+
+Widened to allow backtick-free, space-terminated words before the path, and to
+drop the closing-backtick requirement so a path followed by its arguments
+counts:
+
+| | paths checked |
+|---|---|
+| before | 80 |
+| after | 87 |
+
+Both measured on the tree as it stands with this section in it. Three of the
+seven newly visible paths did not exist. One is the real defect
+above, the check-prose-dashes name, fixed in `docs/conventions/prose.md`. One
+belongs to `Azathothas/TEMPLATE` and is cited at a URL as not being in this
+tree. One is `tests/bindprobe`, which is ours, is built from
+`tests/bindprobe.c`, and is cited as a command rather than as a file. The last
+two are exempt by name.
+
+⚠ **`*` had to enter the path character class in the same change.** Without it
+the class stops at the hyphen in `` `src/gl-fwd-*.h` ``, so the wildcard skip
+never sees a wildcard and the check reports the truncated stem, everything up
+to and including the hyphen, as a file that does not exist. The widened
+pattern did exactly that on its first run.
+
+⚠ **And this paragraph is why the check skips a fenced block.** Recording a
+broken-path finding means writing the broken path down. The quotation above
+sits in a fence and is read as the transcript it is; the two sentences here
+name the defect without putting it in citation shape, the way
+`scripts/verify-gates.sh` assembles its plants at runtime rather than letting
+them sit in the file as literals. Both dodges are the same dodge: a checker
+that reads the tree cannot tell a claim from a quotation of a broken one.
+
+**And two refusals that had never been planted at all.**
+`scripts/package-release.sh` carries the last two guards before anything is
+published: every artefact against its manifest entry, and both archives being
+flat. Neither had been made to fire. Both were, against a synthetic build
+directory of two files and a hand-written manifest, so no real build was
+needed:
+
+| | result |
+|---|---|
+| a manifest that matches its files | exit 0, `both archives are flat: LICENSE build-manifest.json cross-libc-dlopen.so gl-fwd.so` |
+| one artefact edited after the manifest was written | exit 1, `gl-fwd.so does not match its manifest entry`, with both hashes printed |
+| the `tar` invocation changed to archive the staging directory instead of its contents | exit 1, `the tar has a path separator in it, so it would extract into a directory`, with the offending listing printed |
+
+⚠ The third is planted in the SCRIPT rather than in the data, and that is the
+right place for it: the assertion's own comment says a nested directory "is
+exactly the kind of thing that reappears when somebody changes a tar
+invocation", so changing the tar invocation is the defect it names.
+
+⛔ **One guard in this family is still unproven:** `release.yml` refuses to
+publish a tag whose commit is not an ancestor of the default branch. Firing it
+needs a tag, and pushing one publishes a release.
+
+
+---
+
+### 9.15 The pinned AppImage: which repository, and what a stale pin means
+
+The AppImage suite downloads two binaries from a third party and runs them. The
+sha256 pin is what makes the suite's results about a known artefact. Run
+[32948154287](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32948154287)
+refused with
+
+```
+suite: demo.AppImage (x86_64) sha256 is 8f6e390aa36c34f59363b916c29eec3fe95ce931be0c8a89f1e80a43d0981dbe,
+expected 712766f8a4dc6b5ea3193ed7bb0282b64c7b781f7334056416edd3d00e8960bd
+```
+
+⭐ **The pin did its job.** What follows is about what to do next, which is a
+policy question and not a bug.
+
+**Correcting the account of when.** It was recorded here that the assets were
+re-uploaded during that run. Measured from the API, they were not:
+
+| event | time |
+|---|---|
+| run created | `2026-08-26T08:31:03Z` |
+| run ended, refusing | `2026-08-26T08:31:41Z` |
+| every asset on that release re-created | `2026-08-26T08:32:37Z` |
+
+The re-upload post-dates the run's end by 56 seconds. So the mismatch the run
+hit was caused by an EARLIER replacement, and the assets were then replaced
+again a minute later. The object the run downloaded no longer exists, so
+whether `8f6e390a` was a complete asset or a torn read cannot be established
+now. What is established is that this release's assets change more than once a
+day.
+
+**Which repository.** `pkgforge-dev/Anylinux-AppImages` is the upstream:
+`fork: false`, 234 stars. `Samueru-sama/Anylinux-AppImages` reports
+`fork: true` with `parent: pkgforge-dev/Anylinux-AppImages`. The suite was
+taking both assets from the fork.
+
+⚠ **One of the two cannot move, and the reason is what is being measured.**
+
+| asset | upstream | fork |
+|---|---|---|
+| `gtk4-demo-<arch>.AppImage` | published | published |
+| `vkcube+glxgears-host-drivers-demo-<arch>.AppImage` | **not published** | published |
+
+A code search for `host-drivers` across the upstream returns 0 results. The
+upstream's `vkcube+glxgears-demo-<arch>.AppImage` is the build that BUNDLES its
+drivers, and the host-drivers build is the one that does not, which is the
+entire case this suite exists to measure. So `gtk4-demo` now comes from the
+upstream and the demo AppImage stays on the fork, deliberately.
+
+**The policy, and why it is the one that was available.**
+
+| option | verdict |
+|---|---|
+| pin to an immutable release | ⛔ not available. Measured: BOTH repositories publish exactly one release each, and both are tagged `demo` |
+| mirror the asset into this repository | ⛔ refused by `scripts/check-drift.sh` section 2c, which rejects any tracked `*.AppImage` by shape |
+| mirror to a release of our own | needs a published release, and nothing has been published yet |
+| ⭐ re-pin as a maintained act, recorded and reviewed | adopted |
+
+⛔ **A re-pin is a decision, so the refusal now says what the decision is
+about.** The old message printed one sentence whatever had happened, and three
+different things can disagree: the pin, the bytes that arrived, and the digest
+the release publishes today. `scripts/suite-lib.sh` reads the third from the
+release API, which needs no download, and names the case. All five paths
+proven, unpiped, exit codes read directly:
+
+| what disagrees | verdict printed | exit |
+|---|---|---|
+| nothing | `sha256 ok` | 0 |
+| pin only, bytes match the published asset | `UPSTREAM RE-UPLOADED IT` | 1 |
+| bytes only, published asset still matches the pin | `THE DOWNLOAD IS WRONG, NOT THE PIN` | 1 |
+| all three differ | `NEITHER MATCHES` | 1 |
+| API unreachable | cause not established, refuse anyway | 1 |
+
+The second row was proven against the real asset: the pin that failed in that
+run, against the file as it stands today.
+
+⚠ **The four pins were recomputed from the bytes, not copied from the API.**
+Each was downloaded and hashed here, and each then agreed with the digest the
+release publishes, which is a cross-check rather than the source.
+
+⛔ **`docs/ground-truth.md`'s inventory of the demo AppImage was taken against
+the OLD binary**, sha256 `712766f8...`, 10 736 056 bytes. The newly pinned
+build is 10 817 560 bytes. Its bundled glibc version, its stub library set and
+its export counts are therefore UNVERIFIED against the artefact the suite now
+runs. The suite re-extracts and re-asserts on every run, so the next completed
+run is what settles it, and a changed answer is a finding rather than a
+regression.
+
+---
+
+### 9.16 What this branch stopped measuring
+
+Deep review pass 2 asked one question: what did this branch stop measuring?
+Two answers, and neither showed up as a failing case, because both of them
+went green.
+
+**1. The ARM runner arrived and section P did not notice.**
+
+`.github/workflows/gates.yml` added `ubuntu-24.04-arm` with a reason written
+into the matrix: it is "the row where CI is STRONGER than the machine this
+project was built on", because "the aarch64 trampolines have only ever run
+under qemu-user, which emulates the instructions and not a memory model".
+
+Section P of `experiments/30-run-tests.sh` is the case that runs those
+trampolines. It opens by saying "This machine is x86_64 and there is no
+aarch64 silicon to borrow", which was true when it was written, and it
+cross-compiles with `aarch64-linux-gnu-gcc` and runs the result under
+`qemu-aarch64-static`. It does that unconditionally.
+
+⛔ **So on the aarch64 runner, E76 and E76b ran an aarch64 binary under an
+aarch64 emulator on an aarch64 CPU**, and passed. Measured, from the aarch64
+evidence job of run
+[32950783301](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32950783301):
+
+```
+-- P. the aarch64 trampolines, RUN -----------------------------
+  E76    MATCH predicted=OK    OK: first-call ints=204 floats=285.00 varargs=10 struct=[2..12] second-call-identical=yes absent-returned=0
+  E76b   MATCH predicted=OK     [tgt-fwd.so] >> libtgt.so: 5 entry points, none resolved yet
+```
+
+Two green cases, on the one host where the emulator is the thing standing
+between the measurement and the point of it. The branch bought real silicon
+and then declined to stand on it.
+
+Section P now picks its vehicle from the host and PRINTS which one it used,
+because a reader holding one log has no other way to tell:
+
+| host | compiler | vehicle |
+|---|---|---|
+| aarch64 | `gcc` | native. No emulator in the path |
+| x86_64, cross toolchain and qemu present | `aarch64-linux-gnu-gcc` | `qemu-user`. Userspace emulation, not a memory model |
+| x86_64, neither present | none | E76 and E76b SKIP, naming what is missing |
+
+⚠ The predictions did not change. Same case ids, same expected exit, same
+needles. Only the vehicle did, and the stage no longer installs an emulator
+for the architecture it is standing on.
+
+**2. A marker that stopped being read, and four documents that did not.**
+
+The markers were removed on this branch and the feature is on by default. Two
+of the places that explained behaviour by the marker were comments on a case:
+
+```
+# already carries .foreign-dlopen-enabled -- quick-sharun's spelling of the
+# marker, still accepted -- so the feature turns itself on
+        experiments/40-appimage.sh, E40, before this change
+```
+
+Nothing in `src/` reads that file. Measured: `git grep` for the name across
+`src/` and `tests/` returns one hit, and it is a comment in `src/cld-env.h`
+saying the marker is gone.
+
+⭐ **E40 kept passing, for a reason its own comment did not give.** Its claim,
+that this is the case which forces nothing, did not weaken. It got stronger:
+the feature turning itself on with no marker present is a larger statement
+than it turning itself on because a marker is present. That is why nobody
+noticed, and it is the shape worth naming. A case whose stated mechanism has
+been replaced by a better one reads exactly like a case that is fine.
+
+Four places carried the stale claim, and `docs/AGENTS.md` carried it in a
+table of names that must not be renamed on pain of turning E30, E37a and E43a
+into silent passes. That protection is real and it belongs to two other
+things, measured on the tree as it stands:
+
+| name | still load-bearing? |
+|---|---|
+| the AppDir's dispatcher slot | yes. `.preload` names it and our build is copied into it. ⚠ Its NAME is not load-bearing and must not be spelled by us: 9.17 has upstream changing it |
+| the `ANYLINUX_*` env spelling in `experiments/40-appimage.sh` | yes. 13 call sites, none touched by this branch, and upstream's binary understands no other spelling |
+| `.foreign-dlopen-enabled` | ⛔ no. Nothing in `src/` reads it |
+
+⚠ Whether upstream's own binary still reads the marker is NOT measured here.
+No case depends on the answer, because every arm sets the variable explicitly.
+
+---
+
+### 9.17 Upstream shipped this project, and the AppDir changed shape
+
+Re-pinned to the current asset, the suite got further and then refused on both
+architectures, in run
+[32951892766](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32951892766):
+
+```
+demo.AppImage (x86_64) sha256 ok
+==> debian:trixie-slim  (41-extract.sh)
+cp: cannot stat 'AppDir/lib/foreign-dlopen.so': No such file or directory
+suite: extraction failed
+```
+
+⭐ **A sha256 pin says the bytes are the ones somebody reviewed. It says
+nothing about the layout inside them.** The layout moved.
+
+**What the pinned AppImage now contains.** Extracted and measured here:
+
+| `AppDir/lib` | |
+|---|---|
+| `cross-libc-dlopen.so` | 51 608 bytes. Debug tag `[cross-libc-dlopen]`, and it reads both the `CROSS_LIBC_DLOPEN_*` names and the `ANYLINUX_*` aliases. It is a build of THIS project |
+| `gl-fwd.so` | 566 608 bytes, SONAME `libGL.so.1`. This project's forwarding shim |
+| `egl-fwd.so` | 27 200 bytes |
+| `gles-fwd.so` | 78 864 bytes |
+| `foreign-dlopen.so` | ⛔ gone |
+
+⛔ **Upstream adopted this project and renamed the slot to it.** The one file
+the whole A/B replaces used to be `lib/foreign-dlopen.so` and is now
+`lib/cross-libc-dlopen.so`. `experiments/41-extract.sh` reads the name out of
+the AppDir and writes it to `.cld-slot`; `40-appimage.sh` takes it from there
+rather than either file spelling it. Both spellings are accepted by name, the
+one that was found is printed, and an AppDir with neither is a refusal that
+lists what is actually in `lib/`. A guess would be worse than a refusal: the
+A/B is one `cp` into one path, and a wrong path makes both arms identical and
+reports them agreeing.
+
+⚠ **The rename is the loud half. The quiet half is `.preload`.**
+
+| | |
+|---|---|
+| recorded in `ground-truth.md` | `path-mapping.so`, `anylinux.so`, `cross-libc-dlopen.so` |
+| shipped by the pinned build | the same three, then `gl-fwd.so`, `egl-fwd.so`, `gles-fwd.so` |
+
+`41-extract.sh` saved the shipped `.preload` as the baseline that every later
+case restores from before appending the one shim under test. With this project's
+shims already in that list, every case whose whole point is a shim's ABSENCE
+would have run with upstream's copy of it present, appended a duplicate line,
+and passed. ⛔ Nothing would have reported anything: no MISMATCH, no skip, no
+warning. The suite would have gone green measuring the opposite of its claim.
+
+Two files now, and the difference between them is the point:
+
+| file | what it is |
+|---|---|
+| `.preload.shipped` | what the AppImage ships, byte for byte. A record. Never restored from |
+| `.preload.baseline` | the same list with this project's own forwarding shims removed. What the cases restore from |
+
+⭐ **The derived baseline is exactly the old shipped list**, which is the
+check that it reconstructs the contrast the cases were written against rather
+than inventing one:
+
+```
+dispatcher slot: lib/cross-libc-dlopen.so
+shipped .preload:
+    path-mapping.so
+    anylinux.so
+    cross-libc-dlopen.so
+    gl-fwd.so
+    egl-fwd.so
+    gles-fwd.so
+  ⚠ removed from the restore baseline: gl-fwd.so egl-fwd.so gles-fwd.so
+AppDir: 94 libraries, bundled glibc 2.44
+```
+
+That runs on every extraction. A suite that edits the artefact under test and
+does not say so is worse than one that refuses.
+
+**The inventory, re-measured against the pinned build.**
+
+| row | verdict |
+|---|---|
+| bundled glibc 2.44 | unchanged, confirmed |
+| legacy split libs present, `libanl.so.1` absent | unchanged, confirmed |
+| `.foreign-dlopen-enabled` present, 0 bytes | unchanged, confirmed |
+| `gconv/` bundled, beside `locale/` and `vkmark/` | unchanged, confirmed |
+| `.preload` contents | ⛔ CHANGED, above |
+| the dispatcher's filename | ⛔ CHANGED, above |
+| bundled `cross-libc-dlopen.c`, 24 785 bytes | ⛔ GONE. The only `.c` in the AppDir is `.anylinux.c`, 20 731 bytes, a `linuxdeploy-plugin-checkrt` derivative belonging to `anylinux.so`. It names this project 0 times |
+| stub export counts 13, 4, 6, 2 | ⚠ NOT RE-ESTABLISHED |
+| 51 sonames | ⚠ NOT RE-ESTABLISHED |
+
+⚠ **Why two rows are UNVERIFIED rather than corrected.** Four counting methods
+were tried against the new binary and none reproduces 13, 4, 6, 2:
+
+| method | libpthread | libdl | librt | libutil |
+|---|---|---|---|---|
+| `objdump -T`, `DF .text` | 12 | 3 | 5 | 1 |
+| the same, versioned only | 12 | 3 | 5 | 1 |
+| `objdump -T`, every global or weak | 28 | 10 | 14 | 6 |
+| `nm -D --defined-only` | 24 | 6 | 10 | 2 |
+
+Every one of the first method's four numbers is exactly one below the recorded
+value, which is the signature of a counting difference rather than four
+independent changes. The old binary no longer exists, so the method cannot be
+tested against it, and artefact and method cannot be separated. ⭐ The claim
+those numbers exist to support does hold: all four are single digits, so they
+are stubs. The soname total is the same shape of question, measured at 49
+distinct sonames over 55 regular files and 35 symlinks.
+
+⛔ **The A/B's control arm no longer contrasts, and that IS the finding.**
+
+The "as shipped" arm used to be upstream's own shim, which could not load a
+host driver. It is now a build of this project, older than the working tree,
+still carrying the `ANYLINUX_*` aliases this branch removed. E30 and E37a are
+the controls for that arm, and they are what make the patched arm a
+measurement rather than a coincidence.
+
+⚠ **Read their predictions carefully, because the log line is misleading on
+its own.** Both are `predicted=OK`, which is about the exit status: the
+program is expected to run cleanly. What they assert is the NEEDLE, and the
+needle is the complaint being reproduced:
+
+| case | asserts the output contains |
+|---|---|
+| `run E30 OK "NO-DEVICES" probe_verdict 1` | `NO-DEVICES` |
+| `run E37a OK "zero accessible devices" render_verdict vkcube --c 20` | `zero accessible devices` |
+
+So a MISMATCH here means the as-shipped arm found a device. Run
+[32953461170](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32953461170),
+x86-64, the suite's first completed run:
+
+```
+E30    MISMATCH predicted=OK    DEVICES  (  device[0] : llvmpipe (LLVM 20.1.8, 256 bits))
+E37a   MISMATCH predicted=OK    Selected GPU 0: llvmpipe (LLVM 20.1.8, 256 bits), type: Cpu
+```
+
+Both arms now work, so neither case can distinguish them. ⭐ **The right
+response is not to flip the predictions.** A control that has stopped
+contrasting has stopped measuring, and rewriting it to expect success would
+convert two controls into two cases that pass whatever the shim does, which is
+the exact shape this repository calls a silent pass.
+
+⚠ The honest control for "the feature is absent" is an AppDir with NO
+dispatcher in `.preload`, not an AppDir carrying somebody else's. Choosing
+that, or something else, changes what the suite claims about upstream and is a
+decision rather than a repair. It is left open deliberately.
+
+**Two further MISMATCHes, and one of them could not say why.** E33 and E34
+reported `feature off: 3 / 0 load` and `feature on : 0 / 0 load` on the musl
+host and the same zero total on the glibc one. A total of 0 means the
+feature-ON corpus run produced no verdict line at all, so both cases were
+scored against nothing. ⛔ **Its stderr went to `/dev/null`**, which is T-13's
+shape for the third time in this tree, and the reason was in the stream that
+had been discarded. It is captured now and printed when, and only when, the
+run produces no verdict line.
+
+E49 went MISMATCH on aarch64 with one truncated line of preamble, for the same
+family of reason: `experiments/40-appimage.sh`'s `run` printed a 96-column
+summary of a failure where `30-run-tests.sh`'s has printed the whole captured
+output since T-13 closed. Both harnesses do now. ⛔ **E50's assertion is left
+alone until E49 can be read.** It requires exactly two live musl-against-glibc
+ABI hazards and aarch64 measured zero, which would be a genuine architectural
+difference worth recording, except that E49 failed in the same stage and a
+hazard count taken from a crossing that did not happen measures nothing.
+
+---
+
+### 9.18 aarch64 has a live ABI hazard x86-64 does not, and the probe aborted on it
+
+E49 was unreadable until `experiments/40-appimage.sh` gained the full MISMATCH
+dump. With it, the cause is the last four lines of the case's own output, run
+[32954726201](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32954726201),
+aarch64:
+
+```
+  T1.6 -- mutex and condition variable across the boundary
+    ok   guest locked+unlocked a host mutex   returned 0
+    ok   and left it unlocked
+    ok   guest allocated a mutex with its own sizeof
+    ok   host locked the guest's mutex        returned 0
+malloc(): invalid size (unsorted)
+Aborted (core dumped)
+(exit 134, wanted OK, needle: ABI CROSSING PASSED)
+```
+
+⭐ **The cause is in the same dump, eleven lines earlier**, in the size table
+that T1.7a prints before any crossing is attempted:
+
+| | musl guest | glibc host | |
+|---|---|---|---|
+| `pthread_mutex_t` | 40 | 48 | ⛔ diverges on aarch64 |
+| `pthread_mutex_t` | 40 | 40 | agrees on x86-64 |
+
+⛔ **The overflow is inside the GUEST, and it needs no crossing at all.**
+That is worth stating precisely, because the first reading of this was wrong
+and the fix built on it did not work. `abi_new_mutex()` in
+`tests/abi-guest.c` is four lines:
+
+```
+pthread_mutex_t *m = malloc(sizeof *m);        /* the GUEST's 40 */
+if (!m) return NULL;
+if (pthread_mutex_init(m, NULL) != 0) ...      /* resolves to OURS, writes 48 */
+return m;
+```
+
+The guest allocates its own size. Its `pthread_mutex_init` is glibc's, because
+making every reference in the guest resolve to this process's libc is the
+entire point of the thing under test. So glibc writes 48 bytes into a 40-byte
+allocation before anything is handed back, and the host's `free()` further down
+is merely where glibc notices.
+
+⚠ **Whether it is noticed depends on allocator rounding, and the write is
+real either way.** Measured on x86-64 with a guest planted to report and
+allocate eight bytes short: glibc rounds a 32-byte request up to a 40-byte
+usable chunk, the overflow lands in that padding, and nothing aborts. Planted
+32 bytes short instead, it escapes the padding and aborts. ⛔ A silent one is
+the worse outcome of the two, and it is the one a size pair closer together
+produces.
+
+⛔ **This is a real hazard, not a harness artefact:** no loader can make a
+40-byte allocation hold a 48-byte mutex, and the same shape reaches any
+musl-built object that allocates a `pthread_mutex_t` with its own `sizeof` in
+a glibc process on aarch64.
+
+**The measured contrast, one run, both architectures:**
+
+| | x86-64 | aarch64 |
+|---|---|---|
+| E49 | MATCH, `ABI CROSSING PASSED: 26 checks, 0 failed` | ⛔ MISMATCH, `exit 134` |
+| E50 | MATCH, 2 live hazards: `regexec`, `nftw` | MISMATCH, 0 |
+
+⚠ **E50's zero was not a finding.** The abort came before the hazard scan, so
+the count was taken from a process that had already died. That is why E50's
+assertion was left alone: a hazard count from a crossing that did not happen
+measures nothing, and pinning aarch64 to zero would have recorded the crash as
+an architectural virtue.
+
+**The probe declines the CALL now, and reports it.** `tests/abi-host.c`'s own
+header already says T1.7 writes divergent structs behind a guard band "because
+an overrun that only happens on success is the most misleading result
+available". T1.6 had the same overrun and no band, and only x86-64 had ever run
+it, where the sizes happen to agree. It is reported the way every other size
+divergence in that file is reported, through a `DIFF` line and a `LIVE HAZARD`
+explanation rather than through `ok()`, because a hazard is not a failed check:
+it is a thing no loader can fix.
+
+⚠ **The first version of that guard wrapped the wrong thing**, and this is
+recorded rather than quietly corrected because the failure it produced looked
+exactly like success. It guarded the host's `pthread_mutex_lock`, which is the
+crossing the case is about, and left `g_newmtx()` being called. Run
+[32955888055](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32955888055)
+printed the hazard, in full, and then died at the same `free()` with the same
+`exit 134`. ⭐ It did move E50 from 0 live hazards to 1, because the hazard
+line was printed before the abort, which is precisely the kind of partial
+improvement that reads as a fix.
+
+⛔ **Proven by reproducing the abort on x86-64, not by reasoning about it.**
+A guest was rebuilt to report AND allocate a short mutex, which is what a real
+musl guest does on aarch64. Both hosts were built from the same tree and run
+against the same planted guest:
+
+| guard | exit |
+|---|---|
+| wrapping the host's lock, the first attempt | ⛔ **134**, SIGABRT. `g_newmtx()` is still called and the overflow is inside it |
+| wrapping the call, as it stands | **0**, `ABI CROSSING PASSED: 25 checks, 0 failed` |
+
+⚠ The delta has to be large enough to escape glibc's chunk rounding for the
+abort to appear at all, which is the same caveat as above. At eight bytes short
+both hosts exit 0 and the difference is visible only in the output: the old one
+still prints `ok guest allocated a mutex with its own sizeof`, because it
+called the function that does the overflowing write.
+
+The reported form, from the same runs:
+
+```
+    ok   and left it unlocked
+    DIFF a mutex the guest allocates and inits host=40 guest=8
+         LIVE HAZARD: pthread_mutex_t is 40 bytes here and 8
+         there. The guest allocates its own size and calls
+         pthread_mutex_init, which resolves to OURS and writes this
+         size into it. NOT PERFORMED: on this pair it is an
+         out-of-bounds write inside the guest, and the allocator
+         aborts the process on the next free.
+    ok   guest signalled a host condvar       guest signal returned 0, host wait returned 0
+
+ABI CROSSING PASSED: 25 checks, 0 failed
+```
+
+and the same binary against an unplanted same-libc guest still reports
+`ABI CROSSING PASSED: 27 checks, 0 failed` with the crossing performed, so the
+guard is not simply always firing. ⭐ The run reaches the end now, which matters beyond E49: T1.7b and
+E50's hazard scan are downstream of the abort and had never executed on aarch64
+at all.
+
+**Both numbers now measured, one run,
+[32957101324](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32957101324):**
+
+| | E49 | E50, live hazards |
+|---|---|---|
+| x86-64 | MATCH, 26 checks | **2**: `regexec` stride, `nftw` FTW_D |
+| aarch64 | MATCH, 24 checks, on all four host stages | **3**: those two, plus `a mutex the guest allocates and inits` |
+
+⭐ **The difference is exactly the mutex, so E50 probes for it rather than
+carrying a table of architectures.** Two is the count where the two
+`pthread_mutex_t` sizes agree; where they diverge there is a third, and the
+divergence is printed by `abi-host`'s own size table in the same output that
+carries the count. That is E22's shape: read the condition, then assert
+against it. A per-architecture number would have been a second thing to
+maintain and the first to go stale.
+
+⚠ Two aarch64 checks fewer than x86-64, 24 against 26, and that is the guard:
+the two `ok()` calls it skips are the allocation and the lock it declines to
+perform.
+
+---
+
 ## 10. Measured versus assumed
 
-**Measured:** every table and quoted output above, plus `experiments/run.ps1`
-(46/46), `experiments/appimage.ps1` (45/45 glvnd glibc, 40/40 musl with five
+**Measured:** every table and quoted output above, plus `sh scripts/run-evidence.sh`
+(53/53 on x86-64, 50/50 on aarch64), `sh scripts/run-appimage.sh` (45/45 glvnd glibc, 40/40 musl with five
 named skips, 26/26 on each pre-glvnd glibc host, 7/7 on the gtk4 stage), `tools/gap.py --fetch`, the eight-distro inventory, the AppImage inventory,
 the corpus test, and the five-distro `ld.so.cache` survey in
 `ground-truth.md`.
@@ -2158,6 +2903,17 @@ packages** (aarch64: 1172); the "2100 objects" figure previously stated here is
 not what that file says, and the object count after unpacking was not measured.
 The full sweep is in
 [`../HISTORY/references/solo-findings.md`](../HISTORY/references/solo-findings.md).
+
+⛔ **A musl object cannot allocate and initialise its own `pthread_mutex_t` in
+a glibc process on aarch64, and nothing here fixes it.** musl's is 40 bytes
+there and glibc's is 48, so the object allocates 40 and the `pthread_mutex_init`
+it reaches writes 48. ⚠ No crossing is involved: the overflow is inside the
+musl object, on its own allocation, and it happens because the loader did
+exactly what it is supposed to do. It is measured, it is architecture-specific,
+and x86-64 does not have it because both are 40 there. Section 9.18 has the
+transcript and the size table. This is the shape the whole approach cannot
+address: the loader can make every reference resolve to one libc, and it cannot
+change a size the object compiled in.
 
 Also not delivered: NVIDIA's glibc-only userspace on a musl process, static musl
 binaries with GPU access, bridging manylinux wheels into Alpine, and distroless

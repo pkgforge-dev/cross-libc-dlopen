@@ -7,9 +7,49 @@ is a reading.
 
 ## The rule
 
-Short sentences. No em dashes. No marketing adjectives. No emoji beyond the
-three below. Present tense. Every claim backed by a command a reader can run or
-a path a reader can open.
+Short sentences. No dashes as punctuation, in either spelling. No marketing
+adjectives. No emoji beyond the three below. Present tense. Every claim backed
+by a command a reader can run or a path a reader can open.
+
+---
+
+## Dashes, and why `--` is not the fix
+
+⛔ **No em dash.** ⛔ **And `--` is not what replaces it.** Substituting one
+dash for another keeps the sentence that wanted a dash and makes it read worse:
+a reader meets what looks like a subtraction in the middle of a clause, and
+`--` is also how every command-line flag in this repository begins, so the page
+now has two meanings for one token.
+
+⭐ **Rewrite the sentence.** A dash is doing one of four jobs, and each has a
+mark that is not a dash:
+
+| what the dash was doing | what to use instead |
+|---|---|
+| joining two independent clauses | a full stop. Two sentences are almost always better |
+| introducing an explanation, a list or a consequence | a colon |
+| wrapping an aside | a pair of commas, or parentheses |
+| trailing an afterthought | delete it, or promote it to its own sentence |
+
+⚠ **`--` as itself is fine and is not what this is about.** A flag
+(`--library-path`), a literal inside a code block, a shell comment, and a
+horizontal rule are all `--` or `---` doing their own job. The rule is about
+prose.
+
+⚠ **The ratchet is section 4 of `scripts/check-drift.sh`**, which CI runs on
+every push. `HISTORY/` is excluded because it records original wording, and a
+single change that rewrote every dash in the tree would be a change nobody
+could review, so they go as the files they live in are touched for other
+reasons.
+
+⛔ **The pin is exact, and a FALL refuses as loudly as a rise.** That looks
+like pedantry and is the whole mechanism: the pin is a number in the script,
+nothing lowers it on its own, and a version of this check that merely
+suggested lowering it was ignored three commits running until it had drifted
+eight under the tree. A planted dash then landed inside the slack and passed,
+and the ratchet was recorded as broken when it was only unarmed. Lower the
+number in the same change that lowers the count. `docs/REPORT.md` 9.14 has
+both halves proven.
 
 Write for an agent with no memory of the session that wrote the file, and for a
 person looking for one fact.

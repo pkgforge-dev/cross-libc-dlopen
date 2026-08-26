@@ -52,13 +52,20 @@ $ErrorActionPreference = 'Stop'
 $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Repo = Split-Path -Parent $Here
 $Work = Join-Path $Repo '.tmp'
-$Sha  = '712766f8a4dc6b5ea3193ed7bb0282b64c7b781f7334056416edd3d00e8960bd'
+# ⛔ THESE FOUR VALUES ARE A TWIN OF scripts/run-appimage.sh's x86_64 branch,
+# and check-drift.sh refuses when the two disagree. They diverged once, in the
+# change that re-pinned the shell suite and left this file refusing on the old
+# hash, and docs/reproducing.md points a reader here. docs/REPORT.md 9.15 has
+# the pin policy; do not edit one side alone.
+$Sha  = 'd77a01ebacb739392ca8c39f879dc5bc626283b0c01bd9dc12eecbea92dd34c1'
 $Url  = 'https://github.com/Samueru-sama/Anylinux-AppImages/releases/download/demo/vkcube+glxgears-host-drivers-demo-x86_64.AppImage'
 # The OTHER shape of AppImage: self-contained, its own Mesa, its own vendor
 # libraries, a real GTK4 application, and the only AppDir here that bundles
 # libGLESv2.so.2 -- which is what the GLES forwarding table is read out of.
-$Gtk4Sha = '577909eff286b385dc0e3dc1eda0ef42f92858418c449e89e426ef950a63eb89'
-$Gtk4Url = 'https://github.com/Samueru-sama/Anylinux-AppImages/releases/download/demo/gtk4-demo-x86_64.AppImage'
+# ⚠ From pkgforge-dev, the upstream. The demo above is the fork's, because the
+# host-drivers build exists only there. REPORT 9.15.
+$Gtk4Sha = '413243c9ecbaaafe40636afd06e0c3d558b8cc928ed20b9ec55a6e0f09b5d8b4'
+$Gtk4Url = 'https://github.com/pkgforge-dev/Anylinux-AppImages/releases/download/demo/gtk4-demo-x86_64.AppImage'
 
 function Resolve-Engine {
     if ($Engine) {

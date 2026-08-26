@@ -9,7 +9,8 @@ Which documents exist and what each one owns.
 
 | file | owns |
 |---|---|
-| [`../../README.md`](../../README.md) | what this is, for a competent stranger. What, why, how to start, where the docs are. ⛔ Concise and technical. No paragraph whose subject is a past mistake |
+| [`../../README.md`](../../README.md) | what this is, for a competent stranger: what, why, how to start, and where every other document is. ⛔ Concise and technical. No paragraph whose subject is a past mistake. ⛔ **It carries the documentation map**, so `docs/` has no index page of its own for the two to disagree |
+| [`../alternatives.md`](../alternatives.md) | the other answers to the same problem, and which one fits the reader's position. ⛔ Comparison belongs here and not in `README.md`, which was two thirds comparison before this row existed |
 | [`../AGENTS.md`](../AGENTS.md) | ⭐ the router. One per repository, in `docs/`. Restates nothing, links everything |
 | [`../HUMANS.md`](../HUMANS.md) | the operator's side: what to paste to get useful work out of a session |
 | [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md) | ⭐ the record. The baseline, what the last session did, and **the work order**. Nothing else carries a work order |

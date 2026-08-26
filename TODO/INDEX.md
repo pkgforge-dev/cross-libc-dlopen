@@ -12,17 +12,17 @@ nowhere else. This file is a list, not an order and not a log.
 | | open | partially done | done | total |
 |---|---|---|---|---|
 | measurement | 5 | 1 | 0 | 6 |
-| infrastructure | 8 | 1 | 0 | 9 |
+| infrastructure | 7 | 0 | 2 | 9 |
 | blocked | 7 | 0 | 2 reclassified | 9 |
-| **total** | **20** | **2** | **2 reclassified** | **24** |
+| **total** | **19** | **1** | **2 done, 2 reclassified** | **24** |
 
 By priority, across the open and partially-done rows:
 
 | priority | count |
 |---|---|
 | high | 6 |
-| medium | 9 |
-| low | 1 |
+| medium | 7 |
+| low | 0 |
 | blocked (no priority -- a machine unblocks these, not a decision) | 7 |
 
 ---
@@ -40,8 +40,8 @@ By priority, across the open and partially-done rows:
 | T-10 | [Prove every CI gate can fail](infrastructure.md) | infrastructure | high | open |
 | T-11 | [A machine-readable suite result](infrastructure.md) | infrastructure | medium | open |
 | T-12 | [Measure the stage timeouts on a runner before trusting them](infrastructure.md) | infrastructure | medium | open |
-| T-13 | [A build error hidden by `2>/dev/null` cost a debugging cycle](infrastructure.md) | infrastructure | medium | open |
-| T-14 | [Four files that no runner runs](infrastructure.md) | infrastructure | low | partially done |
+| T-13 | [A build error hidden by `2>/dev/null` cost a debugging cycle](infrastructure.md) | infrastructure | medium | done |
+| T-14 | [Four files that no runner runs](infrastructure.md) | infrastructure | low | done |
 | T-15 | [A corpus test with a fresh process per library](infrastructure.md) | infrastructure | medium | open |
 | T-16 | [Delete the path that would mask the failure](infrastructure.md) | infrastructure | medium | open |
 | T-17 | [The IBT property note is documented and is not there](infrastructure.md) | infrastructure | medium | open |

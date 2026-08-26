@@ -92,8 +92,47 @@ sha256_of() {
 	fi
 }
 
-fetch_verified() {                     # fetch_verified <url> <dest> <sha256> <label>
+# ⭐ WHAT GITHUB SAYS THE ASSET IS, which is a different question from what we
+# pinned and from what arrived. The release API publishes a sha256 per asset,
+# so it can be read without downloading anything. Printing nothing on any
+# failure is deliberate: this only ever ADDS a sentence to a refusal, and a
+# suite that cannot reach the network must still be able to refuse.
+#
+# ⚠ awk over `tr ',' '\n'`, not jq and not python3. The suite runs on a hosted
+# runner, in Git Bash on Windows and inside four container images, and jq is
+# not on all of them. Splitting on commas cuts through string values too; that
+# is harmless here because the only lines this reads are a name and a digest,
+# and their order in the response is what identifies the pair.
+upstream_digest() {                    # upstream_digest <owner/repo> <tag> <asset>
+	command -v curl >/dev/null 2>&1 || return 0
+	curl -fsSL --max-time 20 -H 'Accept: application/vnd.github+json' \
+		"https://api.github.com/repos/$1/releases/tags/$2" 2>/dev/null |
+	tr ',' '\n' | awk -v want="$3" '
+		/"name":[ ]*"/ {
+			n = $0; sub(/.*"name":[ ]*"/, "", n); sub(/".*/, "", n)
+		}
+		/"digest":[ ]*"sha256:/ {
+			if (n == want) {
+				d = $0; sub(/.*sha256:/, "", d); sub(/[^0-9a-f].*/, "", d)
+				print d; exit
+			}
+		}'
+}
+
+# ⛔ THREE THINGS CAN DISAGREE AND THE OLD MESSAGE SAID ONE SENTENCE FOR ALL OF
+# THEM: our pin, the bytes that arrived, and what the upstream release
+# publishes today. Which pair differs decides what a reader should do, and they
+# are not close to each other.
+#
+# ⚠ Measured, and it is why this exists. Run 32948154287 refused with "sha256
+# is 8f6e390a..., expected 712766f8...". That reads as one event. It was not:
+# the asset had already been replaced before the run started, and every asset
+# on that release was replaced AGAIN at 08:32:37Z, 56 seconds after the run
+# ended. The upstream tag is `demo` and it is mutable, so this recurs by
+# design. docs/REPORT.md 9.15.
+fetch_verified() {                     # fetch_verified <url> <dest> <sha256> <label> [repo tag asset]
 	_url=$1; _dst=$2; _want=$3; _label=$4
+	_repo=${5:-}; _tag=${6:-}; _asset=${7:-}
 	if [ ! -f "$_dst" ]; then
 		say "downloading $_label"
 		mkdir -p "$(dirname "$_dst")"
@@ -107,12 +146,39 @@ fetch_verified() {                     # fetch_verified <url> <dest> <sha256> <l
 		mv "$_dst.part" "$_dst"
 	fi
 	_got=$(sha256_of "$_dst")
-	if [ "$_got" != "$_want" ]; then
-		die "$_label sha256 is $_got, expected $_want.
-      Refusing to continue: every result below would be about a binary nobody
-      pinned. Delete $_dst to re-download, or update the pin deliberately."
+	if [ "$_got" = "$_want" ]; then
+		say "$_label sha256 ok"
+		return 0
 	fi
-	say "$_label sha256 ok"
+
+	_pub=''
+	[ -n "$_repo" ] && _pub=$(upstream_digest "$_repo" "$_tag" "$_asset")
+
+	if [ -z "$_pub" ]; then
+		_why="Upstream was not reachable, so which of the two changed is not
+      established here. Re-run with the network, or check by hand."
+	elif [ "$_pub" = "$_got" ]; then
+		_why="UPSTREAM RE-UPLOADED IT. What arrived is exactly what the release
+      publishes today, so the pin is older than the asset and nothing is wrong
+      with the download. ⛔ Re-pinning is a deliberate, reviewed act and not a
+      way to make this green: read docs/REPORT.md 9.15 before you do it."
+	elif [ "$_pub" = "$_want" ]; then
+		_why="⛔ THE DOWNLOAD IS WRONG, NOT THE PIN. The release still publishes
+      the pinned digest, so these bytes were truncated, cached wrong, or
+      substituted in transit. Delete $_dst and retry. If it repeats, stop and
+      do not re-pin."
+	else
+		_why="⛔ NEITHER MATCHES. Upstream publishes $_pub, which is a third
+      value, so the asset changed AND what arrived is not the new asset
+      either. A read torn by a re-upload in progress looks exactly like this,
+      and so does interception. Retry once; if the retry lands on $_pub the
+      first read was torn."
+	fi
+
+	die "$_label sha256 is $_got, expected $_want.
+      $_why
+      Refusing to continue: every result below would be about a binary nobody
+      pinned."
 }
 
 # ------------------------------------------------------- 5. the architecture --

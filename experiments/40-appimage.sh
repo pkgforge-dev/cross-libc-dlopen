@@ -2,8 +2,9 @@
 # The end-to-end suite: a real AppImage, a real host driver, on a host whose
 # libc is not the AppImage's.  Runs INSIDE the host container.
 #
-#   /w/AppDir   the extracted demo AppImage (upstream's foreign-dlopen.so kept
-#               beside it as foreign-dlopen.upstream.so)
+#   /w/AppDir   the extracted demo AppImage. The shipped dispatcher is kept
+#               beside it as <slot>.upstream.so, and 41-extract.sh writes the
+#               slot's name to .cld-slot because upstream has renamed it once
 #   /w/build    cross-libc-dlopen.so and the test binaries, built on the glibc
 #               FLOOR so they only need old symbols
 #
@@ -15,11 +16,38 @@ set -u
 
 APPDIR=/w/AppDir
 LP="$APPDIR/lib"
-LD="$LP/ld-linux-x86-64.so.2"
+# ⛔ THE DISPATCHER SLOT IS DERIVED, NOT SPELLED. 41-extract.sh finds it in the
+# extracted AppDir and writes the name here, because upstream renamed it:
+# lib/foreign-dlopen.so up to the build hashed 712766f8, lib/cross-libc-dlopen.so
+# in the one pinned now. Hardcoding either spelling makes the A/B a no-op
+# against the other, and a no-op A/B reports both arms agreeing. 9.17.
+if [ ! -f "$APPDIR/.cld-slot" ]; then
+    echo "  FATAL: $APPDIR/.cld-slot is missing, so the dispatcher slot is unknown."
+    echo "  Delete .tmp/AppDir and re-run so 41-extract.sh can find it."
+    exit 2
+fi
+SLOT=$(cat "$APPDIR/.cld-slot")
+DISPATCH="$LP/$SLOT"
+DISPATCH_UPSTREAM="$LP/$SLOT.upstream.so"
+# ⚠ The bundled loader's name and musl's soname carry the architecture.
+# Derived from uname -m, the same way scripts/suite-lib.sh derives the asset
+# suffix, so this stage runs on the aarch64 AppImage as well as the x86-64 one.
+# ⛔ $MUSL_SO is both an emitter and a MATCHER here: E48's needle is the musl
+# soname the bundled ld.so fails to find, so the two move together or E48 stops
+# asserting what it was written to assert.
+case "$(uname -m)" in
+    x86_64)  LDSO=ld-linux-x86-64.so.2 ; MUSL_SO=libc.musl-x86_64.so.1  ;;
+    aarch64) LDSO=ld-linux-aarch64.so.1; MUSL_SO=libc.musl-aarch64.so.1 ;;
+    *) echo "  FATAL: no loader and musl soname known for $(uname -m)"; exit 1 ;;
+esac
+LD="$LP/$LDSO"
 export APPDIR
 export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/tmp/xdg}
 mkdir -p "$XDG_RUNTIME_DIR"
 PASS=0; FAIL=0; SKIP=0
+# Per-case wall time, for T-12. Written by run(), reported at the end.
+TIMINGS=/tmp/cld-timings.tsv
+: > "$TIMINGS"
 # Extra host library directories for the OpenGL cases. Empty unless E77's
 # pre-flight finds this host's driver cannot load without them; declared here
 # because `set -u` makes reading it before section J a fatal error rather
@@ -27,17 +55,17 @@ PASS=0; FAIL=0; SKIP=0
 GLPATH=""
 XA='-screen 0 1024x768x24 +extension GLX +extension RANDR +render' 
 
-# 41-extract.sh keeps upstream's shim beside the AppDir at extraction time. If it
-# is missing, the AppDir has been used before and lib/foreign-dlopen.so is
+# 41-extract.sh keeps the shipped dispatcher beside the AppDir at extraction
+# time. If it is missing, the AppDir has been used before and the slot holds
 # whatever the last run left there -- copying that as "upstream" would quietly
 # run the entire A/B against the patched build twice and report it as a pass.
-if [ ! -f "$LP/foreign-dlopen.upstream.so" ] || [ ! -f "$APPDIR/.preload.shipped" ]; then
-    echo "  FATAL: $LP/foreign-dlopen.upstream.so or $APPDIR/.preload.shipped is missing."
+if [ ! -f "$DISPATCH_UPSTREAM" ] || [ ! -f "$APPDIR/.preload.baseline" ]; then
+    echo "  FATAL: $DISPATCH_UPSTREAM or $APPDIR/.preload.baseline is missing."
     echo "  The AppDir is stale. Delete .tmp/AppDir and re-run so extraction can"
-    echo "  preserve BOTH the shipped shim and the shipped .preload; without the"
-    echo "  first the 'as shipped' cases silently measure the patched build, and"
-    echo "  without the second the OpenGL cases that must run with NO shim would"
-    echo "  run with whatever the last run left in .preload."
+    echo "  preserve BOTH the shipped dispatcher and the .preload baseline;"
+    echo "  without the first the 'as shipped' cases silently measure the"
+    echo "  patched build, and without the second the OpenGL cases that must"
+    echo "  run with NO shim would run with whatever was left in .preload."
     exit 2
 fi
 
@@ -54,9 +82,13 @@ fi
 #
 # The guard above catches a missing baseline. This catches a dirty one, which
 # is the more common and much quieter of the two.
+# ⚠ .preload.BASELINE, not .preload.shipped. The pinned AppImage ships this
+# project's own forwarding shims in its .preload, so restoring the shipped list
+# would restore them and every absence case would measure their presence.
+# 41-extract.sh derives the baseline and prints what it took out. 9.17.
 reset_appdir() {
-    cp "$APPDIR/.preload.shipped" "$APPDIR/.preload"
-    rm -f "$LP/gl-fwd.so" "$LP/egl-fwd.so"
+    cp "$APPDIR/.preload.baseline" "$APPDIR/.preload"
+    rm -f "$LP/gl-fwd.so" "$LP/egl-fwd.so" "$LP/gles-fwd.so"
     # Probes and demo binaries that section J installs, and anything a hand-run
     # left beside them. Only names this suite creates are removed.
     for p in glprobe eglprobe; do
@@ -72,15 +104,21 @@ if [ -n "$stray" ]; then
 fi
 reset_appdir
 
-# TWO NAMES HERE ARE NOT THIS PROJECT'S, and renaming them would turn E30,
-# E37a and E43a -- the controls the whole A/B rests on -- into silent passes:
+# ONE PATH HERE IS NOT SPELLED BY THIS PROJECT, and getting it wrong turns
+# E30, E37a and E43a -- the controls the whole A/B rests on -- into silent
+# passes:
 #
-#   $LP/foreign-dlopen.so     the slot quick-sharun writes and .preload names.
-#                             Our build is copied INTO it; the path stays
-#                             upstream's because .preload says so.
-#   .foreign-dlopen-enabled   the marker quick-sharun creates. Still accepted
-#                             by src/cld-env.h, so E40 keeps measuring what it
-#                             says it measures.
+#   $DISPATCH   the slot quick-sharun writes and .preload names. Our build is
+#               copied INTO it; the name is whatever .preload says, which is
+#               why 41-extract.sh reads it out of the AppDir rather than
+#               either side spelling it. Upstream has changed it once already.
+#
+# ⚠ .foreign-dlopen-enabled USED TO BE THE SECOND, and is not any more. It is
+# quick-sharun's opt-in marker and it is still present in the AppDir, but
+# nothing in src/ reads it: the markers were removed and the feature is on by
+# default whenever the object is preloaded. Whether upstream's own binary
+# still reads it is not measured here and no case below depends on the answer,
+# because every arm sets the variable explicitly. docs/REPORT.md 9.16.
 #
 # And every `env` below sets the OLD variable spelling beside the new one,
 # because upstream's binary only understands the old one. Losing it does not
@@ -89,8 +127,8 @@ reset_appdir
 # measured nothing.
 use_preload() {                # upstream | patched
     case "$1" in
-        upstream) cp "$LP/foreign-dlopen.upstream.so" "$LP/foreign-dlopen.so" ;;
-        patched)  cp /w/build/cross-libc-dlopen.so       "$LP/foreign-dlopen.so" ;;
+        upstream) cp "$DISPATCH_UPSTREAM" "$DISPATCH" ;;
+        patched)  cp /w/build/cross-libc-dlopen.so       "$DISPATCH" ;;
     esac
 }
 
@@ -107,7 +145,19 @@ summarise() {                  # summarise <text>
 
 run() {                        # run <id> <expect: OK|FAIL> <needle> <cmd...>
     id="$1"; want="$2"; needle="$3"; shift 3
+    # ⚠ T-12. Every wall-clock timeout in this file was tuned on one developer
+    # machine, and a timeout is scored as a FAILURE rather than a skip, so a
+    # slow shared runner turns into a red build that looks like a regression.
+    # Until the real times are known, the first genuinely red run cannot be
+    # told apart from a slow runner.
+    #
+    # Recorded here, at whole-second resolution, which is enough for values
+    # between 25 and 90. This wraps the same command and changes no assertion:
+    # the case is scored below exactly as it was.
+    _t0=$(date +%s 2>/dev/null || echo 0)
     out=$("$@" 2>&1); rc=$?
+    _t1=$(date +%s 2>/dev/null || echo 0)
+    printf '%s\t%s\n' "$((_t1 - _t0))" "$id" >> "$TIMINGS" 2>/dev/null || true
     got=OK; [ $rc -ne 0 ] && got=FAIL
     verdict=MISMATCH
     if [ "$got" = "$want" ] && printf '%s' "$out" | grep -qF "$needle"; then
@@ -117,6 +167,19 @@ run() {                        # run <id> <expect: OK|FAIL> <needle> <cmd...>
     fi
     printf '  %-6s %-8s predicted=%-4s  %s\n' "$id" "$verdict" "$want" \
         "$(summarise "$out" | cut -c1-96)"
+    # ⛔ On a MISMATCH, the WHOLE captured output, not a 96-column summary of
+    # it. This is T-13's shape, which experiments/30-run-tests.sh has carried
+    # since that entry closed. THIS harness did not, and the gap was found the
+    # way the original was: E49 went MISMATCH on the ARM runner and the log
+    # held one truncated line, "guest ... built by musl; host built by glibc",
+    # which is the preamble and not the failure. summarise() picks ONE line for
+    # the column, so on a case that fails loudly it can show a neutral one.
+    # ⚠ This runs only after the case has already been scored, so it changes no
+    # assertion.
+    if [ "$verdict" = MISMATCH ]; then
+        printf '%s\n' "$out" | sed 's/^/           | /'
+        printf '           | (exit %s, wanted %s, needle: %s)\n' "$rc" "$want" "$needle"
+    fi
 }
 
 skip() { SKIP=$((SKIP+1)); printf '  %-6s %-8s %s\n' "$1" "SKIPPED" "$2"; }
@@ -134,7 +197,7 @@ verdict() {                    # verdict <id> <0|1 ok> <text>
 under() {                      # under <0|1> <prog> [args...]
     mode="$1"; shift
     env CROSS_LIBC_DLOPEN="$mode" ANYLINUX_LIB_FOREIGN_DLOPEN="$mode" APPDIR="$APPDIR" \
-        "$LD" --library-path "$LP" --preload "$LP/foreign-dlopen.so" "$@"
+        "$LD" --library-path "$LP" --preload "$DISPATCH" "$@"
 }
 
 # The same, plus one host directory appended AFTER the bundled ones, for the
@@ -147,7 +210,7 @@ under_at() {                   # under_at <0|1> <extra-dirs> <prog> [args...]
     mode="$1"; extra="$2"; shift 2
     env CROSS_LIBC_DLOPEN="$mode" ANYLINUX_LIB_FOREIGN_DLOPEN="$mode" APPDIR="$APPDIR" \
         "$LD" --library-path "$LP${extra:+:$extra}" \
-        --preload "$LP/foreign-dlopen.so" "$@"
+        --preload "$DISPATCH" "$@"
 }
 
 # vkprobe reduced to one word, because "it did not work" arrives in three
@@ -233,7 +296,7 @@ else
         *)  ABS=no; LVP=$(ls /usr/lib/"$LVP" /usr/lib/*/"$LVP" 2>/dev/null | head -1) ;;
     esac
 fi
-HOSTLIBC=musl; [ -e /lib/libc.musl-x86_64.so.1 ] || HOSTLIBC=glibc
+HOSTLIBC=musl; [ -e "/lib/$MUSL_SO" ] || HOSTLIBC=glibc
 
 # Everything a Vulkan device is needed for. Named once so a host that cannot
 # provide one produces one reason repeated, rather than a different guess per
@@ -297,7 +360,7 @@ else
 # than the bundled glibc, nothing can be missing, so the right number is zero.
 rm -f "$XDG_RUNTIME_DIR"/.cross-libc-dlopen-* 2>/dev/null
 trace=$(env CROSS_LIBC_DLOPEN=1 ANYLINUX_LIB_FOREIGN_DLOPEN=1 APPDIR="$APPDIR" CROSS_LIBC_DLOPEN_DEBUG=1 ANYLINUX_LIB_DEBUG=1 \
-        "$LD" --library-path "$LP" --preload "$LP/foreign-dlopen.so" \
+        "$LD" --library-path "$LP" --preload "$DISPATCH" \
         /w/build/vkprobe 2>&1)
 rw=$(printf '%s' "$trace" | grep -c 'cross-libc-dlopen: rewriting')
 kept=$(printf '%s' "$trace" | grep -c 'needs no rewrite')
@@ -321,12 +384,30 @@ else
 # Where the host actually keeps its libraries: the directory the ICD lives in,
 # not a guess. Debian puts them under /usr/lib/<triplet>, Alpine in /usr/lib.
 CORPUS=$(dirname "$LVP")
-under 1 /w/build/corpus "$CORPUS" 2>/dev/null > /tmp/corpus_on.txt
-under 0 /w/build/corpus "$CORPUS" 2>/dev/null > /tmp/corpus_off.txt
+# ⛔ STDERR TO A FILE, NOT TO /dev/null. This was `2>/dev/null` on both lines,
+# and it is T-13's shape a third time: when the feature-ON run produced nothing
+# at all, $total came out 0, E33 and E34 reported "0 / 0 load", and the reason
+# was in the stream that had been discarded. The suite's first ever completed
+# run on the new AppImage said exactly that on two hosts and could not say why.
+# ⚠ The redirect is still there because a driver probe writes chatter to stderr
+# on every host and inlining it would bury the table. It is now KEPT and
+# printed only when the run produced no verdict line, which is the only case in
+# which it is the answer.
+under 1 /w/build/corpus "$CORPUS" 2>/tmp/corpus_on.err  > /tmp/corpus_on.txt
+under 0 /w/build/corpus "$CORPUS" 2>/tmp/corpus_off.err > /tmp/corpus_off.txt
 total=$(grep -cE '^(OK|FAIL)' /tmp/corpus_on.txt)
 off=$(grep -c '^OK' /tmp/corpus_off.txt)
 on=$(grep -c '^OK' /tmp/corpus_on.txt)
 echo "  corpus directory: $CORPUS  ($total libraries)"
+if [ "$total" -eq 0 ]; then
+    echo "  ⛔ the feature-ON corpus run produced no OK or FAIL line at all, so"
+    echo "     the total below is 0 and E33/E34 are scored against nothing."
+    echo "     Its stderr, which used to be discarded:"
+    sed 's/^/       | /' /tmp/corpus_on.err | head -20
+    echo "     and the feature-OFF run, for contrast:"
+    printf '       | %s OK line(s)\n' "$off"
+    sed 's/^/       | /' /tmp/corpus_off.err | head -5
+fi
 
 # The verdicts are computed OUTSIDE a command substitution. Incrementing PASS
 if [ "$HOSTLIBC" = musl ]; then
@@ -372,11 +453,17 @@ else
 
     # E40: the whole thing stated the way a user would.
     #
-    # Replace exactly one file inside the AppDir, lib/foreign-dlopen.so, and run
-    # it. No CROSS_LIBC_DLOPEN_* variables and no VK_DRIVER_FILES: the AppDir
-    # already carries .foreign-dlopen-enabled -- quick-sharun's spelling of the
-    # marker, still accepted -- so the feature turns itself on, and the
-    # Vulkan loader finds the host's ICD by itself.
+    # Replace exactly one file inside the AppDir, the dispatcher slot, and run
+    # it. No CROSS_LIBC_DLOPEN_* variables and no VK_DRIVER_FILES: the feature
+    # is ON BY DEFAULT once the object is preloaded, so it turns itself on and
+    # the Vulkan loader finds the host's ICD by itself.
+    #
+    # ⚠ This comment used to say the AppDir's .foreign-dlopen-enabled marker
+    # was what turned it on. That was true when the marker was read and it is
+    # not now: the markers were removed, nothing in src/ reads that file, and
+    # the case has been passing for the other reason since. The claim the case
+    # makes did not change and got stronger, which is exactly why nobody
+    # noticed. docs/REPORT.md 9.16.
     #
     # Every other case here forces something -- the feature, the ICD, the
     # loader. This one forces nothing, which is the only version of the claim
@@ -467,7 +554,7 @@ else
     # arriving from a vendor binary instead of a synthetic probe.
     rm -f "$XDG_RUNTIME_DIR"/.cross-libc-dlopen-* 2>/dev/null
     ctrace=$(env CROSS_LIBC_DLOPEN=1 ANYLINUX_LIB_FOREIGN_DLOPEN=1 APPDIR="$APPDIR" CROSS_LIBC_DLOPEN_DEBUG=1 ANYLINUX_LIB_DEBUG=1 \
-             "$LD" --library-path "$LP:$WSLLIB" --preload "$LP/foreign-dlopen.so" \
+             "$LD" --library-path "$LP:$WSLLIB" --preload "$DISPATCH" \
              /w/build/cudaprobe "$CUDA" 2>&1)
     crw=$(printf '%s' "$ctrace" | grep -c 'cross-libc-dlopen: rewriting')
     ckept=$(printf '%s' "$ctrace" | grep -c 'needs no rewrite')
@@ -483,12 +570,12 @@ else
     use_preload upstream
     run E43a FAIL "BINDINGS MIXED" env LD_BIND_NOW=1 CROSS_LIBC_DLOPEN=1 ANYLINUX_LIB_FOREIGN_DLOPEN=1 \
         APPDIR="$APPDIR" "$LD" --library-path "$LP:$WSLLIB" \
-        --preload "$LP/foreign-dlopen.so" \
+        --preload "$DISPATCH" \
         /w/build/bindprobe "$CUDA" --init cuInit $CONDS
     use_preload patched
     run E43  OK "BINDINGS UNIFORM" env LD_BIND_NOW=1 CROSS_LIBC_DLOPEN=1 ANYLINUX_LIB_FOREIGN_DLOPEN=1 \
         APPDIR="$APPDIR" "$LD" --library-path "$LP:$WSLLIB" \
-        --preload "$LP/foreign-dlopen.so" \
+        --preload "$DISPATCH" \
         /w/build/bindprobe "$CUDA" --init cuInit $CONDS
 
     # E44: the discovery gap, with nothing but the AppImage's own library path.
@@ -578,9 +665,12 @@ else
         skip E49 "depends on E48"; skip E50 "depends on E48"
     else
         # E48: the control that FAILS. With the feature off the bundled ld.so
-        # goes looking for libc.musl-x86_64.so.1 and does not find it, which is
-        # what makes E49 a measurement rather than a coincidence.
-        run E48 FAIL "libc.musl-x86_64.so.1" under 0 /w/build/abi-host \
+        # goes looking for musl's soname and does not find it, which is what
+        # makes E49 a measurement rather than a coincidence. ⛔ The needle is
+        # $MUSL_SO, not a literal: the guest is built on Alpine for THIS
+        # architecture, so on aarch64 the name it fails to find is
+        # libc.musl-aarch64.so.1 and a hardcoded needle would never match.
+        run E48 FAIL "$MUSL_SO" under 0 /w/build/abi-host \
             /w/build/libabi_musl.so musl
         # E49: and with it on, every crossing holds -- allocator, errno, FILE*,
         # mutex and condvar -- with one libc in the process.
@@ -596,12 +686,35 @@ else
         # The names come out of the same run as the count. Hardcoding them
         # beside a measured number is how a report ends up describing a
         # different result from the one it counted.
+        #
+        # ⚠ THE COUNT IS ARCHITECTURE DEPENDENT, and aarch64 once reported 0.
+        # That zero was never a finding: abi-host ABORTED at T1.6 before the
+        # scan, because musl's pthread_mutex_t is 40 bytes there and glibc's is
+        # 48, so a mutex the guest allocates and initialises overflows by eight
+        # bytes inside the guest. tests/abi-host.c declines that call now and
+        # reports it as a hazard, so the scan completes and the count means
+        # something. docs/REPORT.md 9.18.
         hazout=$(under 1 /w/build/abi-host /w/build/libabi_musl.so musl 2>&1)
         haz=$(printf '%s' "$hazout" | grep -c 'LIVE HAZARD')
         hazwhat=$(printf '%s' "$hazout" | grep -E '^ *DIFF ' |
                   sed 's/^ *DIFF  *//; s/  */ /g; s/ host=.*//' | tr '\n' ';')
-        [ "$haz" -eq 2 ] && r50=1 || r50=0
-        verdict E50 "$r50" "reading back a glibc-filled struct: $haz live hazard(s) -- ${hazwhat:-none}"
+        # ⭐ THE EXPECTED COUNT IS PROBED, NOT SPELLED PER ARCHITECTURE, which
+        # is E22's shape applied here. Two hazards are live on a pair whose
+        # pthread_mutex_t agree: regexec's stride and nftw's FTW_D. Where the
+        # two sizes DIVERGE there is a third, because the guest then cannot
+        # allocate and initialise one of its own at all, and abi-host prints
+        # that divergence in its own size table before any of the hazards.
+        #
+        # ⚠ Measured on one run, 32957101324: x86-64 reports 2, aarch64 reports
+        # 3, and the extra one is exactly the mutex. Reading the condition out
+        # of the same output that carries the count is what keeps this a
+        # measurement rather than a per-arch table somebody has to maintain.
+        expect_haz=2
+        if printf '%s' "$hazout" | grep -qE '^ +pthread_mutex_t .*DIVERGES'; then
+                expect_haz=3
+        fi
+        [ "$haz" -eq "$expect_haz" ] && r50=1 || r50=0
+        verdict E50 "$r50" "reading back a glibc-filled struct: $haz live hazard(s), expected $expect_haz -- ${hazwhat:-none}"
     fi
 fi
 
@@ -748,11 +861,17 @@ fi
 echo "  host GL stack: $GLHOST$([ $GLHOST = classic ] && echo ' (no libGLX_<vendor>.so.0 anywhere)')"
 
 # The .preload file drives which shims the AppRun loads. Restore it from the
-# copy 41-extract.sh kept, so a case whose whole point is the shim's ABSENCE
-# cannot silently run with it present.
+# BASELINE 41-extract.sh derived, so a case whose whole point is the shim's
+# ABSENCE cannot silently run with it present.
+#
+# ⛔ Not from .preload.shipped. The pinned AppImage names gl-fwd.so, egl-fwd.so
+# and gles-fwd.so in its own .preload, so restoring the shipped list would put
+# upstream's copy of the very shim under test back into every arm, including
+# the ones that assert it is not there. Those arms would then append a
+# duplicate line and pass. 41-extract.sh prints what the baseline drops. 9.17.
 use_gl_shims() {               # use_gl_shims [gl] [egl]
-    cp "$APPDIR/.preload.shipped" "$APPDIR/.preload"
-    rm -f "$LP/gl-fwd.so" "$LP/egl-fwd.so"
+    cp "$APPDIR/.preload.baseline" "$APPDIR/.preload"
+    rm -f "$LP/gl-fwd.so" "$LP/egl-fwd.so" "$LP/gles-fwd.so"
     for s in "$@"; do
         case "$s" in
             gl)  cp /w/build/gl-fwd.so  "$LP/gl-fwd.so";  echo gl-fwd.so  >> "$APPDIR/.preload" ;;
@@ -1039,7 +1158,7 @@ else
     #      would produce: E74b is the same command after a GL call.
     use_gl_shims gl egl
     vkout=$(env CROSS_LIBC_DLOPEN=1 ANYLINUX_LIB_FOREIGN_DLOPEN=1 CROSS_LIBC_DLOPEN_DEBUG=1 ANYLINUX_LIB_DEBUG=1 APPDIR="$APPDIR" \
-            "$LD" --library-path "$LP" --preload "$LP/foreign-dlopen.so $LP/gl-fwd.so $LP/egl-fwd.so" \
+            "$LD" --library-path "$LP" --preload "$DISPATCH $LP/gl-fwd.so $LP/egl-fwd.so" \
             /w/build/vkprobe 2>&1)
     if printf '%s' "$vkout" | grep -q 'entry points resolved'; then
         verdict E74 0 "a Vulkan-only run still resolved the GL stack"
@@ -1086,6 +1205,38 @@ else
     use_gl_shims
 fi
 
+
+# ------------------------------------------------------------------- T-12 ---
+# ⛔ THE INSTRUMENTATION EXISTED AND NOTHING READ IT BACK. run() has been
+# recording each case's wall time to $TIMINGS since T-12 was opened, and until
+# the suite first completed there was nothing to read: no run ever reached the
+# end. This prints it.
+#
+# Every `timeout` in this file is a wall-clock value tuned on one developer
+# machine, and ⚠ a timeout is scored as a FAILURE rather than a skip, so a slow
+# shared runner reads as a regression. ⛔ The rule when one is close is RAISE,
+# never shorten: shortening hides the problem and makes the failure mode less
+# legible. TODO/infrastructure.md T-12 holds the measured-versus-configured
+# table, per runner, taken from these lines.
+#
+# ⚠ The margin column is against the SMALLEST timeout in this file, not against
+# the one that case actually carries, because a case's timeout is written
+# inline in its own command and is not knowable here. It is a floor on the
+# margin, so a case that looks safe by this column is safe by its own.
+if [ -s "$TIMINGS" ]; then
+    _tmin=$(grep -oE 'timeout( -k [0-9]+)? [0-9]+' "$0" |
+            awk '{print $NF}' | sort -n | head -1)
+    : "${_tmin:=25}"
+    echo
+    echo "-- T-12: measured wall time per case, slowest first ---------------"
+    printf '   %-6s %8s %10s\n' case seconds "vs ${_tmin}s"
+    sort -k1,1nr "$TIMINGS" | head -12 | while IFS="$(printf '\t')" read -r _s _id; do
+        [ -n "$_id" ] || continue
+        printf '   %-6s %8s %9s%%\n' "$_id" "$_s" "$((_s * 100 / _tmin))"
+    done
+    echo "   total recorded: $(wc -l < "$TIMINGS" | tr -d ' ') case(s), $(awk '{t+=$1} END{print t+0}' "$TIMINGS")s of wall time"
+    echo "   smallest timeout configured in this file: ${_tmin}s"
+fi
 echo
 echo "================================================================"
 echo " predictions matched: $PASS   mismatched: $FAIL   skipped: $SKIP"

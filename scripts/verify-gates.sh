@@ -71,7 +71,7 @@ g_attrib() {
 }
 g_onehome() {
 	f=0
-	for n in 3470 358 46/46 45/45 40/40 26/26; do
+	for n in 3470 358 53/53 50/50 45/45 40/40 26/26; do
 		c=$(git grep -lF "$n" -- '*.md' ':(exclude)HISTORY/*' | wc -l)
 		[ "$c" -gt 1 ] && f=1
 	done
@@ -93,6 +93,11 @@ g_endings() {
 	[ -z "$(git ls-files --eol | grep -v 'i/lf' | grep -v 'i/-text')" ]
 }
 
+# ⛔ NOT RESTATED. gates.yml runs this one as `sh scripts/check-drift.sh`, so
+# the body here is that same call rather than a copy of its four sections: a
+# copy is a second thing to keep in step, and the first one to drift.
+g_drift() { sh scripts/check-drift.sh; }
+
 echo "== each gate, against a clean tree and against its own defect =="
 
 # ⛔ THE PLANTS ARE ASSEMBLED AT RUNTIME, and this is not decoration. Spelled
@@ -113,7 +118,15 @@ check "no tool is credited (tree)" g_attrib docs/_gate_probe.md \
 check "  the same, as a generated-with line" g_attrib docs/_gate_probe.md \
 	"Generated with [$TOOLNAME Code](https://example.invalid)"
 check "every headline number has one home" g_onehome docs/_gate_probe.md \
-	'the suite reports 46/46 predictions held'
+	'the suite reports 53/53 predictions held'
+
+# ⛔ THIS CHECK EXISTS BECAUSE THE RATCHET DID NOT REFUSE. It was written as a
+# budget with a hardcoded number and a printed suggestion that the next reader
+# lower it. Nobody did, the tree drifted eight under, and a planted dash then
+# landed inside the slack and passed. Proving it by hand once proves it on the
+# day; this proves it on every run. scripts/check-drift.sh section 4.
+check "the dash ratchet refuses a new dash" g_drift docs/_gate_probe.md \
+	'A sentence -- with a dash.'
 check "shell scripts parse" g_parse scripts/_gate_probe.sh \
 	'if [ 1 ; then'
 

@@ -7,11 +7,42 @@ apt-get update -qq >/dev/null 2>&1
 # The aarch64 cross toolchain and qemu-user are for section P, which RUNS the
 # aarch64 trampolines rather than only assembling them. They are installed
 # best-effort: if the host has no network for them the section SKIPS by name
-# (section 7) rather than failing a suite whose other 44 cases are unaffected.
+# (section 7) rather than failing a suite whose other cases are unaffected.
+#
+# ⚠ Not on an aarch64 host, where section P builds with the native gcc and
+# runs on the CPU. Installing an emulator for the architecture you are
+# standing on is how E76 came to run under qemu on real aarch64 silicon.
 apt-get install -y -qq gcc binutils python3 >/dev/null 2>&1
-apt-get install -y -qq --no-install-recommends \
-    gcc-aarch64-linux-gnu libc6-dev-arm64-cross qemu-user-static >/dev/null 2>&1
+if [ "$(uname -m)" != aarch64 ]; then
+    apt-get install -y -qq --no-install-recommends \
+        gcc-aarch64-linux-gnu libc6-dev-arm64-cross qemu-user-static >/dev/null 2>&1
+fi
 cd /work
+
+# ⚠ The same three architecture-carrying names stage 2 derives, derived the
+# same way, because this stage is the MATCHER for what stage 2 emits: it runs
+# /work/newglibc/<loader> and copies out of the multiarch directory. The two
+# must agree, or the assertion is no longer the one that was written.
+#
+# CET is the fourth. -fcf-protection=full is x86-only, and on aarch64 gcc it
+# is a hard error rather than a warning, so the four helper builds in sections
+# M and N would not compile at all -- and a helper that does not build reports
+# itself as "./tramp2: No such file or directory", which names the wrong thing
+# entirely. It buys endbr64 on x86-64 and there is no endbr64 on aarch64, so
+# dropping it there removes nothing that was being measured.
+# ⚠ $CET is deliberately unquoted below: it is one word or none, and "" would
+# hand gcc an empty argument.
+case "$(uname -m)" in
+    x86_64)
+        LDSO=ld-linux-x86-64.so.2 ; TRIPLET=x86_64-linux-gnu
+        LIBDIR2=/lib64            ; CET=-fcf-protection=full ;;
+    aarch64)
+        LDSO=ld-linux-aarch64.so.1; TRIPLET=aarch64-linux-gnu
+        LIBDIR2=/lib              ; CET= ;;
+    *)
+        echo "stage 3: no loader and triplet known for $(uname -m)" >&2
+        exit 1 ;;
+esac
 
 BASE_GLIBC=$(ldd --version | head -1 | grep -oE '[0-9]+\.[0-9]+$')
 PASS=0; FAIL=0
@@ -101,6 +132,23 @@ python3 strip_ver.py libnew.so  libnew_s.so
 python3 strip_ver.py libthr.so  libthr_s.so
 
 # ---------------------------------------------------------------- harness
+#
+# ⛔ T-13. A helper build whose stderr goes to /dev/null turns a compiler error
+# into a cascade of cases reporting "No such file or directory", which names
+# the wrong thing entirely. It cost a debugging cycle once when an include
+# broke tgt-fwd.so, and it cost another when a moved Python module broke the
+# shim generator: ten cases and two cases respectively, neither naming a cause.
+#
+# ⚠ The stderr is captured rather than shown, and printed ONLY when the
+# command fails. A passing run is exactly as quiet as before, and no assertion
+# changes: this runs after the build, and the cases still score themselves.
+BERR=/work/.build-stderr
+bfail() {                     # bfail <label>; always returns 1
+    printf '  BUILD FAILED: %s\n' "$1"
+    [ -s "$BERR" ] && sed 's/^/           | /' "$BERR"
+    return 1
+}
+
 run() {                       # run <id> <expect: OK|FAIL> <expect-substring> <cmd...>
     local id="$1" want="$2" needle="$3"; shift 3
     local out rc
@@ -113,6 +161,16 @@ run() {                       # run <id> <expect: OK|FAIL> <expect-substring> <c
         FAIL=$((FAIL+1))
     fi
     printf '  %-6s %-4s predicted=%-4s  %s\n' "$id" "$verdict" "$want" "$(printf '%s' "$out" | head -1)"
+    # ⛔ On a MISMATCH, the WHOLE captured output, not the first line of it.
+    # A one-line summary of a failure names the symptom and hides the cause:
+    # E16 reported "ok strlcpy short" for a probe that failed forty checks
+    # later, and the cause was not in the line that was printed.
+    # ⚠ This runs only after the case has already been scored, so it changes
+    # no assertion. T-13 is the same shape applied to the helper builds.
+    if [ "$verdict" = "MISMATCH" ]; then
+        printf '%s\n' "$out" | sed 's/^/           | /'
+        printf '           | (exit %s, wanted %s, needle: %s)\n' "$rc" "$want" "$needle"
+    fi
 }
 
 echo "================================================================"
@@ -156,10 +214,10 @@ echo "-- E. exec-time whole-runtime switch: the answer for symbols we cannot pre
 printf '#include <stdio.h>\nint main(void){puts("hello from switched runtime");return 0;}\n' > h.c
 gcc -O2 h.c -o h
 run E10 OK "hello from switched runtime" \
-    /work/newglibc/ld-linux-x86-64.so.2 --library-path /work/newglibc ./h
+    /work/newglibc/$LDSO --library-path /work/newglibc ./h
 
 echo "  E11    (informational) mixing an OLD libdl with a NEW libc:"
-/work/newglibc/ld-linux-x86-64.so.2 --library-path /work/newglibc:/lib/x86_64-linux-gnu \
+/work/newglibc/$LDSO --library-path /work/newglibc:/lib/$TRIPLET \
     ./loader /work/libnew.so newlib_answer >/dev/null 2>&1
 echo "         exit=$?  (139 = SIGSEGV: the runtime set must be switched WHOLE)"
 
@@ -167,7 +225,7 @@ echo "         exit=$?  (139 = SIGSEGV: the runtime set must be switched WHOLE)"
 # You do not shim it. You run under the host's own runtime, so the symbol resolves natively.
 # Note NO shim is preloaded here -- contrast with E5.
 run E12 OK "newlib_answer()=99" \
-    /work/hostrt/ld-linux-x86-64.so.2 --library-path /work/hostrt ./loader /work/libnew.so newlib_answer
+    /work/hostrt/$LDSO --library-path /work/hostrt ./loader /work/libnew.so newlib_answer
 
 echo
 echo "-- F. library search path: --library-path vs /etc/ld.so.cache ---"
@@ -187,8 +245,8 @@ int main(void){ void *h = dlopen("libfoo.so.1", RTLD_NOW);
     int (*f)(void) = dlsym(h,"foo_answer"); printf("OK: %d\n", f?f():-1); return 0; }
 CEOF
 gcc -O2 byname.c -o byname -ldl
-LD=/lib64/ld-linux-x86-64.so.2
-SHARUN_LIKE="/work:/usr/lib:/lib:/usr/lib64:/lib64:/usr/lib/x86_64-linux-gnu"   # no /usr/local/lib
+LD=$LIBDIR2/$LDSO
+SHARUN_LIKE="/work:/usr/lib:/lib:/usr/lib64:/lib64:/usr/lib/$TRIPLET"   # no /usr/local/lib
 
 run E13a OK   "OK: 55" $LD --library-path "$SHARUN_LIKE" ./byname
 run E13b FAIL "cannot open shared object file" $LD --library-path "$SHARUN_LIKE" --inhibit-cache ./byname
@@ -210,8 +268,8 @@ else
     # tests/elf-selftest.c #includes cross-libc-dlopen.c, so T0.4/T0.5/T0.7/T0.8
     # exercise the shipped predicates rather than a model of them.
     gcc -O2 -Wno-format-truncation /repo/tests/elf-selftest.c \
-        -o elf-selftest -ldl 2>/dev/null
-    run E14 OK "ELF SELFTEST PASSED" ./elf-selftest /lib/x86_64-linux-gnu/libz.so.1
+        -o elf-selftest -ldl 2>"$BERR" || bfail elf-selftest
+    run E14 OK "ELF SELFTEST PASSED" ./elf-selftest /lib/$TRIPLET/libz.so.1
 
     # ---- Design B: the GENERATED shim ----
     # Generated here, in the container, for THIS process's glibc 2.31 floor --
@@ -220,7 +278,7 @@ else
         python3 /repo/tools/gen_forward_shim.py \
             --floor /repo/inventories/glibc-2.31.json \
             --target /repo/inventories/glibc-2.44.json \
-            --out gen-shim.c --manifest gen-shim.json --quiet 2>/dev/null
+            --out gen-shim.c --manifest gen-shim.json --quiet 2>"$BERR" || bfail gen-shim.c
 
         # E15: it compiles clean against the floor it claims to target.
         run E15 OK "compiled" sh -c \
@@ -229,7 +287,7 @@ else
         # E16: and the implementations are CORRECT, not merely present --
         #      ~40 documented behaviours, on a glibc that really lacks them.
         gcc -O2 /repo/tests/shim-selftest.c -o shimtest \
-            -L"$PWD" -l:gen-shim.so -Wl,-rpath,"$PWD" >/dev/null 2>&1
+            -L"$PWD" -l:gen-shim.so -Wl,-rpath,"$PWD" >"$BERR" 2>&1 || bfail shimtest
         run E16 OK "SHIM TEST PASSED" ./shimtest
     else
         echo "  E15    SKIPPED - no python3 in this image"
@@ -238,7 +296,7 @@ else
 
     # ---- Design R: the host-runtime selector ----
     gcc -O2 -Wno-format-truncation /repo/src/runtime-select.c \
-        -o runtime-select -ldl 2>/dev/null
+        -o runtime-select -ldl 2>"$BERR" || bfail runtime-select
 
     # An AppDir bundling glibc 2.41 -- NEWER than this container's 2.31 host.
     rm -rf app_new && mkdir -p app_new/lib && cp -L /work/hostrt/* app_new/lib/ 2>/dev/null
@@ -253,9 +311,9 @@ else
     rm -rf app_old && mkdir -p app_old/lib
     for f in libc.so.6 libm.so.6 libdl.so.2 libpthread.so.0 librt.so.1 \
              libutil.so.1 libanl.so.1 libresolv.so.2; do
-        cp -L "/lib/x86_64-linux-gnu/$f" app_old/lib/ 2>/dev/null || true
+        cp -L "/lib/$TRIPLET/$f" app_old/lib/ 2>/dev/null || true
     done
-    cp -L /lib64/ld-linux-x86-64.so.2 app_old/lib/ 2>/dev/null || true
+    cp -L "$LIBDIR2/$LDSO" app_old/lib/ 2>/dev/null || true
     run E18 OK "runtime      : bundled" env APPDIR="$PWD/app_old" ./runtime-select --probe
 
     # E19: the override is real. Forcing bundled must be honoured verbatim.
@@ -272,7 +330,7 @@ else
     rm -rf mixedhost && mkdir -p mixedhost
     cp -L /work/hostrt/* mixedhost/ 2>/dev/null
     for f in libdl.so.2 libpthread.so.0 librt.so.1 libutil.so.1; do
-        cp -L "/lib/x86_64-linux-gnu/$f" mixedhost/ 2>/dev/null || true
+        cp -L "/lib/$TRIPLET/$f" mixedhost/ 2>/dev/null || true
     done
     run E20 OK "NOT internally consistent" \
         env APPDIR="$PWD/app_old" ./runtime-select --probe --host-dir "$PWD/mixedhost"
@@ -283,6 +341,34 @@ else
     rm -rf goodhost && mkdir -p goodhost && cp -L /work/hostrt/* goodhost/ 2>/dev/null
     run E21 OK "runtime      : host" \
         env APPDIR="$PWD/app_old" ./runtime-select --probe --host-dir "$PWD/goodhost"
+
+    # ---- the build-time strict-environment option -------------------------
+    #
+    # APPDIR is a convention this project does not own: an AppImage runtime
+    # exports it into every process it starts. It is kept by default for that
+    # reason, and src/cld-env.h has the argument in full.
+    #
+    # ⭐ A consumer who wants ONE spelling and no interop can have it, and gets
+    # it where the choice belongs: at build time, where whoever assembles the
+    # bundle knows whether an AppImage runtime is in the picture. A library
+    # cannot know that.
+    #
+    # ⛔ Two cases because one would not be a measurement. E87 alone would pass
+    # if the strict build were simply broken and found no root under any name.
+    gcc -O2 -DCLD_STRICT_ENV -Wall -Wextra -Wno-format-truncation -I/repo/src \
+        /repo/src/runtime-select.c -o runtime-select-strict -ldl \
+        2>"$BERR" || bfail runtime-select-strict
+
+    # E87: the strict build IGNORES APPDIR. The needle is the appdir line and
+    #      not the runtime line: "runtime : bundled" is also what a probe that
+    #      found nothing reports, so it cannot tell the two apart.
+    run E87 OK "appdir       : (unset)" \
+        env APPDIR="$PWD/app_old" ./runtime-select-strict --probe
+
+    # E88: and the same binary still works under this project's own name, so
+    #      E87 is APPDIR being ignored rather than the build being inert.
+    run E88 OK "appdir       : $PWD/app_old" \
+        env CROSS_LIBC_DLOPEN_ROOT="$PWD/app_old" ./runtime-select-strict --probe
 
     # ---- H. the version-binding trap, and the forwarders that close it ----
     #
@@ -295,12 +381,34 @@ else
     gcc -shared -fPIC -O2 /repo/tests/verprobe.c -o verprobe.so -lpthread
     python3 strip_ver.py verprobe.so verprobe_stripped.so
 
+    # ⚠ The trap E22 measures belongs to THIS libc, not to this project. It
+    # needs pthread_cond_init exported at TWO symbol versions, an obsolete one
+    # beside the current one. Measured on debian:bullseye-slim: x86-64's
+    # libc.so.6 and libpthread.so.0 each carry pthread_cond_init@GLIBC_2.2.5
+    # and @@GLIBC_2.3.2, and the aarch64 libc of the same release carries only
+    # @@GLIBC_2.17. So on aarch64 there is no obsolete definition to bind to,
+    # the stripped object returns 0, and E22 reported MISMATCH.
+    condvar_versions=0
+    for _l in "/lib/$TRIPLET/libpthread.so.0" "/lib/$TRIPLET/libc.so.6"; do
+        [ -e "$_l" ] || continue
+        _n=$(readelf -sW "$_l" 2>/dev/null |
+             grep -oE 'pthread_cond_init@+GLIBC_[0-9.]+' | sort -u | wc -l)
+        [ "$_n" -gt "$condvar_versions" ] && condvar_versions=$_n
+    done
+
     # E22: THE BUG. Same file, same libc, only the version tags removed, and
     #      pthread_cond_init now returns EINVAL(22) instead of 0. Everything
     #      users have reported as "the driver loads but nothing works" is this
     #      number. If this ever reports 0 the trap is gone from this glibc and
     #      E23 is measuring nothing -- which is why both sides are asserted.
-    run E22 OK "probe_cond_init()=22" ./loader /work/verprobe_stripped.so probe_cond_init
+    if [ "$condvar_versions" -ge 2 ]; then
+        run E22 OK "probe_cond_init()=22" ./loader /work/verprobe_stripped.so probe_cond_init
+    else
+        echo "  E22    SKIPPED - this libc exports pthread_cond_init at"
+        echo "         $condvar_versions symbol version(s). The trap needs an obsolete"
+        echo "         definition beside the current one, which x86-64 glibc"
+        echo "         carries and this one does not."
+    fi
 
     # E22b: the control. The very same object, unstripped, is fine -- so E22
     #       cannot be blamed on the probe, the compiler or this container.
@@ -312,9 +420,106 @@ else
     #      unversioned definitions sitting in the global lookup scope.
     gcc -shared -fPIC -O2 -Wall -Wextra -Wno-format-truncation -I/repo/src \
         /repo/src/cross-libc-dlopen.c /repo/src/forward-shim.c /repo/src/version-compat.c \
-        -o cross-libc-dlopen.so -ldl 2>/dev/null
-    run E23 OK "probe_cond_init()=0" \
-        env LD_PRELOAD=/work/cross-libc-dlopen.so ./loader /work/verprobe_stripped.so probe_cond_init
+        -o cross-libc-dlopen.so -ldl 2>"$BERR" || bfail cross-libc-dlopen.so
+    # ⛔ E23 is skipped WITH E22, not left running. E22's comment above says
+    # why: with no trap in this libc the stripped object already returns 0, so
+    # E23 passes whether or not version-compat.c does anything at all. It was
+    # reporting MATCH on the ARM runner while asserting nothing, which is the
+    # shape this repository calls a silent pass.
+    # ⚠ The build stays unconditional: cross-libc-dlopen.so is used by the
+    # host-dependency cases further down, which do not need the trap.
+    # ⛔ CROSS_LIBC_DLOPEN=0 is stated rather than left unset. The feature is
+    # ON by default now, and this case measures version-compat.c's unversioned
+    # definitions sitting in the global lookup scope with NO dlopen
+    # interception in the process. Relying on unset to mean off would have
+    # turned this into a different measurement the day the default changed,
+    # silently, and it would still have printed 0.
+    if [ "$condvar_versions" -ge 2 ]; then
+        run E23 OK "probe_cond_init()=0" \
+            env CROSS_LIBC_DLOPEN=0 LD_PRELOAD=/work/cross-libc-dlopen.so \
+                ./loader /work/verprobe_stripped.so probe_cond_init
+    else
+        echo "  E23    SKIPPED - it can only measure the fix where E22's trap"
+        echo "         exists; without it the unstripped answer is already 0."
+    fi
+
+    # ---- the deprecated ANYLINUX_* spellings, and that they are gone ------
+    #
+    # Every control here used to have a second spelling, read as a deprecated
+    # alias so that a bundle built before the rename kept working. No such
+    # bundle exists: this project has never published a release, so nothing
+    # sets one, and carrying the aliases meant every control had two names and
+    # one of them appeared in no document.
+    #
+    # ⛔ These two are a PAIR and neither means anything alone. E84 says the
+    # debug control works, so E85's silence is the alias being gone rather than
+    # the preload failing to load at all. E85 MISMATCHED before the aliases
+    # were removed, which is what makes it a measurement.
+    #
+    # ⚠ E85 asserts an ABSENCE, and `run` can only assert that a string is
+    # present, so the absence is turned into a word. Reading grep's status
+    # inside the case is deliberate and is not the "exit code through a pipe"
+    # trap: the pipeline IS the assertion here, not a check whose code is being
+    # misread.
+    #
+    # ⚠ ANYLINUX_LIB_DEBUG is still set by experiments/40-appimage.sh and by
+    # scripts/_upstream-controls-inner.sh, and must stay. Those drive
+    # UPSTREAM's binary, which understands only the old names, and
+    # scripts/verify-upstream-controls.sh measures the difference.
+    # E84: the control, and both halves are needed. "global-scope lib" is
+    #      printed only from the ENABLED path; "dlopen pass-through" is
+    #      printed from both, and a case needling that would pass with the
+    #      feature off. Measured on debian:bullseye-slim before this needle
+    #      was chosen.
+    run E84 OK "global-scope lib" \
+        env CROSS_LIBC_DLOPEN=1 CROSS_LIBC_DLOPEN_DEBUG=1 \
+            LD_PRELOAD=/work/cross-libc-dlopen.so \
+            ./loader /work/verprobe.so probe_cond_init
+
+    # E85: the DEBUG alias is gone. Feature on under its new name, so the
+    #      interposer IS running and E84 proves it prints; only the debug
+    #      control is spelled the old way, so one variable is under test.
+    #      ⚠ An absence, and `run` can only assert presence, so the absence is
+    #      turned into a word. Reading grep's answer inside the case is the
+    #      assertion here, not an exit code being read through a pipe.
+    run E85 OK "debug-alias-is-silent" sh -c \
+        'out=$(env CROSS_LIBC_DLOPEN=1 ANYLINUX_LIB_DEBUG=1 \
+                   LD_PRELOAD=/work/cross-libc-dlopen.so \
+                   ./loader /work/verprobe.so probe_cond_init 2>&1)
+         case "$out" in
+             *"[cross-libc-dlopen.so]"*) echo "debug-alias-STILL-READ" ;;
+             *)                          echo "debug-alias-is-silent" ;;
+         esac'
+
+    # E86: the ENABLE alias is gone, and now that the feature is on by default
+    #      the way to show that is to try to TURN IT OFF with the old name.
+    #      A build that still read the alias would bail at mode=0 here.
+    run E86 OK "global-scope lib" \
+        env ANYLINUX_LIB_FOREIGN_DLOPEN=0 CROSS_LIBC_DLOPEN_DEBUG=1 \
+            LD_PRELOAD=/work/cross-libc-dlopen.so \
+            ./loader /work/verprobe.so probe_cond_init
+
+    # ---- on by default, and the off switch that makes the controls work ----
+    #
+    # ⭐ The point of the default. A consumer that preloads the object and asks
+    # for nothing else gets the feature. Before this, it got a run that did
+    # nothing and said nothing about why, unless it also shipped a marker file
+    # or set a variable.
+    #
+    # ⚠ CROSS_LIBC_DLOPEN_DEBUG is set only so the object reports what it did.
+    # It does not enable anything: E90 has it set too and reads mode=0.
+    run E89 OK "global-scope lib" \
+        env CROSS_LIBC_DLOPEN_DEBUG=1 LD_PRELOAD=/work/cross-libc-dlopen.so \
+            ./loader /work/verprobe.so probe_cond_init
+
+    # E90: and OFF is still reachable, which is what every A/B control in
+    #      experiments/40-appimage.sh depends on for its "feature off" arm.
+    #      ⛔ Without this, E89 would be a one-sided result: "it is on" means
+    #      nothing if it cannot be turned off.
+    run E90 OK "attempt bail: mode=0" \
+        env CROSS_LIBC_DLOPEN=0 CROSS_LIBC_DLOPEN_DEBUG=1 \
+            LD_PRELOAD=/work/cross-libc-dlopen.so \
+            ./loader /work/verprobe.so probe_cond_init
 
     # E24: the trap stated in terms of libc alone -- the obsolete definition
     #      really does reject the attribute Mesa passes.
@@ -323,7 +528,7 @@ else
     #      with the obsolete definition on glibc 2.31 and the default one on
     #      2.41, which is exactly why version-compat.c reads the version name
     #      out of the ELF and uses dlvsym.
-    gcc -O2 /repo/tests/vertrap.c -o vertrap -ldl -lpthread 2>/dev/null
+    gcc -O2 /repo/tests/vertrap.c -o vertrap -ldl -lpthread 2>"$BERR" || bfail vertrap
     run E24 OK "e24 PASSED" ./vertrap e24
     run E25 OK "e25 PASSED" ./vertrap e25
     run E27 OK "e27 PASSED" ./vertrap e27
@@ -331,7 +536,7 @@ else
     # E26: the audit. A future glibc must not be able to add a trap that
     #      version-compat.c neither forwards nor explicitly declines.
     run E26 OK "every trap in this libc is forwarded" \
-        python3 /repo/tools/version_traps.py /lib/x86_64-linux-gnu/libc.so.6 \
+        python3 /repo/tools/version_traps.py /lib/$TRIPLET/libc.so.6 \
                 --check /repo/src/version-compat.c --quiet
 
     # ---- I. the failure report says the right thing ----------------------
@@ -515,11 +720,29 @@ int main(void) {
 }
 CEOF
 gcc -shared -fPIC -O2 tgt.c -o libtgt.so -Wl,-soname,libtgt.so
-gcc -O2 -fcf-protection=full tramp.c -o tramp -ldl
 # E58: eight integer registers, nine float registers, a varargs call whose %al
 #      carries the float count, and a struct returned through hidden memory --
 #      all through a jump that knows none of their shapes.
-run E58 OK "OK: ints=204" ./tramp
+#
+# ⚠ This section's STUB macro is x86-64 machine code written by hand: an
+# endbr64 as four literal bytes, then `jmp *glfwd_tab+8*i(%rip)`. It is a
+# miniature of src/gl-fwd.c's trampoline, not that trampoline, and it cannot
+# assemble anywhere else. On aarch64 gas rejects it with "unknown mnemonic
+# `jmp'", the binary is never produced, and E58 reported "./tramp: No such
+# file or directory" -- which names the wrong thing entirely.
+#
+# The capability this stage lacks on aarch64 is a hand-written x86-64
+# trampoline. What the REAL aarch64 trampolines do is measured, on this same
+# host, by E69 through E73 in section N and by E76/E76b in section P: those
+# build src/gl-fwd.c itself rather than a copy of it.
+if [ "$(uname -m)" = x86_64 ]; then
+    gcc -O2 $CET tramp.c -o tramp -ldl
+    run E58 OK "OK: ints=204" ./tramp
+else
+    echo "  E58    SKIPPED - section M's trampoline is hand-written x86-64 asm"
+    echo "         and this host is $(uname -m). src/gl-fwd.c's own aarch64"
+    echo "         trampolines are measured by E69-E73 and E76/E76b."
+fi
 
 echo
 echo "-- N. the resolver: a table slot that can run code -------------"
@@ -547,10 +770,10 @@ CEOF
 # t_absent is in the table and NOT in libtgt.so, which is the 1097-entry-point
 # case in miniature: a name the shim must export and the host cannot provide.
 cp /repo/src/gl-fwd.c /repo/src/ld-conf.h /repo/src/cld-env.h .
-gcc -shared -fPIC -O2 -Wall -Wextra -Wno-format-truncation -fcf-protection=full \
+gcc -shared -fPIC -O2 -Wall -Wextra -Wno-format-truncation $CET \
     -DGLFWD_TABLE='"tgt-fwd.h"' -DGLFWD_TAG='"tgt-fwd.so"' \
     -DGLFWD_GETPROC='"t_getproc"' \
-    -Wl,-soname,libtgt.so gl-fwd.c -o tgt-fwd.so -ldl 2>/dev/null
+    -Wl,-soname,libtgt.so gl-fwd.c -o tgt-fwd.so -ldl 2>"$BERR" || bfail tgt-fwd.so
 
 cat > tramp2.c <<'CEOF'
 /* Calls each entry point TWICE. The first call goes through the resolver with
@@ -612,8 +835,8 @@ CEOF
 # t_absent exists only in the shim, so this is also the only thing that links.
 # --no-as-needed because mapped.c with no argument references nothing, and the
 # default would drop the DT_NEEDED that the case is about.
-gcc -O2 -fcf-protection=full tramp2.c -o tramp2 ./tgt-fwd.so -Wl,-rpath,"$PWD"
-gcc -O2 -fcf-protection=full mapped.c -o mapped ./tgt-fwd.so -Wl,--no-as-needed \
+gcc -O2 $CET tramp2.c -o tramp2 ./tgt-fwd.so -Wl,-rpath,"$PWD"
+gcc -O2 $CET mapped.c -o mapped ./tgt-fwd.so -Wl,--no-as-needed \
     -Wl,-rpath,"$PWD"
 
 # The shim owns libtgt.so's soname, so the ONE name it is allowed to resolve
@@ -713,37 +936,70 @@ echo "-- P. the aarch64 trampolines, RUN -----------------------------"
 # for another platform REPLACES the cached image for that tag, so the next run
 # of the suite gets `exec container process: Exec format error` from an image
 # it has used a hundred times. That cost a run here.
-if ! command -v qemu-aarch64-static >/dev/null 2>&1 ||
-   ! command -v aarch64-linux-gnu-gcc >/dev/null 2>&1; then
+# ⭐ WHEN THE HOST IS THE TARGET, DO NOT EMULATE IT. Everything above was
+# written on an x86_64 machine, where qemu-user is the only way to run these
+# instructions at all. CI now also runs this stage on ubuntu-24.04-arm, and
+# there the emulator is not a bridge, it is a layer between the trampoline and
+# the CPU that is the whole reason for running there.
+#
+# ⛔ Measured: on that runner E76 and E76b passed THROUGH qemu-aarch64-static,
+# on aarch64 silicon. .github/workflows/gates.yml added that runner saying in
+# so many words that qemu "emulates the instructions and not a memory model",
+# so the one host where the memory model is real was the one host still not
+# using it. docs/REPORT.md 9.16.
+#
+# The prediction is identical on both paths. Only the vehicle differs, and the
+# vehicle is PRINTED, because a reader looking at one log has no other way to
+# tell which of the two produced it.
+a64_vehicle=''
+if [ "$(uname -m)" = aarch64 ]; then
+    A64=gcc
+    a64_vehicle="native: the host IS aarch64, no emulator in the path"
+    a64run()  { env LD_PRELOAD="$PWD/tgt-fwd.so" \
+                    CROSS_LIBC_DLOPEN_GL_HOST_DIR="$PWD" "$@"; }
+    a64dbg()  { env LD_PRELOAD="$PWD/tgt-fwd.so" \
+                    CROSS_LIBC_DLOPEN_GL_HOST_DIR="$PWD" \
+                    CROSS_LIBC_DLOPEN_DEBUG=1 "$@"; }
+elif command -v qemu-aarch64-static >/dev/null 2>&1 &&
+     command -v aarch64-linux-gnu-gcc >/dev/null 2>&1; then
+    A64=aarch64-linux-gnu-gcc
+    a64_vehicle="qemu-user on $(uname -m): userspace emulation, not a memory model"
+    a64run()  { qemu-aarch64-static -L /usr/aarch64-linux-gnu \
+                    -E LD_PRELOAD="$PWD/tgt-fwd.so" \
+                    -E CROSS_LIBC_DLOPEN_GL_HOST_DIR="$PWD" "$@"; }
+    a64dbg()  { qemu-aarch64-static -L /usr/aarch64-linux-gnu \
+                    -E LD_PRELOAD="$PWD/tgt-fwd.so" \
+                    -E CROSS_LIBC_DLOPEN_GL_HOST_DIR="$PWD" \
+                    -E CROSS_LIBC_DLOPEN_DEBUG=1 "$@"; }
+else
+    A64=''
+fi
+
+if [ -z "$A64" ]; then
     skip E76 "no qemu-aarch64-static or aarch64-linux-gnu-gcc: apt-get install qemu-user-static gcc-aarch64-linux-gnu libc6-dev-arm64-cross"
     skip E76b "as E76"
 else
+    echo "   vehicle: $a64_vehicle"
     # Absolute, both ways: `cd a64 && ...` followed by `cd ..` walks out of
     # /work entirely if the copy failed, and everything after it then runs
     # somewhere unexpected.
     mkdir -p /work/a64
     cp gl-fwd.c ld-conf.h cld-env.h tgt.c tgt-fwd.h tramp2.c /work/a64/
     cd /work/a64
-    A64=aarch64-linux-gnu-gcc
-    $A64 -shared -fPIC -O2 tgt.c -o libtgt.so -Wl,-soname,libtgt.so 2>/dev/null
+    $A64 -shared -fPIC -O2 tgt.c -o libtgt.so -Wl,-soname,libtgt.so 2>"$BERR" || bfail "libtgt.so (aarch64)"
     $A64 -shared -fPIC -O2 -Wall -Wextra -Wno-format-truncation \
          -DGLFWD_TABLE='"tgt-fwd.h"' -DGLFWD_TAG='"tgt-fwd.so"' \
          -DGLFWD_GETPROC='"t_getproc"' \
-         -Wl,-soname,libtgt.so gl-fwd.c -o tgt-fwd.so -ldl 2>/dev/null
-    $A64 -O2 tramp2.c -o tramp2 ./tgt-fwd.so 2>/dev/null
-    qemu() {
-        qemu-aarch64-static -L /usr/aarch64-linux-gnu \
-            -E LD_PRELOAD="$PWD/tgt-fwd.so" -E CROSS_LIBC_DLOPEN_GL_HOST_DIR="$PWD" "$@"
-    }
+         -Wl,-soname,libtgt.so gl-fwd.c -o tgt-fwd.so -ldl 2>"$BERR" || bfail tgt-fwd.so
+    $A64 -O2 tramp2.c -o tramp2 ./tgt-fwd.so 2>"$BERR" || bfail "tramp2 (aarch64)"
     # E76: the same four shapes E69 puts through the x86-64 resolver, through
     #      the aarch64 one. x0-x7, x8's indirect-result pointer and q0-q7 all
     #      surviving a bl in the middle of the forward, and the index arriving
     #      in x17 because x16 was already the branch register.
-    run E76 OK "OK: first-call ints=204" qemu ./tramp2
+    run E76 OK "OK: first-call ints=204" a64run ./tramp2
     # E76b: and the absent path, which is the arch-specific `mov x0,#0 / movi
     #       d0,#0` rather than x86-64's `xor/pxor`.
-    run E76b OK "ABSENT entry point called: t_absent" \
-        qemu -E CROSS_LIBC_DLOPEN_DEBUG=1 ./tramp2
+    run E76b OK "ABSENT entry point called: t_absent" a64dbg ./tramp2
     cd ..
 fi
 

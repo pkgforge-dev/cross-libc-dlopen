@@ -1,0 +1,250 @@
+# The release. T-18.
+#
+# ⛔ NOTHING PUBLISHES ON A RED SUITE. The evidence table runs first, on both
+# architectures, on real silicon for aarch64, and the build does not start
+# until it is green.
+#
+# ⛔ NOTHING PUBLISHES FROM A BRANCH THAT HAS NOT BEEN THROUGH A PULL REQUEST.
+# A tag can be pushed at any commit, so that rule is checked rather than
+# trusted: the tagged commit must be an ancestor of the default branch, and
+# the default branch is what pull requests land on.
+#
+# ⛔ THE BODY IS GENERATED. scripts/release-notes.sh reads build-manifest.json,
+# which scripts/verify-artifacts.sh wrote from the objects themselves. Nothing
+# in the body is typed at release time, so the release and the manifest cannot
+# disagree about a checksum, a floor or a symbol version.
+#
+# ⚠ A workflow_dispatch run BUILDS and uploads for inspection and stops there.
+# Only a tag publishes, so a manual run cannot create a release named after a
+# branch.
+#
+# PIN EVERY THIRD-PARTY ACTION TO A COMMIT, NOT A TAG.
+
+name: release
+
+# ⭐ A pull request that touches the release path RUNS it, up to but not
+# including the publish. A release workflow first exercised on the day of the
+# first release is a release workflow nobody has tested, and workflow_dispatch
+# cannot reach a workflow that is not yet on the default branch, so a pull
+# request is the only place this can be proven before it matters.
+# ⚠ `paths` keeps it off every unrelated pull request: it is a two-architecture
+# build and it is not a fast gate.
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
+      - 'scripts/build.sh'
+      - 'scripts/build-in-env.sh'
+      - 'scripts/verify-artifacts.sh'
+      - 'scripts/package-release.sh'
+      - 'scripts/release-notes.sh'
+      - 'src/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------- the gate --
+  # ⭐ aarch64 runs on ubuntu-24.04-arm, which is real silicon. Publishing an
+  # aarch64 artefact whose suite has only ever run under emulation would be
+  # publishing a claim nobody measured.
+  gate:
+    name: evidence table (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: run the evidence table
+        run: sh scripts/run-evidence.sh
+        env:
+          CLD_ENGINE: docker
+
+  # --------------------------------------------------------------- the build --
+  build:
+    name: build and package ${{ matrix.arch }}
+    needs: gate
+    # ⛔ BOTH architectures build on ubuntu-latest, and that is deliberate.
+    # scripts/build.sh CROSS-compiles aarch64 inside the x86-64 floor image.
+    # `podman run --platform linux/arm64` would pull a tag for another
+    # platform, REPLACE the cached image for that tag, and leave the next
+    # x86-64 job with "Exec format error". docs/building.md says what it cost.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # ⭐ Two variants, so nobody has to build one by hand. `default` reads
+    # APPDIR as well as CROSS_LIBC_DLOPEN_ROOT, because an AppImage runtime
+    # exports APPDIR on its own. `portable` reads only this project's name,
+    # which is what a consumer who wants one spelling asked for.
+    # src/cld-env.h has the argument; E87 and E88 measure both arms.
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, aarch64]
+        variant: [default, portable]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: what is available
+        run: sh scripts/build.sh --check --arch ${{ matrix.arch }}
+
+      # ⛔ The floor rule. No --floor-glibc override here: a release is built
+      # on the oldest glibc this project preaches, which is the script's
+      # default, and an override at release time would be how that silently
+      # stops being true.
+      - name: build on the floor
+        run: |
+          set -eu
+          if [ "${{ matrix.variant }}" = portable ]; then
+            sh scripts/build.sh --engine docker --arch ${{ matrix.arch }} --portable
+            echo "BUILD_DIR=${{ matrix.arch }}-portable" >> "$GITHUB_ENV"
+          else
+            sh scripts/build.sh --engine docker --arch ${{ matrix.arch }}
+            echo "BUILD_DIR=${{ matrix.arch }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: the manifest
+        run: cat "build/$BUILD_DIR/build-manifest.json"
+
+      # ⚠ The variant is read out of the manifest by the packager, not passed
+      # in, so a mislabelled directory cannot produce a mislabelled asset.
+      - name: package
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends zip
+          sh scripts/package-release.sh ${{ matrix.arch }} "build/$BUILD_DIR"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-${{ matrix.arch }}-${{ matrix.variant }}
+          path: |
+            dist/
+            build/*/build-manifest.json
+          if-no-files-found: error
+          retention-days: 7
+
+  # ------------------------------------------------------------- the publish --
+  publish:
+    name: publish
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Only a tag publishes.
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+      attestations: write
+      id-token: write
+    steps:
+      # fetch-depth: 0 because the body's changelog is `git log` between this
+      # tag and the one before it, and a shallow clone has neither.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # ⛔ THE PULL REQUEST RULE, CHECKED. A tag pushed at a commit that never
+      # reached the default branch never went through review, and this is the
+      # only place that can still be caught.
+      - name: the tagged commit reached the default branch
+        run: |
+          set -eu
+          base="origin/${{ github.event.repository.default_branch }}"
+          git fetch -q origin "${{ github.event.repository.default_branch }}"
+          sha=$(git rev-parse HEAD)
+          if ! git merge-base --is-ancestor "$sha" "$base"; then
+            echo "$sha is not an ancestor of $base."
+            echo "A tag on a commit that never landed on the default branch has"
+            echo "not been through a pull request. Refusing to publish."
+            exit 1
+          fi
+          echo "ok: $sha is on $base"
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: staged
+
+      # download-artifact writes one directory per uploaded artifact, so the
+      # two architectures arrive as staged/release-x86_64/... and
+      # staged/release-aarch64/.... Flatten them into the layout the two
+      # scripts expect, and fail if either is missing rather than publishing
+      # half a release.
+      - name: collect every architecture and variant
+        run: |
+          set -eu
+          mkdir -p dist build
+          for a in x86_64 aarch64; do
+            for v in default portable; do
+              src=staged/release-$a-$v
+              [ -d "$src/dist" ] || { echo "no dist/ for $a/$v"; exit 1; }
+              cp -a "$src/dist/." dist/
+              cp -a "$src/build/." build/
+            done
+          done
+          ls -la dist
+          echo "--- manifests ---"
+          for m in build/*/build-manifest.json; do
+            echo "$m: arch=$(jq -r .arch "$m") variant=$(jq -r '.variant // "default"' "$m")"
+          done
+
+      # ⛔ The checksums in the body have to be the ones in the manifest, and
+      # the files have to match them. package-release.sh asserted that at build
+      # time; this asserts it again on the artifacts as DOWNLOADED, because an
+      # upload and a download sit between the two.
+      - name: every asset still matches its manifest
+        run: |
+          set -eu
+          fail=0
+          # ⚠ Only the DEFAULT variant ships loose files to check this way.
+          # The portable set ships as archives, and package-release.sh already
+          # checked every object in it against its manifest before archiving.
+          for a in x86_64 aarch64; do
+            man=build/$a/build-manifest.json
+            for f in $(jq -r '.artifacts | keys[]' "$man"); do
+              want=$(jq -r --arg f "$f" '.artifacts[$f].sha256' "$man")
+              got=$(sha256sum "dist/$a-$f" | awk '{print $1}')
+              if [ "$want" != "$got" ]; then
+                echo "MISMATCH $a/$f: manifest $want, asset $got"; fail=1
+              else
+                echo "ok $a/$f $want"
+              fi
+            done
+          done
+          exit $fail
+
+      - name: generate the body
+        run: |
+          set -eu
+          sh scripts/release-notes.sh "${GITHUB_REF#refs/tags/}" dist build > /tmp/notes.md
+          echo "--- generated body ---"
+          cat /tmp/notes.md
+
+      - name: attest what is being published
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: dist/*
+
+      - name: create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          tag="${GITHUB_REF#refs/tags/}"
+          gh release create "$tag" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$tag" \
+            --notes-file /tmp/notes.md \
+            --verify-tag \
+            dist/*

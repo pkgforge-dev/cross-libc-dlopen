@@ -13,7 +13,11 @@
  *   T1.4  an errno set inside the guest is read here, in the same thread
  *   T1.5  a FILE* opened here is written from the guest
  *   T1.6  a mutex made here is locked there, a mutex made there is locked
- *         here, and a condition variable made here is signalled from there
+ *         here, and a condition variable made here is signalled from there.
+ *         ⚠ The second of those is not attempted, and is reported as a live
+ *         hazard, when the two pthread_mutex_t sizes differ at all: the guest
+ *         allocates its own size and the init it reaches writes ours, so the
+ *         overflow is inside the guest. aarch64 is such a pair, x86-64 is not
  *   T1.7  every struct size and constant the two sides could disagree about,
  *         printed side by side -- and then the divergent structs actually
  *         WRITTEN by the guest into storage this side allocated, behind a
@@ -317,14 +321,58 @@ int main(int argc, char **argv) {
 		ok(r == 0, "and left it unlocked", NULL);
 		if (r == 0) pthread_mutex_unlock(&m);
 
-		void *gm = g_newmtx();
-		ok(gm != NULL, "guest allocated a mutex with its own sizeof", NULL);
-		if (gm) {
-			r = pthread_mutex_lock((pthread_mutex_t *)gm);
-			snprintf(detail, sizeof detail, "returned %d", r);
-			ok(r == 0, "host locked the guest's mutex", detail);
-			if (r == 0) pthread_mutex_unlock((pthread_mutex_t *)gm);
-			free(gm);
+		/* ⛔ THE CALL ITSELF IS THE OUT-OF-BOUNDS WRITE, so the guard is around
+		 * the CALL and not around what is done with the result.
+		 *
+		 * abi_new_mutex() does `malloc(sizeof *m)` with the GUEST's
+		 * pthread_mutex_t and then pthread_mutex_init() on it. That init is
+		 * glibc's, because making every reference in the guest resolve to this
+		 * process's libc is the entire point of the thing under test. So on a
+		 * pair whose sizes differ the guest allocates its own size and glibc
+		 * writes ours into it, and the overflow happens inside the guest before
+		 * anything crosses back. On aarch64 that is 40 against 48: eight bytes
+		 * into the allocator's next chunk header, and the free() below is
+		 * merely where glibc notices, with "malloc(): invalid size (unsorted)"
+		 * and SIGABRT.
+		 *
+		 * ⚠ MEASURED, AND THE FIRST VERSION OF THIS GUARD WAS IN THE WRONG
+		 * PLACE. It wrapped the host's pthread_mutex_lock, which is the
+		 * crossing this case is about, and the process still aborted at exactly
+		 * the same point: run 32955888055 printed the hazard and then died on
+		 * the free. The lock was never the write that corrupted anything.
+		 *
+		 * ⭐ Reported the way every other size divergence in this file is
+		 * reported. This file's own header says T1.7 writes divergent structs
+		 * behind a guard band "because an overrun that only happens on success
+		 * is the most misleading result available". T1.6 had the same overrun
+		 * and no band.
+		 *
+		 * ⚠ It does not go through ok(). A hazard is not a failed check: it is
+		 * a thing no loader can fix, which is what E50 counts and what section
+		 * 11 of docs/REPORT.md is a list of. */
+		if (gv.sz_pthread_mutex_t != hv.sz_pthread_mutex_t) {
+			printf("    %-4s %-36s host=%llu guest=%llu\n", "DIFF",
+			       "a mutex the guest allocates and inits",
+			       (unsigned long long)hv.sz_pthread_mutex_t,
+			       (unsigned long long)gv.sz_pthread_mutex_t);
+			printf("         LIVE HAZARD: pthread_mutex_t is %llu bytes here and %llu\n"
+			       "         there. The guest allocates its own size and calls\n"
+			       "         pthread_mutex_init, which resolves to OURS and writes this\n"
+			       "         size into it. NOT PERFORMED: on this pair it is an\n"
+			       "         out-of-bounds write inside the guest, and the allocator\n"
+			       "         aborts the process on the next free.\n",
+			       (unsigned long long)hv.sz_pthread_mutex_t,
+			       (unsigned long long)gv.sz_pthread_mutex_t);
+		} else {
+			void *gm = g_newmtx();
+			ok(gm != NULL, "guest allocated a mutex with its own sizeof", NULL);
+			if (gm) {
+				r = pthread_mutex_lock((pthread_mutex_t *)gm);
+				snprintf(detail, sizeof detail, "returned %d", r);
+				ok(r == 0, "host locked the guest's mutex", detail);
+				if (r == 0) pthread_mutex_unlock((pthread_mutex_t *)gm);
+				free(gm);
+			}
 		}
 
 		static struct waitctx w;

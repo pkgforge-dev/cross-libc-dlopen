@@ -1,0 +1,19 @@
+# Who reviews what.
+#
+# ⚠ THIS FILE ON ITS OWN CHANGES NOTHING. It has teeth only when branch
+# protection on the default branch requires a review from a code owner.
+# docs/security.md records every setting that has to be on, and
+# scripts/check-repo-settings.sh reports which of them are.
+#
+# The three names below are the accounts with write access at the time this
+# was written. `sh scripts/check-repo-settings.sh` prints the current list, so
+# a stale name here shows up rather than silently granting nobody.
+
+*                       @Azathothas @QaidVoid @Samueru-sama
+
+# ⛔ The paths that decide what everything else is allowed to do. A change here
+# can turn every other check off, so it is called out separately rather than
+# relying on the catch-all above being noticed.
+/.github/               @Azathothas @QaidVoid @Samueru-sama
+/scripts/               @Azathothas @QaidVoid @Samueru-sama
+/docs/conventions/      @Azathothas @QaidVoid @Samueru-sama

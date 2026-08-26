@@ -25,7 +25,7 @@ and loaded by CUDA and by Mesa's d3d12 driver respectively -- have no
 
 Usage
 -----
-    python3 tools/trap_users.py <libc.so.6> <object>...
+    python3 tools/manual/trap_users.py <libc.so.6> <object>...
 
 Exit 0 always: this is a survey, not a gate.  `version_traps.py --check` is the
 gate, and it runs against the libc rather than against its callers.
@@ -33,8 +33,13 @@ gate, and it runs against the libc rather than against its callers.
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+# elfsym and version_traps live in tools/, one level up: this file is manual
+# and they are not. The old form inserted this file's own directory twice,
+# which was harmless while everything sat together and became an ImportError
+# the moment it did not.
+sys.path.insert(0, _HERE)
+sys.path.insert(0, os.path.dirname(_HERE))
 
 from elfsym import Elf                        # noqa: E402
 from version_traps import traps_for, NoVersionInfo   # noqa: E402

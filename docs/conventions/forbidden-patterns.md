@@ -55,7 +55,7 @@ recur everywhere.
 | forbidden | what it caused |
 |---|---|
 | **[here]** Editing a generated file | the next `make` reverts it, and the two disagree in between |
-| **[here]** Renaming a name that belongs to another project | three controls became silent passes. `$APPDIR/lib/foreign-dlopen.so` and `.foreign-dlopen-enabled` are upstream's |
+| **[here]** Renaming a name that belongs to another project | three controls became silent passes. `$APPDIR/lib/foreign-dlopen.so` is upstream's, and so is the `ANYLINUX_*` spelling the harness sends upstream's own binary |
 | **[here]** A source file left in the repository root because a list said "no need to touch" | "correct and self-contained" was about the content, not the location. `elfsym.py` and `gap.py` sat in the root until a human noticed |
 | Rebuilding something the tree already does | the most expensive mistake available, and usually invisible in review |
 | Dead code kept for later | noise. Delete it; the history remembers |

@@ -707,7 +707,7 @@ static const char *rs_host_dir_override;
 
 static void rs_decide(struct rs_plan *p, const char *appdir) {
 	char path[RS_MAX_PATH];
-	const char *forced = cld_getenv("CROSS_LIBC_DLOPEN_RUNTIME", "ANYLINUX_RUNTIME");
+	const char *forced = cld_getenv("CROSS_LIBC_DLOPEN_RUNTIME", NULL);
 
 	memset(p, 0, sizeof(*p));
 	snprintf(p->bundled_ver, sizeof(p->bundled_ver), "unknown");
@@ -1170,7 +1170,7 @@ static void rs_print_plan(const struct rs_plan *p, const char *appdir) {
 }
 
 int main(int argc, char **argv) {
-	const char *dbg = cld_getenv("CROSS_LIBC_DLOPEN_DEBUG", "ANYLINUX_LIB_DEBUG");
+	const char *dbg = cld_getenv("CROSS_LIBC_DLOPEN_DEBUG", NULL);
 	rs_debug = dbg && !strcmp(dbg, "1");
 
 	const char *appdir = cld_root();

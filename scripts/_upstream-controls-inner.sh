@@ -3,7 +3,13 @@
 set -eu
 APPDIR=/w/AppDir
 LP=$APPDIR/lib
-LD=$LP/ld-linux-x86-64.so.2
+# The bundled loader and lavapipe's ICD manifest both carry the architecture.
+case "$(uname -m)" in
+	x86_64)  LDSO=ld-linux-x86-64.so.2 ; ICD_ARCH=x86_64  ;;
+	aarch64) LDSO=ld-linux-aarch64.so.1; ICD_ARCH=aarch64 ;;
+	*) echo "no loader and ICD name known for $(uname -m)" >&2; exit 1 ;;
+esac
+LD=$LP/$LDSO
 export XDG_RUNTIME_DIR=/tmp/xdg
 mkdir -p "$XDG_RUNTIME_DIR"
 apk add --no-cache mesa-vulkan-swrast binutils >/dev/null 2>&1 || true
@@ -17,7 +23,7 @@ strings -a "$LP/foreign-dlopen.upstream.so" |
 	grep -E '^(ANYLINUX|CROSS_LIBC)' | sort -u | sed 's/^/   /'
 echo
 
-ICD=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+ICD=/usr/share/vulkan/icd.d/lvp_icd.$ICD_ARCH.json
 
 # ⚠ The count goes in a variable, NOT down stdout. An earlier version of this
 # function printed its report and then echoed the number, and the caller's

@@ -45,18 +45,40 @@ esac
 # ---------------------------------------------------- the pinned downloads --
 # One sha256 PER ARCHITECTURE, each computed from the asset itself. Copying a
 # number out of a document is how a pin stops being a pin.
+#
+# ⛔ TWO REPOSITORIES, AND THE SECOND ONE IS NOT AN OVERSIGHT.
+# pkgforge-dev/Anylinux-AppImages is the upstream. Samueru-sama's is a fork of
+# it. gtk4-demo is taken from the upstream, where it belongs.
+#
+# ⚠ The demo AppImage cannot be. `vkcube+glxgears-host-drivers-demo-*` is
+# published ONLY by the fork: the string "host-drivers" appears zero times in
+# the upstream's code, and the upstream's demo release does not carry that
+# asset. Its `vkcube+glxgears-demo-*` is the build that BUNDLES its drivers,
+# which is the opposite of the case this whole suite exists to measure. So the
+# fork is a real dependency for exactly one file, for a reason, and moving it
+# would change what is being tested rather than where it comes from.
+#
+# ⛔ NEITHER TAG IS IMMUTABLE. Both repositories publish exactly one release
+# and its tag is `demo`, so there is no version to pin to instead. Re-pinning
+# is therefore a maintained act rather than a failure, and docs/REPORT.md 9.15
+# is the policy. The refusal in suite-lib.sh says which of the pin, the bytes
+# and the published asset disagreed, so a re-pin is a decision and not a shrug.
 ARCH=$(asset_suffix)
-BASE=https://github.com/Samueru-sama/Anylinux-AppImages/releases/download/demo
+UPSTREAM_REPO=pkgforge-dev/Anylinux-AppImages
+FORK_REPO=Samueru-sama/Anylinux-AppImages
+TAG=demo
+DEMO_ASSET="vkcube+glxgears-host-drivers-demo-$ARCH.AppImage"
+GTK4_ASSET="gtk4-demo-$ARCH.AppImage"
 case "$ARCH" in
 	x86_64)
-		DEMO_SHA=712766f8a4dc6b5ea3193ed7bb0282b64c7b781f7334056416edd3d00e8960bd
-		GTK4_SHA=577909eff286b385dc0e3dc1eda0ef42f92858418c449e89e426ef950a63eb89 ;;
+		DEMO_SHA=d77a01ebacb739392ca8c39f879dc5bc626283b0c01bd9dc12eecbea92dd34c1
+		GTK4_SHA=413243c9ecbaaafe40636afd06e0c3d558b8cc928ed20b9ec55a6e0f09b5d8b4 ;;
 	aarch64)
-		DEMO_SHA=12a64183fc36990aae265be38f0472d7e3d73d5622b6d0b17fb355aad8ba7130
-		GTK4_SHA=69fd76c0f1d47f2a7516d2b7909cf0bd346f64368de39d14e9093426526a42be ;;
+		DEMO_SHA=9aeb38f7f2834c0cfc85117b032b51b08108f074304711edaa54a5c04e3caedb
+		GTK4_SHA=e03ef26456fc0f3cd5c056e8bbaeab1cfcb0ba208e6f7c9ac88770775b1e3689 ;;
 esac
-DEMO_URL="$BASE/vkcube+glxgears-host-drivers-demo-$ARCH.AppImage"
-GTK4_URL="$BASE/gtk4-demo-$ARCH.AppImage"
+DEMO_URL="https://github.com/$FORK_REPO/releases/download/$TAG/$DEMO_ASSET"
+GTK4_URL="https://github.com/$UPSTREAM_REPO/releases/download/$TAG/$GTK4_ASSET"
 
 engine=$(resolve_engine)
 say "engine: $engine"
@@ -77,7 +99,7 @@ in_container() {                       # in_container <image> <script> [flags...
 		"$_img" sh "/scripts/$_scr"
 }
 
-fetch_verified "$DEMO_URL" "$WORK/demo.AppImage" "$DEMO_SHA" "demo.AppImage ($ARCH)"
+fetch_verified "$DEMO_URL" "$WORK/demo.AppImage" "$DEMO_SHA" "demo.AppImage ($ARCH)" "$FORK_REPO" "$TAG" "$DEMO_ASSET"
 
 # Extraction runs the AppImage's own ELF runtime and the payload is DwarFS, so
 # it happens inside a container. --privileged: hosted runners allow it, a
@@ -115,7 +137,7 @@ esac
 # vendor libraries. It is what found the shim preferring a host vendor library
 # over the bundle's own.
 case "$ONLY" in all|gtk4)
-	fetch_verified "$GTK4_URL" "$WORK/gtk4-demo.AppImage" "$GTK4_SHA" "gtk4-demo.AppImage ($ARCH)"
+	fetch_verified "$GTK4_URL" "$WORK/gtk4-demo.AppImage" "$GTK4_SHA" "gtk4-demo.AppImage ($ARCH)" "$UPSTREAM_REPO" "$TAG" "$GTK4_ASSET"
 	if [ ! -d "$WORK/gtk4x/AppDir" ]; then
 		in_container debian:trixie-slim 48-extract-gtk4.sh --privileged ||
 			die "gtk4 extraction failed"

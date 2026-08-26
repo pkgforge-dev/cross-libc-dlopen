@@ -48,12 +48,28 @@ build by name when the host is newer.
 
 ---
 
-## Two names in this tree are not this project's
+## One path in this tree is not spelled by this project
 
-⛔ `$APPDIR/lib/foreign-dlopen.so` is the slot `quick-sharun` writes and
-`.preload` names. `.foreign-dlopen-enabled` is the marker it creates. Both stay
-spelled upstream's way, and `src/cld-env.h` still accepts the old
-`ANYLINUX_*` variables as deprecated aliases.
+⛔ **The AppDir's dispatcher slot is the file `quick-sharun` writes and
+`.preload` names, and its name is upstream's to change.** It has changed:
+`lib/foreign-dlopen.so` up to the build hashed `712766f8`, and
+`lib/cross-libc-dlopen.so` in the one pinned now. So it is READ out of the
+extracted AppDir by `experiments/41-extract.sh` and never spelled by us.
+[`../REPORT.md`](../REPORT.md) 9.17.
+
+⚠ **`.foreign-dlopen-enabled` was the second name here, and is not one any
+more.** It is `quick-sharun`'s opt-in marker and an AppDir still carries it,
+but nothing in `src/` reads it: the markers were removed and the feature is on
+by default whenever the object is preloaded. It stayed listed as load-bearing
+in four places for the rest of the branch, and one of them was the comment
+explaining why a case passed. [`../REPORT.md`](../REPORT.md) 9.16.
+
+⚠ **The `ANYLINUX_*` environment names are a different case and they are
+gone.** `src/cld-env.h` no longer reads any of them, because nothing consumed
+them. What still sets them is `experiments/40-appimage.sh`, for UPSTREAM's own
+binary, which understands no other spelling. Removing them from the harness is
+what turns the three controls below into silent passes; removing them from
+`src/` did not.
 
 ⚠ **Renaming any of them turns E30, E37a and E43a into silent passes**, because
 those three drive upstream's own binary and a case that stops receiving the

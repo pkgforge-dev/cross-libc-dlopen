@@ -14,6 +14,8 @@
 #   scripts/build.sh --arch both         both, sequentially
 #   scripts/build.sh --engine native     no container; refuses if the host
 #                                        libc is newer than --floor-glibc
+#   scripts/build.sh --portable        a variant that reads only
+#                                        CROSS_LIBC_DLOPEN_ROOT, never APPDIR
 #   scripts/build.sh --check             detect and report, build nothing
 #
 # Everything it produces lands in build/<arch>/ with a manifest beside it.
@@ -30,6 +32,19 @@ FLOOR_GLIBC=2.31
 OUT=
 CHECK_ONLY=0
 KEEP_GOING=0
+# The build variant. "default" reads APPDIR as well as CROSS_LIBC_DLOPEN_ROOT,
+# because an AppImage runtime exports APPDIR into every process it starts.
+# "portable" reads only this project's own name, which is what a consumer who
+# wants one spelling asked for; src/cld-env.h has the argument.
+VARIANT=default
+EXTRA_CFLAGS=
+# ⭐ The portable variant also drops -fcf-protection=full. Measured in
+# docs/REPORT.md 9.13: the flag emits endbr64 and no IBT property note, the
+# note cannot be emitted honestly because glibc's crti.o carries none, and
+# without it a CET-enforcing loader does not turn IBT on for the object. So the
+# instructions do no protective work, and a consumer targeting a kernel or an
+# emulation layer that would rather not see them can have a build without.
+NO_CET=0
 
 die()  { printf 'build: %s\n' "$*" >&2; exit 1; }
 note() { printf '  %s\n' "$*"; }
@@ -49,6 +64,7 @@ while [ $# -gt 0 ]; do
 		--out)         OUT=${2:?--out needs a value}; shift 2 ;;
 		--check)       CHECK_ONLY=1; shift ;;
 		--keep-going)  KEEP_GOING=1; shift ;;
+		--portable)  VARIANT=portable; EXTRA_CFLAGS=-DCLD_STRICT_ENV; NO_CET=1; shift ;;
 		-h|--help)     usage 0 ;;
 		*)             printf 'build: unknown option %s\n' "$1" >&2; usage 2 ;;
 	esac
@@ -167,13 +183,19 @@ fi
 # --------------------------------------------------------- step 2: building --
 build_one() {                          # build_one <arch>
 	a=$1
-	out=${OUT:-$ROOT/build/$a}
+	# A variant goes in its own directory. Two builds of the same
+	# architecture into one place would leave a manifest describing files
+	# that the other build had already overwritten.
+	if [ "$VARIANT" = default ]; then dir=$a; else dir=$a-$VARIANT; fi
+	out=${OUT:-$ROOT/build/$dir}
 	mkdir -p "$out"
-	head_ "building $a into $out"
+	head_ "building $a ($VARIANT) into $out"
 
 	if [ "$engine" = native ]; then
 		[ "$a" = "$host_arch" ] || die "native builds cannot target $a from $host_arch; use a container"
 		CLD_OUT="$out" CLD_ARCH="$a" CLD_FLOOR_GLIBC="$FLOOR_GLIBC" \
+		CLD_VARIANT="$VARIANT" CLD_EXTRA_CFLAGS="$EXTRA_CFLAGS" \
+		CLD_NO_CET="$NO_CET" \
 			sh "$HERE/build-in-env.sh" "$ROOT"
 		return
 	fi
@@ -189,6 +211,9 @@ build_one() {                          # build_one <arch>
 		-e CLD_ARCH="$a" \
 		-e CLD_FLOOR_GLIBC="$FLOOR_GLIBC" \
 		-e CLD_INSTALL_DEPS=1 \
+		-e CLD_VARIANT="$VARIANT" \
+		-e CLD_EXTRA_CFLAGS="$EXTRA_CFLAGS" \
+		-e CLD_NO_CET="$NO_CET" \
 		"$FLOOR_IMAGE" sh /repo/scripts/build-in-env.sh /repo
 }
 

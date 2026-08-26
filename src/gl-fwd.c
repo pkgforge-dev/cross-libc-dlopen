@@ -116,14 +116,14 @@
 #endif
 
 static int glfwd_debug(void) {
-	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_DEBUG", "ANYLINUX_LIB_DEBUG");
+	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_DEBUG", NULL);
 	return v && strcmp(v, "1") == 0;
 }
 
 /* Trace implies debug: a trace with the logger switched off prints nothing,
  * which is a confusing way to answer a question somebody asked for. */
 static int glfwd_trace(void) {
-	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_GL_TRACE", "ANYLINUX_GL_FWD_TRACE");
+	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_GL_TRACE", NULL);
 	return v && strcmp(v, "1") == 0;
 }
 
@@ -421,7 +421,7 @@ static void glfwd_conf_warn(void *ctx, const char *what, const char *detail) {
 
 /* Call fn(dir) for every candidate directory until it returns non-zero. */
 static int glfwd_each_dir(int (*fn)(const char *dir, void *ctx), void *ctx) {
-	const char *env = cld_getenv("CROSS_LIBC_DLOPEN_GL_HOST_DIR", "ANYLINUX_GL_HOST_DIR");
+	const char *env = cld_getenv("CROSS_LIBC_DLOPEN_GL_HOST_DIR", NULL);
 	if (env && *env) {
 		char *copy = strdup(env);
 		if (copy) {
@@ -560,7 +560,7 @@ static void *glfwd_open_target(const char **how) {
 		          "built against another libc will not load\n");
 	dlerror();                                  /* a miss above left a message */
 
-	const char *want = cld_getenv("CROSS_LIBC_DLOPEN_GL_TARGET", "ANYLINUX_GL_FWD_TARGET");
+	const char *want = cld_getenv("CROSS_LIBC_DLOPEN_GL_TARGET", NULL);
 	int force_host    = want && strcmp(want, "host") == 0;
 	int force_bundled = want && strcmp(want, "bundled") == 0;
 
@@ -904,7 +904,7 @@ static void glfwd_init(void) {
 	 * measurement rather than a memory. It is also the honest way to ask "how
 	 * much of this dispatcher could this host stand behind", which is a
 	 * question about the host and not about the run. */
-	const char *eager = cld_getenv("CROSS_LIBC_DLOPEN_GL_EAGER", "ANYLINUX_GL_FWD_EAGER");
+	const char *eager = cld_getenv("CROSS_LIBC_DLOPEN_GL_EAGER", NULL);
 	if (!(eager && strcmp(eager, "1") == 0)) {
 		glfwd_log("%s: %d entry points, none resolved yet -- the host stack "
 		          "loads at the first GL call, not here\n",

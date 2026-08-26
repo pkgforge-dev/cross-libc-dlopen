@@ -3,8 +3,9 @@
 #
 # Faithful matters, and 10-build-musl.sh says why: Debian's musl-gcc emits
 # NEEDED "libc.so", which collides with glibc's linker script of the same name.
-# Only a real Alpine build gives NEEDED "libc.musl-x86_64.so.1", which is what a
-# host driver on Alpine actually looks like.
+# Only a real Alpine build gives NEEDED "libc.musl-x86_64.so.1", or on aarch64
+# "libc.musl-aarch64.so.1", which is what a host driver on Alpine actually
+# looks like.
 #
 # The result goes into /w/build, so BOTH host stages can load it: on Alpine it
 # is a host-native object, and on Debian it isolates "the object is musl-built"

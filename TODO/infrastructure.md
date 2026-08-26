@@ -21,6 +21,39 @@ Build, CI and orchestration.
 - **Prove.** Six deliberately broken branches, each with the run URL and the
   step that refused, recorded here.
 
+### What has been seen to refuse, and where
+
+⭐ **Four of these were not planted.** They are gates that went red on a runner
+against a real defect somebody committed, which is stronger evidence than a
+plant: nobody chose the shape of the failure.
+
+| gate | on a runner | evidence |
+|---|---|---|
+| every headline number has one home | ⭐ yes, unplanted | run [32948974925](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32948974925), hygiene, step `every headline number has exactly one home`: `46/46 appears in 2 files: TODO/PROGRESS.md docs/REPORT.md`. The commit was a `PROGRESS.md` rewrite whose sentence warning that the number lives in two places contained the number |
+| the evidence table refuses a broken stage | ⭐ yes, unplanted | run [32947794151](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32947794151), `evidence table (aarch64)`: `cp: cannot stat '/lib64/libc.so.6'`, `suite: stage 2 failed`, exit 1. That is pull request #9 against `main`, where the loader path is still hardcoded |
+| the AppImage suite's sha256 pin | ⭐ yes, unplanted | run [32948154287](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32948154287): the upstream asset had been replaced and the suite refused rather than measuring an unknown binary |
+| the AppImage suite's AppDir shape | ⭐ yes, unplanted | run [32951892766](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32951892766): `cp: cannot stat 'AppDir/lib/foreign-dlopen.so'`, on both architectures, after upstream renamed the dispatcher slot |
+| the old repository name, two spellings | locally | `sh scripts/verify-gates.sh`, planted and clean, exit codes read unpiped |
+| no tool is credited, two spellings | locally | the same |
+| shell scripts parse | locally | the same |
+| no CR in a shell script | locally | the same |
+| ⭐ the dash ratchet | locally | the same. Added this session, and it is the reason the count is 8 rather than 7 |
+| the drift check's six sections | locally | each planted separately: a stale citation behind a command, a tracked `.AppImage`, a tracked ELF under an innocent name, a dash added and a dash removed, the two orchestrators pinning different bytes, and an `INDEX.md` row disagreeing with its entry |
+
+### ⛔ What is still not proven, and why
+
+- **The endings gate.** `.gitattributes` normalises a CRLF file on the way into
+  the index, so the defect cannot be planted from the working tree at all.
+  `verify-gates.sh` reports it as unproven rather than as passing.
+- **The `generated` job**, both steps: a stale `forward-shim.c` and a version
+  trap that no longer covers this libc. Measured locally before the port; not
+  measured on a runner.
+- **The artefact verifier's floor rule** and the build matrix.
+
+⚠ Those four need a runner and a deliberate push, which is what the approach
+above describes and what remains of this entry. The four unplanted rows do not
+substitute for them: they prove four different gates.
+
 ---
 
 ## T-11 A machine-readable suite result
@@ -56,6 +89,43 @@ Build, CI and orchestration.
   Shortening hides the problem and makes the failure mode less legible.
 - **Prove.** A table of measured-vs-configured per case, in this entry.
 
+### Measured, both runners, run [32955888055](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32955888055)
+
+⭐ The instrumentation had been in `run()` since this entry was opened and
+nothing read it back, because no run of the AppImage suite had ever reached the
+end. The stage reports it now. Worst observed wall time per case, across all
+four host stages:
+
+| case | configured | x86-64 | aarch64 | |
+|---|---|---|---|---|
+| E61 `glxgears` | `timeout -k 2 30` | 30 | 30 | ⚠ runs to its timeout |
+| E62 `glxgears`, feature on | `timeout -k 2 30` | 30 | 30 | ⚠ runs to its timeout |
+| E59 boundary scan | none | 11 | 1 | |
+| everything else recorded | 25 to 90 | 0 to 1 | 0 to 1 | |
+
+⛔ **E61 and E62 are not close to their timeout. They ARE their timeout, and
+that is by construction.** A GL binary never exits on its own, so `timeout` is
+how those cases end, and their wall time is the configured value by definition.
+`experiments/40-appimage.sh` says so where it wraps them. ⚠ **Do not read 30
+against 30 as no margin**, and do not raise it on that reading: E62 produced
+`GL_RENDERER = llvmpipe` inside the window, so the work finished and only the
+process did not.
+
+⭐ **Every case that terminates on its own is far under.** The slowest is E59 at
+11 seconds against a 25-second floor, and the rest are at or below 1 second on
+both runners. The fear this entry was opened on, a slow shared runner turning a
+pass into a red build, is not visible in this data.
+
+### ⛔ What this measurement still cannot tell you
+
+The timing report cannot distinguish "ran to its timeout because that is how
+this case ends" from "was killed before it finished". Both appear as a wall
+time equal to the configured value. For E61 and E62 the distinction is settled
+by their output, which carried the answer; for a case that produced nothing it
+would not be. ⚠ That is why the entry stays open: the margin question is
+answered for the self-terminating cases and unanswerable, as instrumented, for
+the two that are killed on purpose.
+
 ---
 
 ## T-13 A build error hidden by `2>/dev/null` cost a debugging cycle
@@ -65,7 +135,7 @@ Build, CI and orchestration.
   message was discarded. Ten cases reported `./tramp2: No such file or
   directory`, which names the wrong thing entirely.
 - **Category** infrastructure · **Priority** medium · **Effort** low ·
-  **Status** open
+  **Status** ⭐ **DONE**
 - **Problem.** Several helper builds in the stages redirect stderr to
   `/dev/null`. When one fails the suite reports a cascade of downstream
   mismatches with no cause in the output.
@@ -77,23 +147,59 @@ Build, CI and orchestration.
 - **Prove.** Break a helper build deliberately; the suite output names the
   compiler error rather than only its consequences.
 
+### Closure
+
+⚠ **It stopped being theoretical twice more before it was fixed.** Moving a
+Python module out from under the shim generator broke it, and the suite
+reported `gcc: error: gen-shim.c: No such file or directory` from E15 and
+`./shimtest: No such file or directory` from E16. Neither named a cause,
+because the generator's own message went to `/dev/null`.
+
+Nine helper builds and the generator now capture stderr to `$BERR` and print it
+only on failure, through a `bfail` helper. A passing run is exactly as quiet as
+before, and no assertion changed: the capture happens at build time and the
+cases still score themselves afterwards.
+
+⭐ **The harness got the same shape first**, and that is what made the rest
+findable. `run` now prints the WHOLE captured output of a MISMATCH rather than
+its first line. E16 had been reporting `ok strlcpy short`, which is a step that
+had succeeded; the real failure was `FAIL stat matches __xstat`, forty checks
+later.
+
+**Proven, by planting the defect.** A syntax error was added to
+`tests/shim-selftest.c` and the suite run:
+
+```
+  E15    MATCH predicted=OK    compiled
+  BUILD FAILED: shimtest
+           | /repo/tests/shim-selftest.c:135:40: error: unknown type name 'this'
+           |   135 | static void t13_planted_defect(void) { this is not C; }
+  E16    MISMATCH predicted=OK    ./shimtest: No such file or directory
+ predictions matched: 48   mismatched: 1
+```
+
+⭐ The compiler error is named, above the case it used to only look like.
+Against a clean tree the same run reports 49 matched, 0 mismatched, and prints
+no `BUILD FAILED` line at all, so the helper is not merely always shouting.
+
 ---
 
 ## T-14 Four files that no runner runs
 
 - **Source.** The port brief, task 0.1.
 - **Category** infrastructure · **Priority** low · **Effort** low ·
-  **Status** partially done
+  **Status** ⭐ **DONE**
 - **Problem.** ⭐ A test no runner runs is a test that has already stopped
   working and nobody has noticed.
 - **Premise.** Measured, by grep over the tree.
   - `tests/allocprobe.c` -- now compiled and smoke-run by the `orphans` job.
   - `tests/icd-harness.c` -- built by `42-build-floor.sh` and invoked by nothing.
-    Now compiled and smoke-run by the same job. ⚠ **Compiling is not running
-    it against an ICD**, which is what it is for.
+    Now compiled and smoke-run by the same job, against a real lavapipe ICD.
+    ⚠ **Compiling is not running it against an ICD**, and the `orphans` job
+    now fails rather than passing when no ICD is present.
   - `tools/libc_inventory.py` -- what produced `inventories/*.json`. Not run by
     anything. It is a regeneration tool, not a test.
-  - `tools/trap_users.py` -- not run by anything.
+  - `tools/manual/trap_users.py` -- not run by anything.
 - **Approach.** Give `icd-harness` a real case in the AppImage suite, or move it
   beside the probe it duplicates. Move the two Python tools to `tools/manual/`
   with one line each saying what they are for.
@@ -102,6 +208,56 @@ Build, CI and orchestration.
   document pointing at nothing.
 - **Prove.** `git grep -l` for each name resolves to either a CI job or a
   `tools/manual/README.md` line.
+
+### ⛔ Correction: the premise above is wrong about `libc_inventory.py`
+
+The premise says it is "not run by anything". ⛔ **It is run on every push.**
+`tools/gen_forward_shim.py:37` does `from libc_inventory import version_key`,
+and `make shim` runs that generator, and the `generated artefacts are not
+stale` job runs `make shim` and diffs the result.
+
+⚠ **The premise says "Measured, by grep over the tree", and the grep was
+real.** It searched for the FILENAME, and an import names the module. That is
+the whole error, and it is worth writing down because the same grep would miss
+the same thing again.
+
+⭐ It was caught by moving the file and running the suite: E15 went MISMATCH
+with `gcc: error: gen-shim.c: No such file or directory`, and E16 followed with
+`./shimtest: No such file or directory`. ⚠ **The generator's own error was
+invisible**, because the E15 line ends in `2>/dev/null`. What made it findable
+was T-13's shape being applied to the harness first: the `run` helper now
+prints a MISMATCH's whole output, so E16's message named E15 as the cause
+rather than only its own symptom.
+
+`trap_users.py` was wrong in a second way. Its two `sys.path.insert` lines both
+inserted its own directory, which was harmless while every tool sat together
+and became an `ImportError` for `elfsym` and `version_traps` the moment it did
+not.
+
+### Closure
+
+- `tests/allocprobe.c` and `tests/icd-harness.c` were already covered by the
+  `orphans` job, against a real lavapipe ICD.
+- `tools/libc_inventory.py` **stays in `tools/`**. It is a library the shim
+  generator imports, not a manual tool.
+- `tools/manual/trap_users.py` moved, with its `sys.path` corrected to reach
+  `tools/`, and [`../tools/manual/README.md`](../tools/manual/README.md) says
+  what it is for and who cites it.
+
+⭐ **Both halves measured, by running them rather than by grepping for them:**
+
+```
+$ python3 tools/gen_forward_shim.py --floor ... --target ... --musl ... --quiet
+  OK: generated 2388 lines
+$ python3 tools/manual/trap_users.py /lib/x86_64-linux-gnu/libc.so.6 /lib/x86_64-linux-gnu/libm.so.6
+libc /lib/x86_64-linux-gnu/libc.so.6: 21 trap(s), 10 benign re-versioning(s)
+$ python3 tools/libc_inventory.py scan /lib/x86_64-linux-gnu --name smoke
+{ "counts": { "ld-linux-x86-64.so.2": 33, ...
+```
+
+`sh scripts/check-drift.sh` now checks both classes: every path a document
+cites exists, and every module a tool imports is reachable from that tool's own
+`sys.path`. The second check exists because of this entry.
 
 ---
 
@@ -120,8 +276,31 @@ Build, CI and orchestration.
     failed at the first call;
   - the output is a count, not a per-symbol view of which ABI entries the
     corpus demands.
-- **Premise.** Measured by reading `tst/corpus.py` and `tst/corpus_load.cpp` at
-  the recorded commit. ⚠ solo's corpus was **not** run.
+- **Premise.** ⭐ **No longer inferred. Observed here, on two hosts, in run
+  [32957101324](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32957101324).**
+  The first weakness above does not merely change the verdict on the libraries
+  after the corrupting one: it truncates the result to **nothing**, and E33 and
+  E34 are then scored against a total of zero.
+
+  | host | feature ON | feature OFF |
+  |---|---|---|
+  | `alpine:3.22` | ⛔ `Segmentation fault (core dumped)`, 0 verdict lines | `TOTAL=298 OK=3` |
+  | `debian:trixie-slim` | `FATAL: HWAddressSanitizer requires a kernel with tagged address ABI.`, 0 verdict lines | 99 OK lines, then the same FATAL |
+
+  ⚠ **Both causes were invisible until this session**, because the sweep's
+  stderr went to `/dev/null`. That is T-13's shape, and it is why the two
+  entries are related: the crash had presumably been happening for as long as
+  the corpus cases have existed, and the AppImage suite had never completed to
+  show it.
+
+  ⛔ The two causes are different in kind and the design above covers both. The
+  Alpine one is a crash somewhere in a 298-library sweep and is not yet
+  attributed to a library. The Debian one is a library that calls the process
+  dead on load, which no fault handler catches and only a fresh process per
+  library survives.
+
+  The original reading of `tst/corpus.py` and `tst/corpus_load.cpp` stands, and
+  ⚠ solo's corpus was still **not** run.
 - **Approach.** One fresh process per library, `RTLD_NOW`, a fault handler
   installed before the load so a crash is a report rather than a silence, and
   per-library JSON merged afterwards.
