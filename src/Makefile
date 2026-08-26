@@ -26,6 +26,16 @@ PYTHON  ?= python3
 CFLAGS  ?= -O2 -Wall -Wextra -Wno-format-truncation
 SOFLAGS  = -shared -fPIC
 
+# CET is an x86 feature. On aarch64 gcc, -fcf-protection=full is not a warning
+# but a hard error -- "not supported for this target" -- so both aarch64 builds
+# failed at the first shim before anything else could be measured.
+#
+# ⚠ Selected by what the COMPILER TARGETS, not by uname: the aarch64 artefacts
+# are CROSS-compiled, so the machine running make is x86-64 while the object
+# being produced is not. -dumpmachine is the only one of the two that knows.
+CC_TARGET  := $(shell $(CC) -dumpmachine 2>/dev/null)
+CET_CFLAGS := $(if $(filter x86_64% i386% i686% amd64%,$(CC_TARGET)),-fcf-protection=full,)
+
 ROOT     = ..
 FLOOR   ?= $(ROOT)/inventories/appdir.json
 TARGET  ?= $(ROOT)/inventories/glibc-2.44.json
@@ -76,12 +86,17 @@ cross-libc-dlopen.so: cross-libc-dlopen.c forward-shim.c version-compat.c cld-en
 
 # The OpenGL and EGL forwarding shims. Each is built with the SONAME of the
 # bundled dispatcher it replaces, so preloading it makes ld.so bind an
-# application's DT_NEEDED to it instead. -fcf-protection so the object carries
-# the IBT property note that matches the endbr64 the trampolines start with:
-# without the note a CET-enforcing host turns indirect-branch tracking off for
-# the whole process, which is a silent loss of a mitigation rather than a crash.
+# application's DT_NEEDED to it instead.
+#
+# $(CET_CFLAGS) puts an endbr64 at every indirect-branch target on x86-64. It
+# does NOT produce an IBT property note, and this comment used to say it did.
+# Measured on bullseye, bookworm and trixie: the note is absent because glibc's
+# crti.o carries no property, and the linker ANDs that absence across the link.
+# ⚠ -Wl,-z,ibt DOES emit a note, and the note is FALSE: _init and _fini come
+# from crti.o/crtn.o, ld.so reaches them through DT_INIT/DT_FINI -- an indirect
+# call -- and neither begins with endbr64. docs/REPORT.md 9.13 has the table.
 gl-fwd.so: gl-fwd.c gl-fwd-gl.h ld-conf.h cld-env.h
-	$(CC) $(SOFLAGS) $(CFLAGS) -fcf-protection=full \
+	$(CC) $(SOFLAGS) $(CFLAGS) $(CET_CFLAGS) \
 		-DGLFWD_TABLE='"gl-fwd-gl.h"' -DGLFWD_TAG='"gl-fwd.so"' \
 		-Wl,-soname,libGL.so.1 gl-fwd.c -o $@ -ldl
 	@$(MAKE) --no-print-directory gl-fwd-verify SO=$@ TBL=gl-fwd-gl.h
@@ -89,7 +104,7 @@ gl-fwd.so: gl-fwd.c gl-fwd-gl.h ld-conf.h cld-env.h
 # EGL's dispatcher finds its vendor through a JSON directory rather than a
 # libGLX_*.so.0, so the marker differs; everything else is the same object.
 egl-fwd.so: gl-fwd.c gl-fwd-egl.h ld-conf.h cld-env.h
-	$(CC) $(SOFLAGS) $(CFLAGS) -fcf-protection=full \
+	$(CC) $(SOFLAGS) $(CFLAGS) $(CET_CFLAGS) \
 		-DGLFWD_TABLE='"gl-fwd-egl.h"' -DGLFWD_TAG='"egl-fwd.so"' \
 		-DGLFWD_VENDOR_PREFIX='"libEGL_"' \
 		-DGLFWD_VENDOR_DIR='"/usr/share/glvnd/egl_vendor.d"' \
@@ -124,7 +139,7 @@ gl-fwd-verify:
 # turned up -- the generator's one rule is that the list comes out of the object
 # being replaced, and there was no object.
 gles-fwd.so: gl-fwd.c gl-fwd-gles2.h ld-conf.h cld-env.h
-	$(CC) $(SOFLAGS) $(CFLAGS) -fcf-protection=full \
+	$(CC) $(SOFLAGS) $(CFLAGS) $(CET_CFLAGS) \
 		-DGLFWD_TABLE='"gl-fwd-gles2.h"' -DGLFWD_TAG='"gles-fwd.so"' \
 		-DGLFWD_VENDOR_PREFIX='"libEGL_"' \
 		-DGLFWD_VENDOR_DIR='"/usr/share/glvnd/egl_vendor.d"' \
