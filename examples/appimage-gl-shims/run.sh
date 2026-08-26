@@ -19,7 +19,7 @@
 # ⚠ WHAT IT FOUND, and it is the reason this example is worth reading: a
 # self-contained AppImage that bundles its own vendor library must KEEP it.
 # Forwarding to the host's because the host has none puts two Mesas in one
-# process -- E80 was SIGFPE before the bundle's own vendor was looked for
+# process. E80 was SIGFPE before the bundle's own vendor was looked for
 # first. E81 is the case that states the rule.
 #
 #   sh examples/appimage-gl-shims/run.sh

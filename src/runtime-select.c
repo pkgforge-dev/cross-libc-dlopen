@@ -1,4 +1,4 @@
-/* runtime-select -- Design R: choose the libc runtime at exec time.
+/* runtime-select, Design R: choose the libc runtime at exec time.
  *
  * Design R. The only strategy that survives symbols invented after we
  * ship (4.5, E12): if the host's glibc is newer than the one we bundle and a
@@ -7,13 +7,13 @@
  *
  * The three things that make this correct rather than merely plausible:
  *
- *  1. E11 -- a MIXED runtime set segfaults instantly. So the set is verified
+ *  1. E11: a MIXED runtime set segfaults instantly. So the set is verified
  *     whole, statically, before anything is exec'd. The check is not "do the
  *     files exist" but "does each member's VERNEED on its peers fall inside
- *     what those peers actually define" -- the same predicate ld.so applies,
+ *     what those peers actually define", the same predicate ld.so applies,
  *     evaluated ahead of time. That is exactly the E8 failure condition.
  *
- *  2. T4.2 -- bundled libraries must still win for everything that is not
+ *  2. T4.2: bundled libraries must still win for everything that is not
  *     libc. A flat "--library-path $HOST_LIBDIR:$APPDIR/lib" (5.0's sketch)
  *     would hand the host libstdc++, libX11 and every other soname the win
  *     too. Instead a SYMLINK FARM under $XDG_RUNTIME_DIR holds the runtime
@@ -83,7 +83,7 @@
 #endif
 
 /* The set that must be switched WHOLE (E11). libc and ld.so are mandatory;
- * the rest are only required when the bundle itself ships them -- a host that
+ * the rest are only required when the bundle itself ships them, and a host that
  * dropped libanl.so.1 is not "incomplete" if we never had it either. */
 static const char *rs_runtime_set[] = {
 	RS_LDSO, "libc.so.6", "libm.so.6",
@@ -230,7 +230,7 @@ static int rs_str_ok(const struct rs_elf *e, size_t off) {
 	return off < e->strsz && memchr(e->strtab + off, '\0', e->strsz - off) != NULL;
 }
 
-/* A set of version names, as a fixed array -- glibc defines ~50. */
+/* A set of version names, as a fixed array. glibc defines ~50. */
 struct rs_vers {
 	char *v[RS_MAX_VERSIONS];
 	size_t n;
@@ -338,7 +338,7 @@ static int rs_verneed_from(const char *path, const char *soname, struct rs_vers 
 
 /* ------------------------------------------------------- symbol tables */
 /*
- * The VERNEED check below catches E8's direction -- a NEW object needing a
+ * The VERNEED check below catches E8's direction, a NEW object needing a
  * version an OLD peer does not define. It provably cannot catch E11's
  * direction, because glibc never retires a version name: an OLD libdl.so.2
  * asks libc only for GLIBC_2.2.5, and every later glibc still defines that.
@@ -348,9 +348,9 @@ static int rs_verneed_from(const char *path, const char *soname, struct rs_vers 
  * is not stable at all. Measured, glibc 2.31 -> 2.41:
  *
  *   old libdl.so.2       imports _dl_sym, _dl_addr, _dl_catch_error,
- *                        _dl_vsym, __libc_dlopen_mode  -- 2.41 exports NONE
+ *                        _dl_vsym, __libc_dlopen_mode: 2.41 exports NONE
  *   old libpthread.so.0  imports __libc_pthread_init, __libc_dlopen_mode,
- *                        _dl_make_stack_executable, ... -- 13 gone
+ *                        _dl_make_stack_executable, ...: 13 gone
  *
  * So the real completeness test is a symbol test: every STRONG undefined
  * symbol of every member must be defined by the libc and ld.so it will be
@@ -564,7 +564,7 @@ static int rs_exists(const char *dir, const char *file, char *out, size_t outsz)
  *
  * Reading libc.so.6 alone is not enough: a release that adds no new libc
  * symbols leaves libc's top VERDEF at the previous release. Measured on
- * Debian bullseye -- glibc 2.31, whose libc.so.6 tops out at GLIBC_2.30 while
+ * Debian bullseye, glibc 2.31, whose libc.so.6 tops out at GLIBC_2.30 while
  * libm.so.6 carries GLIBC_2.31. Both sides of the comparison must be measured
  * the same way or the ranking is not meaningful.
  */
@@ -592,7 +592,7 @@ static long rs_set_release(const char *dir, const struct rs_plan *p,
  * Is `dir` + `ldso` an INTERNALLY CONSISTENT glibc?
  *
  * This is the E11 guard, and it is the whole point of the exercise. It does
- * not ask "are the files there" -- E11's mixed set had every file present. It
+ * not ask "are the files there", because E11's mixed set had every file present. It
  * asks the question ld.so will ask at load time, ahead of time: does each
  * member's VERNEED on its peers fall inside what those peers DEFINE?
  *
@@ -751,7 +751,7 @@ static void rs_decide(struct rs_plan *p, const char *appdir) {
 
 	/* The release is the highest GLIBC_x.y ANY member defines, not just
 	 * libc.so.6's. Measured: glibc 2.31's libc.so.6 tops out at GLIBC_2.30
-	 * because that release added no new libc symbols -- reading libc alone
+	 * because that release added no new libc symbols, so reading libc alone
 	 * reports the wrong release and would misrank two close hosts. */
 	long bver = rs_set_release(blib, p, p->bundled_ver, sizeof(p->bundled_ver));
 	if (bver < 0) {
@@ -899,7 +899,7 @@ static int rs_build_farm(const struct rs_plan *p, char *out, size_t outsz) {
 
 /* Append one directory, once, guarding both the buffer and duplicates.
  * Returns 0 when it would not fit, so the caller can say so rather than
- * silently shipping a truncated path -- a path that is quietly one directory
+ * silently shipping a truncated path, one that is quietly one directory
  * short is exactly the failure E44 is about. */
 static int rs_path_append(char *s, size_t cap, size_t *n, const char *dir) {
 	size_t len = strlen(dir);
@@ -933,7 +933,7 @@ static int rs_path_append(char *s, size_t cap, size_t *n, const char *dir) {
  * /etc/ld.so.conf.d/ld.wsl.conf. Under a loader with the cache inhibited (E13b)
  * that directory does not exist as far as the process is concerned, NVIDIA's
  * libcuda.so.1 cannot dlopen its own libdxcore.so, and CUDA reports no device
- * at all -- a symptom that reads as "no GPU", not as a missing library.
+ * at all, a symptom that reads as "no GPU", not as a missing library.
  *
  * The walk itself lives in ld-conf.h, because src/gl-fwd.c needs the same
  * answer for a different reason and a second parser is how the two would
@@ -1070,7 +1070,7 @@ static void rs_resolve_self(const char *argv0, char *out, size_t outsz) {
  * The self-test child: exercise the parts of libc a mixed set breaks.
  *
  * E11's segfault came from an old libdl.so.2 against a new libc.so.6, and it
- * died inside a dlopen. So it is not enough to start and exit -- touch the
+ * died inside a dlopen. So it is not enough to start and exit: touch the
  * allocator, TLS (errno), stdio, and the dynamic linker interface, which is
  * where the crash actually lives.
  */
@@ -1106,7 +1106,7 @@ static int rs_self_test_child(void) {
  * runtime, and see whether we die.
  *
  * Re-execing this binary rather than the host's /bin/true is deliberate on two
- * counts. First it is guaranteed to be a dynamically linked ELF -- measured:
+ * counts. First it is guaranteed to be a dynamically linked ELF, measured:
  * Rocky 9's /bin/true is a 51-byte shell script, and ld.so answers "file too
  * short", which looked exactly like a mixed set and was not. Second it is the
  * stronger question: this binary was linked against the BUNDLED glibc, so the

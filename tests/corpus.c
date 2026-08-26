@@ -1,4 +1,4 @@
-/* T2.4 -- cross-libc-dlopen every .so in the host's library directory and count
+/* T2.4: cross-libc-dlopen every .so in the host's library directory and count
  * successes. Run once with the feature off and once on: the gate is
  * "successes >= baseline, ZERO regressions". A library that loaded before and
  * does not load after is a regression no aggregate gain excuses. */

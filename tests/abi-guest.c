@@ -1,4 +1,4 @@
-/* T1.3 - T1.7, guest half -- the HOST DRIVER's side of the boundary.
+/* T1.3 to T1.7, guest half: the HOST DRIVER's side of the boundary.
  *
  * Built twice: once on Alpine, where it is a faithful musl-linked object of the
  * kind cross-libc-dlopen has to load, and once on the glibc floor as the control.
@@ -29,7 +29,7 @@ EXPORT uint32_t abi_version(void) { return ABI_VIEW_VERSION; }
  * HEADERS differ. */
 EXPORT void abi_fill(struct abi_view *v) { abi_view_fill(v); }
 
-/* T1.3 -- allocator ownership crossing the boundary. */
+/* T1.3: allocator ownership crossing the boundary. */
 EXPORT void *abi_alloc(uint64_t n) {
 	void *p = malloc((size_t)n);
 	if (p) memset(p, 0x5A, (size_t)n);
@@ -38,11 +38,11 @@ EXPORT void *abi_alloc(uint64_t n) {
 
 EXPORT int abi_release(void *p) { free(p); return 0; }
 
-/* T1.3b -- strdup, because the free() that matters is often one the caller
+/* T1.3b: strdup, because the free() that matters is often one the caller
  * never sees written down. */
 EXPORT char *abi_strdup(const char *s) { return strdup(s); }
 
-/* T1.4 -- errno coherence. Fail HERE and report the value seen HERE; the host
+/* T1.4: errno coherence. Fail HERE and report the value seen HERE; the host
  * reads its own errno immediately afterwards and compares. Two sides reaching
  * different __errno_location report different values. */
 EXPORT int abi_errno_after_failing_open(void) {
@@ -52,7 +52,7 @@ EXPORT int abi_errno_after_failing_open(void) {
 	return errno;
 }
 
-/* T1.5 -- a FILE* opened by the host, written from here. glibc's FILE is 216
+/* T1.5: a FILE* opened by the host, written from here. glibc's FILE is 216
  * bytes with a public layout and musl's is neither, so only one of them can be
  * right about the object. */
 EXPORT int abi_write_file(void *fp, const char *s) {
@@ -62,7 +62,7 @@ EXPORT int abi_write_file(void *fp, const char *s) {
 	return (int)strlen(s);
 }
 
-/* T1.6 -- a mutex made by the host, locked from here. */
+/* T1.6: a mutex made by the host, locked from here. */
 EXPORT int abi_lock_unlock(void *mtx) {
 	pthread_mutex_t *m = (pthread_mutex_t *)mtx;
 	int r = pthread_mutex_lock(m);
@@ -70,7 +70,7 @@ EXPORT int abi_lock_unlock(void *mtx) {
 	return pthread_mutex_unlock(m);
 }
 
-/* T1.6b -- and the reverse: a mutex made HERE, sized by THESE headers, handed
+/* T1.6b: and the reverse: a mutex made HERE, sized by THESE headers, handed
  * back for the host to lock. */
 EXPORT void *abi_new_mutex(void) {
 	pthread_mutex_t *m = malloc(sizeof *m);
@@ -79,7 +79,7 @@ EXPORT void *abi_new_mutex(void) {
 	return m;
 }
 
-/* T1.6c -- signalling a condition variable the host created and is waiting on.
+/* T1.6c: signalling a condition variable the host created and is waiting on.
  * This is the entry point the version-binding trap lands on: an unversioned
  * pthread_cond_signal reaches glibc's pre-2003 implementation, which reads the
  * first eight bytes of the object as a pointer to a different structure. */
@@ -93,7 +93,7 @@ EXPORT int abi_cond_signal(void *cond, void *mtx) {
 	return r;
 }
 
-/* T1.7 -- one function per hazard, actually CALLED, so the divergent struct is
+/* T1.7: one function per hazard, actually CALLED, so the divergent struct is
  * written and read across the boundary rather than merely sized. The host
  * passes storage it allocated with ITS headers. */
 EXPORT int abi_regexec_into(void *pmatch, uint64_t nmatch, const char *pat,
@@ -117,12 +117,12 @@ EXPORT int abi_stat_into(const char *path, void *st) {
 	return stat(path, (struct stat *)st);
 }
 
-/* T1.7c -- the direction that actually breaks.
+/* T1.7c: the direction that actually breaks.
  *
  * Everything above passes storage the HOST allocated, so glibc's implementation
  * writes glibc's layout into glibc-sized memory and nothing can overrun. That
  * is not the hazard. The hazard is a guest that allocates a struct with ITS
- * headers, hands it to glibc, and then READS IT BACK at its own offsets --
+ * headers, hands it to glibc, and then READS IT BACK at its own offsets,
  * which is what any real library does with regexec, nftw or getrusage. Nothing
  * crashes; the numbers are simply wrong.
  *

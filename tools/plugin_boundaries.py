@@ -48,7 +48,7 @@ KNOWN = {
     'libvulkan.so.1':    ('covered', 'ICD from /usr/share/vulkan/icd.d/*.json; '
                                      'cross-libc-dlopen carries it across the libc gap (E30-E37)'),
     # Note which of these two actually turns up. glvnd's libGL.so.1 imports no
-    # dlopen at all -- it is a re-export layer -- and libGLX.so.0 is what opens
+    # dlopen at all, because it is a re-export layer, and libGLX.so.0 is what opens
     # the vendor library. A human enumerating this by hand writes down
     # libGL.so.1, because that is the name in the failure message. The entry
     # below is kept for an AppDir that bundles a CLASSIC Mesa libGL, which does
@@ -82,7 +82,7 @@ KNOWN = {
     # None of these is bundled by the demo AppDir, so nothing here has run them.
     # They are listed anyway: an AppImage that DOES bundle one is classified on
     # sight rather than investigated from scratch, and each is the shape the
-    # OpenGL boundary was -- a bundled loader wanting a host plugin.
+    # OpenGL boundary was: a bundled loader wanting a host plugin.
     'libasound.so.2':    ('unmeasured', 'ALSA plugins from /usr/lib/alsa-lib'),
     'libpulse.so.0':     ('unmeasured', 'PulseAudio modules'),
     'libva.so.2':        ('unmeasured', 'VA-API driver <name>_drv_video.so from /usr/lib/dri'),

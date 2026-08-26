@@ -61,7 +61,7 @@ $Sha  = 'd77a01ebacb739392ca8c39f879dc5bc626283b0c01bd9dc12eecbea92dd34c1'
 $Url  = 'https://github.com/Samueru-sama/Anylinux-AppImages/releases/download/demo/vkcube+glxgears-host-drivers-demo-x86_64.AppImage'
 # The OTHER shape of AppImage: self-contained, its own Mesa, its own vendor
 # libraries, a real GTK4 application, and the only AppDir here that bundles
-# libGLESv2.so.2 -- which is what the GLES forwarding table is read out of.
+# libGLESv2.so.2, which is what the GLES forwarding table is read out of.
 # ⚠ From pkgforge-dev, the upstream. The demo above is the fork's, because the
 # host-drivers build exists only there. REPORT 9.15.
 $Gtk4Sha = '413243c9ecbaaafe40636afd06e0c3d558b8cc928ed20b9ec55a6e0f09b5d8b4'

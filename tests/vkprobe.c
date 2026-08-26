@@ -1,5 +1,5 @@
 /* Minimal Vulkan probe: bundled loader + host ICD, no window system.
- * vulkaninfo needs no surface, so neither does this -- it isolates the
+ * vulkaninfo needs no surface, so neither does this. It isolates the
  * cross-libc load from X11 and rendering entirely. */
 #define _GNU_SOURCE
 #include <dlfcn.h>

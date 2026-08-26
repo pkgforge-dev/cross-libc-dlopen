@@ -4,8 +4,8 @@
 #
 # libglx-mesa0 brings libglvnd's vendor library, so this host is the OTHER GL
 # class: the bundled dispatcher has something to dispatch to and OpenGL works
-# as shipped. That makes section J's cases a transparency test here -- the shim
-# must change nothing -- rather than a repair, and E61/E63 predict success
+# as shipped. That makes section J's cases a transparency test here, where the shim
+# must change nothing, rather than a repair, and E61/E63 predict success
 # instead of the classic-host failure.
 set -u
 export DEBIAN_FRONTEND=noninteractive

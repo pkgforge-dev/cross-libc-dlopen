@@ -106,7 +106,7 @@ static inline void abi_view_fill(struct abi_view *v) {
 
 	/* Taking the address of an imported function yields the address the
 	 * loader resolved, so these are the implementations this object really
-	 * calls -- with one caveat the host half prints rather than hides: an
+	 * calls: with one caveat the host half prints rather than hides: an
 	 * EXECUTABLE that takes such an address gets its own PLT entry as the
 	 * canonical value, so the two columns can differ for a reason that is
 	 * about linking and not about libc. dladdr on each side is what settles

@@ -83,8 +83,8 @@ static int cross_libc_dlopen_debug_enabled(void) {
 
 // ⭐ ON BY DEFAULT. Preloading this object is already an explicit, deliberate
 // act by whoever assembled the process: nothing loads it by accident. Asking
-// for a second opt-in on top of that -- an environment variable, or a marker
-// file at the bundle root -- bought nothing and cost a whole class of silent
+// for a second opt-in on top of that, whether an environment variable or a
+// marker file at the bundle root, bought nothing and cost a whole class of silent
 // failure, where a consumer preloads the object, forgets the marker, and gets
 // a run that does nothing and says nothing about why.
 //
@@ -245,7 +245,7 @@ static void cld_locate_dynsym(struct cld_elf *e) {
 			e->gnu_symoffset = symoffset;
 
 			// Only walk the chains when DT_HASH did not already give us
-			// an exact count -- nchain is authoritative, this is not.
+			// an exact count: nchain is authoritative, this is not.
 			if (!count && nbucket && nbucket < (1u << 24) && bloom_size < (1u << 24)) {
 				size_t bo = go + 4 * sizeof(uint32_t) + (size_t)bloom_size * sizeof(ElfW(Addr));
 				if (bo + (size_t)nbucket * sizeof(uint32_t) <= e->size) {
@@ -546,13 +546,13 @@ static int cld_have_version(const char *name) {
 // CXXABI_* and LLVM_* requirement was therefore unvouchable, so
 // cld_requirements_satisfied() returned 0 for everything in a Mesa closure and
 // objects that needed nothing got rewritten anyway. On a host whose glibc is
-// OLDER than the bundled one -- where by construction nothing CAN be missing --
+// OLDER than the bundled one, where by construction nothing CAN be missing,
 // that turned a working driver into a rewritten one for no reason (issue #1).
 //
 // Resolution order matches the project's own rule that bundled beats host:
 //   1. $APPDIR/lib/<file>, if the bundle owns that soname
 //   2. whatever is already loaded under that soname
-//   3. nothing -- and then the answer is "no", which strips. Conservative is
+//   3. nothing, and then the answer is "no", which strips. Conservative is
 //      the right direction: a needless rewrite is survivable, a missing
 //      version is a hard load failure.
 // ---------------------------------------------------------------------------
@@ -723,8 +723,8 @@ static int cld_requirements_satisfied(const struct cld_elf *e) {
 // ---------------------------------------------------------------------------
 // Which definition SHOULD an unversioned reference have reached?
 //
-// Stripping version tags -- and being musl-built, which amounts to the same
-// thing -- turns every reference into a plain name lookup, and for the handful
+// Stripping version tags, and being musl-built, which amounts to the same
+// thing, turns every reference into a plain name lookup, and for the handful
 // of symbols glibc still exports at an obsolete version that lookup does not
 // pick the default one. src/version-compat.c closes that by defining those
 // names itself and forwarding; this is how it learns what to forward TO.
@@ -827,7 +827,7 @@ static void cld_strip_versions(struct cld_elf *e) {
 //
 // Some musl names differ from their glibc equivalent only cosmetically. musl's
 // environ pointer is ___environ (three underscores), glibc's is __environ
-// (two). The reference is a WEAK import, so it does not stop the load -- it
+// (two). The reference is a WEAK import, so it does not stop the load, and it
 // silently resolves to 0 and the driver reads a NULL environment. Latent, and
 // exactly the class of bug that "just works until it doesn't".
 //
@@ -837,8 +837,8 @@ static void cld_strip_versions(struct cld_elf *e) {
 //
 //   * the symbol is UNDEFINED, so DT_GNU_HASH does not index it (GNU hash
 //     covers only defined symbols, from symoffset onward). No hash fixup.
-//   * nothing is written to .dynstr, so .dynstr tail-merging -- measured real:
-//     16 of 647 names in libvulkan_lvp.so are suffixes of another -- cannot
+//   * nothing is written to .dynstr, so .dynstr tail-merging, measured real at
+//     16 of 647 names in libvulkan_lvp.so being suffixes of another, cannot
 //     bite. We only move a pointer that already pointed into that string.
 //
 // The general case (rename X to Y where Y is NOT a suffix of X) needs an
@@ -995,7 +995,7 @@ static int cld_rename_undef_symbol(struct cld_elf *e, const struct cld_rename *r
 		}
 
 		// General case. Clobbering [off, off+flen] breaks any other name that
-		// is a suffix of this one -- tail-merging makes that a live hazard,
+		// is a suffix of this one, and tail-merging makes that a live hazard,
 		// not a theoretical one. Prove it is safe or decline.
 		if (cld_dynstr_range_occupied(e, off + 1, off + flen + 1, off)) {
 			DEBUG_PRINT("cross-libc-dlopen: refusing in-place rename %s -> %s: another "
@@ -1200,7 +1200,7 @@ static void cld_cache_put(const char *key, void *handle) {
 // at load: one missing symbol makes the library unloadable and the error names
 // only the FIRST one. Walking the imports ourselves and testing each against
 // the process's own lookup scope reports ALL of them at once, and does it
-// without loading anything -- which is what makes this testable with no GPU
+// without loading anything, which is what makes this testable with no GPU
 // and no Alpine.
 //
 // This is the generalisable half of the gconv lesson: a plugin
@@ -1214,7 +1214,7 @@ static void cld_cache_put(const char *key, void *handle) {
 // not only by the process's global scope, so a report that consults only
 // RTLD_DEFAULT accuses the object of missing symbols its siblings provide.
 // Measured: without this, loading libvulkan_lvp.so "reported" 446 missing
-// symbols -- LLVMBuildAdd, drmIoctl, xcb_* -- every one of which its own
+// symbols (LLVMBuildAdd, drmIoctl, xcb_*), every one of which its own
 // DT_NEEDED closure supplies. The diagnostic was louder than the bug.
 #define CLD_UNOPENED_MAX 8
 struct cld_deps {
@@ -1237,7 +1237,7 @@ static void cld_note_unopened(struct cld_deps *deps, const char *soname) {
 
 static int cld_resolvable(const char *name, const struct cld_deps *deps) {
 	// RTLD_DEFAULT walks the global scope, which includes this preload's own
-	// exports -- that is how the shim satisfies imports (E2, E5).
+	// exports, which is how the shim satisfies imports (E2, E5).
 	//
 	// NB: no dlerror() call anywhere in here. dlerror() is destructive, and
 	// the caller of the intercepted dlopen() needs the real message intact.
@@ -1364,7 +1364,7 @@ static int cld_dryrun_enabled(void) {
 //  2. musl puts libm, libpthread, libdl, librt and the resolver INSIDE its
 //     libc; glibc splits them out. A musl-built object therefore imports
 //     fmod, fesetround, log10, pow with no DT_NEEDED on anything, because on
-//     musl its libc edge covered them -- and that edge is exactly the one we
+//     musl its libc edge covered them, and that edge is exactly the one we
 //     drop. Measured on Alpine v3.22: libxml2 failed on `fmod` and libstdc++
 //     on `fesetround`, which cascaded into libLLVM and took the whole ICD
 //     down. libm.so.6 was simply not in the process.
@@ -1375,7 +1375,7 @@ static int cld_dryrun_enabled(void) {
 // pull libm in.
 //
 // This is rung 6 of the diagnostic ladder applied as a policy rather
-// than per incident -- load the library instead of shimming the symbol.
+// than per incident: load the library instead of shimming the symbol.
 static const char *cld_global_scope_libs[] = {
 	// musl folds these into libc.so; glibc splits them out
 	"libm.so.6",
@@ -1428,7 +1428,7 @@ static void cld_load_global_scope_libs(void) {
 }
 
 // Bring this preload fully up before the caller does something that depends on
-// it. The only caller is another preload -- gl-fwd.so -- whose constructor
+// it. The only caller is another preload, gl-fwd.so, whose constructor
 // dlopens a HOST library, and a host object with its musl libc edge dropped
 // needs the bundled libc runtime set already in the global scope. Preload
 // constructors run in reverse of the .preload order (E56), so no ordering of
@@ -1574,8 +1574,8 @@ static void *cld_load(dlopen_func_t dlopen_orig, const char *canon, int flags, i
 		//
 		// This has to happen BEFORE the host hunt, and it has to happen for
 		// musl guests too. Upstream skipped the probe entirely for musl
-		// guests -- correctly refusing to load the HOST copy unstripped,
-		// since that would drag musl libc in -- but the skip sent them
+		// guests, correctly refusing to load the HOST copy unstripped,
+		// since that would drag musl libc in. But the skip sent them
 		// straight to cld_find_candidate(), which only searches directories
 		// on the active load stack. For a host object that is /usr/lib, so a
 		// bundled soname could never win.
@@ -1722,7 +1722,7 @@ static void *cld_load(dlopen_func_t dlopen_orig, const char *canon, int flags, i
 		// Upstream read dlerror() here unconditionally and only DEBUG_PRINTed
 		// it, which CONSUMED the message: with debug off the caller's own
 		// dlerror() returned NULL and the "classic error message" never
-		// reached anyone. Measured -- the T2 harness printed
+		// reached anyone. Measured: the T2 harness printed
 		// "FAILED: dlopen: (null)". Leave it in place unless tracing.
 		handle = dlopen_orig(canon, flags);
 		if (!handle && cross_libc_dlopen_debug_enabled()) {
@@ -1732,7 +1732,7 @@ static void *cld_load(dlopen_func_t dlopen_orig, const char *canon, int flags, i
 			// The report probes with dlsym, and every probe that misses
 			// REPLACES the pending dlerror() message. The caller, who is about
 			// to ask for it, would get "cross-libc-dlopen.so: undefined symbol:
-			// ..." -- this object blamed for a failure in a different one --
+			// ...", this object blamed for a failure in a different one,
 			// instead of ld.so's real explanation. Re-running the load puts
 			// the right message back. One extra failed dlopen, only in a trace
 			// run. Same class of bug as the destructive dlerror() upstream

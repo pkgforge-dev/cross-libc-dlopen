@@ -1,4 +1,4 @@
-/* E22/E23 -- the probe object for the version-binding trap.
+/* E22/E23: the probe object for the version-binding trap.
  *
  * Built as a shared object, then version-stripped by the harness exactly the
  * way cross-libc-dlopen.c strips a host driver, then dlopen'd and called.

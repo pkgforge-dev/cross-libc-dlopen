@@ -27,7 +27,7 @@ ICD=/usr/share/vulkan/icd.d/lvp_icd.$ICD_ARCH.json
 
 # ⚠ The count goes in a variable, NOT down stdout. An earlier version of this
 # function printed its report and then echoed the number, and the caller's
-# $( ) swallowed both -- so the comparison was against a paragraph and the
+# $( ) swallowed both, so the comparison was against a paragraph and the
 # script declared the controls broken while the measurement in front of it
 # said 85. A function that reports AND returns down the same channel returns
 # its report.

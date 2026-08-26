@@ -278,7 +278,7 @@ count_dashes() {
 	' 2>/dev/null | grep -oF ' -- ' | wc -l | tr -d ' '
 }
 
-BUDGET=216
+BUDGET=0
 have=$(count_dashes)
 if [ "$have" -gt "$BUDGET" ]; then
 	bad "$have dashes used as punctuation, and the pin is $BUDGET."
@@ -306,8 +306,9 @@ head_ "TODO/INDEX.md against the entries"
 # The entry is the authority: it is where the acceptance command was run and
 # the output recorded. INDEX is a view of it.
 #
-# ⚠ An entry's status may carry a trailing clause, "partially done -- see
-# somewhere". Everything from the first dash on is a pointer, not a status.
+# ⚠ An entry's status once carried a trailing pointer clause, and the strip
+# below still tolerates one. No entry writes it that way now: the pointer is
+# its own bullet, so the status line is the status and nothing else.
 badx=0
 entries=$(git ls-files 'TODO/*.md' |
           grep -vE 'TODO/(INDEX|PROGRESS|RULES)\.md')

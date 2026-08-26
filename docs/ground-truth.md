@@ -225,14 +225,14 @@ even when `/etc/ld.so.conf` names it. Base images of five distros:
 
 | host | `/etc/ld.so.cache` | dirs from the cache | dirs from `ld.so.conf` | named by conf, absent from the cache |
 |---|---|---|---|---|
-| alpine 3.22 | **absent** | 0 | no such file | -- |
+| alpine 3.22 | **absent** | 0 | no such file | none |
 | debian trixie | present | 1 | 3 | `/usr/lib/<triplet>`, `/usr/local/lib` |
 | ubuntu 24.04 | present | 1 | 3 | `/usr/lib/<triplet>`, `/usr/local/lib` |
-| fedora 41 | present | 1 | 0 | -- |
-| arch | present | 1 | 0 | -- |
+| fedora 41 | present | 1 | 0 | none |
+| arch | present | 1 | 0 | none |
 
-A base image is the weakest case for the cache -- everything lives in one
-directory -- so this understates it on a real desktop, where the cache is what
+A base image is the weakest case for the cache: everything lives in one
+directory. This understates it on a real desktop, where the cache is what
 names a Gentoo `/usr/lib/llvm/N/lib64` or a WSL `/usr/lib/wsl/lib`. The point is
 narrower: the two mechanisms are **complementary**, and upstream covers the
 `/usr/local/*` half by hardcoding it rather than by reading the cache.
@@ -246,7 +246,7 @@ not lost:
   built-in default is `/lib:/usr/local/lib:/usr/lib`, all three of which
   upstream now has. It bites only a musl host that has been given an explicit
   path file.
-- multiarch triplets past x86-64, i386 and aarch64 -- riscv64, ppc64le, s390x,
-  loongarch64 -- which the cache covers only where a cache exists.
+- multiarch triplets past x86-64, i386 and aarch64 (riscv64, ppc64le, s390x,
+  loongarch64), which the cache covers only where a cache exists.
 - `/usr/libexec`, Guix's `/run/current-system/profile/lib`, Flatpak's
   `/app/lib` and Termux's prefix, none of which has a cache.

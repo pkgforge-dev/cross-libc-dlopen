@@ -1,4 +1,4 @@
-/* eglprobe.c -- glprobe's question, asked of EGL, with no window system.
+/* eglprobe.c: glprobe's question, asked of EGL, with no window system.
  *
  * eglgears runs forever and prints through a block-buffered stdout, so a
  * timeout kills it and takes every line it printed with it: "Terminated" and
@@ -7,7 +7,7 @@
  *
  * EGL_PLATFORM=surfaceless removes X from the question entirely, which matters
  * because the failure being measured is about a missing VENDOR library, not a
- * missing display -- and a display error would be indistinguishable.
+ * missing display, and a display error would be indistinguishable.
  *
  * Exit 0 on success, 1 on a failure that names itself.
  */

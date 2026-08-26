@@ -60,7 +60,7 @@ IRRELEVANT_RE = [
     (r"^__ctype|^__c(type|locale)", "locale table internals"),
     (r"^__tls_|^__libc_tls", "TLS internals owned by ld.so"),
     # These look musl-only against a libc/libm/split-lib inventory, but glibc
-    # ships them in libcrypt.so.1 -- which cross-libc-dlopen.c now loads into the
+    # ships them in libcrypt.so.1, which cross-libc-dlopen.c now loads into the
     # global scope precisely so re-homed names resolve (B4). Shimming them
     # would INTERPOSE over the real implementation and abort a working call.
     (r"^(crypt|crypt_r|encrypt|encrypt_r|setkey|setkey_r)$",
@@ -79,7 +79,7 @@ IRRELEVANT_RE = [
 #
 # kind: implementable | forwardable | stub-only
 # Every entry is hand-reviewed.  `needs` names symbols the implementation calls
-# that must exist at the floor -- the generator verifies that and downgrades to
+# that must exist at the floor, and the generator verifies that and downgrades to
 # stub-only if the prerequisite is missing, so a wrong floor cannot silently
 # produce a broken shim.
 # ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ def _impl(name, kind, code, needs=(), headers=(), note=""):
                       headers=list(headers), note=note)
 
 
-# -- BSD string ------------------------------------------------------------
+# --- BSD string ------------------------------------------------------------
 _impl("strlcpy", "implementable", r"""
 SHIM(size_t) strlcpy(char *d, const char *s, size_t n) {
 	size_t sl = strlen(s);
@@ -123,7 +123,7 @@ SHIM(size_t) wcslcat(wchar_t *d, const wchar_t *s, size_t n) {
 	return dl + wcslcpy(d + dl, s, n - dl);
 }""", needs=["wcsnlen", "wcslen"], headers=["<wchar.h>"], note="glibc 2.38")
 
-# -- arc4random ------------------------------------------------------------
+# --- arc4random ------------------------------------------------------------
 _impl("arc4random_buf", "implementable", r"""
 SHIM(void) arc4random_buf(void *b, size_t n) {
 	unsigned char *p = (unsigned char *)b;
@@ -169,7 +169,7 @@ SHIM(uint32_t) arc4random_uniform(uint32_t upper) {
 	return r % upper;
 }""", needs=["syscall"], headers=["<stdint.h>"], note="glibc 2.36; unbiased")
 
-# -- stat family (real symbols only from 2.33; before that only __xstat) ----
+# --- stat family (real symbols only from 2.33; before that only __xstat) ----
 for _n, _vn, _proto, _args in [
     ("stat",     "__xstat",     "const char *p, struct stat *b",              "p, b"),
     ("lstat",    "__lxstat",    "const char *p, struct stat *b",              "p, b"),
@@ -201,7 +201,7 @@ SHIM(int) {_n}({_proto}) {{
 }}""", needs=[_vn], headers=["<sys/stat.h>", "<sys/sysmacros.h>"],
           note="glibc 2.33; note __xmknod takes dev_t BY POINTER")
 
-# -- syscall wrappers ------------------------------------------------------
+# --- syscall wrappers ------------------------------------------------------
 _SYSCALLS = [
     ("close_range", "int", "unsigned int f, unsigned int l, int flags", "f, l, flags",
      "SYS_close_range", 436, "glibc 2.34"),
@@ -248,7 +248,7 @@ SHIM({_ret}) {_n}({_proto}) {{
           headers=["<sys/syscall.h>", "<unistd.h>", "<sys/uio.h>", "<signal.h>"],
           note=_note + "; thin syscall wrapper, errno set by syscall(2)")
 
-# -- misc ------------------------------------------------------------------
+# --- misc ------------------------------------------------------------------
 _impl("mallinfo2", "implementable", r"""
 struct shim_mallinfo2 {
 	size_t arena, ordblks, smblks, hblks, hblkhd, usmblks,
@@ -312,7 +312,7 @@ SHIM(const char *) strerrordesc_np(int e) {
 	return e >= 0 ? strerror(e) : NULL;
 }""", needs=["strerror"], headers=["<string.h>"], note="glibc 2.32")
 
-# -- atexit: absent from EVERY glibc libc.so.6 (lives in libc_nonshared.a) --
+# --- atexit: absent from EVERY glibc libc.so.6 (lives in libc_nonshared.a) ---
 _impl("atexit", "implementable", r"""
 static void shim_atexit_thunk(void *p) {
 	/* Calling through the correct prototype: no function-pointer cast, so
@@ -341,8 +341,8 @@ SHIM(int) atexit(void (*fn)(void)) {
 _impl("issetugid", "implementable", r"""
 SHIM(int) issetugid(void) {
 	/* musl exports this BSD call; glibc has never had it. The kernel already
-	   answers the question through AT_SECURE -- which is exactly what musl's
-	   own implementation reads -- so this is a faithful port, not a guess.
+	   answers the question through AT_SECURE, which is exactly what musl's
+	   own implementation reads, so this is a faithful port, not a guess.
 	   Measured: this ONE symbol was the only thing blocking libX11.so.6 and
 	   libdbus-1.so.3 in the Alpine corpus test. */
 	errno = 0;
@@ -423,7 +423,7 @@ SHIM(int) at_quick_exit(void (*fn)(void)) {
            "the wrong lifetime. Callers must handle a non-zero return.")
 
 
-# -- C23 stdc_* bit utilities: generated, not hand-written ------------------
+# --- C23 stdc_* bit utilities: generated, not hand-written ------------------
 _STDC_W = [("uc", "unsigned char", 8), ("us", "unsigned short", 16),
            ("ui", "unsigned int", 32), ("ul", "unsigned long", 64),
            ("ull", "unsigned long long", 64)]
@@ -521,13 +521,13 @@ def classify(sym, floor_syms, kind=None):
     return "stub-only", "no audited implementation"
 
 
-PROLOGUE = r"""/* GENERATED by tools/gen_forward_shim.py -- do not edit by hand.
+PROLOGUE = r"""/* GENERATED by tools/gen_forward_shim.py. Do not edit by hand.
  *
  * Forward-compatibility shim (Design B).
  *
  * Covers the ENUMERABLE gap: symbols a newer glibc exports that the runtime
  * we bundle does not.  It does NOT and cannot cover symbols invented after
- * this file was generated -- that is Design R's job (REPORT.md, and E12).
+ * this file was generated. That is Design R's job (REPORT.md, and E12).
  *
  * Anything outside the covered set aborts naming the symbol.  Solo's
  * discipline: silent corruption is worse than a loud failure.

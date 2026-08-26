@@ -1,4 +1,4 @@
-/* T2.2 -- cross-libc load a REAL host Vulkan ICD built against musl, from a
+/* T2.2: cross-libc load a REAL host Vulkan ICD built against musl, from a
  * process carrying the AppImage's own glibc runtime.
  *
  * Isolates the cross-libc load from AppImage mounting, ICD discovery, X11 and
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     if (!gipa) { printf("FAILED: no vk_icdGetInstanceProcAddr: %s\n", dlerror()); return 1; }
     printf("  vk_icdGetInstanceProcAddr: %p\n", (void *)gipa);
 
-    /* Resolve and CALL through it -- a handle alone proves only that ld.so
+    /* Resolve and CALL through it, because a handle alone proves only that ld.so
      * was satisfied, not that the object is usable. */
     void *ci = gipa(NULL, "vkCreateInstance");
     void *ev = gipa(NULL, "vkEnumerateInstanceExtensionProperties");

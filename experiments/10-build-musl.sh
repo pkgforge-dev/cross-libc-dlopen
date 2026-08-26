@@ -1,5 +1,5 @@
 #!/bin/sh
-# Stage 1 -- runs in Alpine (musl). Produces a faithful musl-linked probe library.
+# Stage 1, running in Alpine (musl). Produces a faithful musl-linked probe library.
 # Faithful matters: Debian's musl-gcc emits NEEDED "libc.so", which collides with
 # glibc's linker script of the same name. Only a real Alpine build gives us
 # NEEDED "libc.musl-x86_64.so.1" on x86-64 and "libc.musl-aarch64.so.1" on

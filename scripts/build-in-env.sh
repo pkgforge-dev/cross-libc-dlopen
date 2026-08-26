@@ -1,5 +1,5 @@
 #!/bin/sh
-# The half of the build that runs INSIDE the floor environment -- a container
+# The half of the build that runs INSIDE the floor environment, whether a container
 # by default, the host itself for `build.sh --engine native`. Never invoked
 # directly; scripts/build.sh sets everything it reads.
 #

@@ -105,8 +105,8 @@ paragraph, stops, and acts on the retired rule.
 ⭐ **The one exception is a measured correction inside the record.**
 [`../REPORT.md`](../REPORT.md) is a measured record, and a premise a later
 measurement disproves keeps its title and gets the correction written
-underneath -- because the title is how the item has been referred to
-everywhere else. That is a different operation from a stacked banner: the
+underneath. The title is how the item has been referred to everywhere else.
+That is a different operation from a stacked banner: the
 correction states what was measured, when, and with what command.
 
 ---
@@ -121,7 +121,7 @@ gets checked and a number gets used.
 with no host, no date and no sample size cannot be compared to anything.
 
 ⭐ **A SKIP names a missing capability and stops there.** It may say "this host
-has no X". It may **not** say "and therefore nothing can be done" -- that is a
+has no X". It may **not** say "and therefore nothing can be done". That is a
 claim about the design space, it needs its own evidence, and welded to a
 measured fact it inherits the measured fact's authority. One such sentence kept
 OpenGL broken on every musl distribution for an entire session
@@ -185,7 +185,7 @@ reader to look for the thing it denies.
 Checked by `check-docs` in CI:
 
 1. Every fenced shell block parses.
-2. No angle-bracket placeholders inside a shell block -- bash reads
+2. No angle-bracket placeholders inside a shell block: bash reads
    `<appdir>` as a redirect. Use `"$APPDIR"`.
 3. No literal control bytes.
 4. Every relative link resolves and every cited path exists.

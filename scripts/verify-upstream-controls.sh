@@ -1,8 +1,8 @@
 #!/bin/sh
 # Did the rename turn a control into a silent pass?
 #
-# ⛔ THE PROBLEM THIS EXISTS FOR. E30, E37a and E43a drive UPSTREAM's binary --
-# the shim shipped inside the demo AppImage -- not this project's. Upstream only
+# ⛔ THE PROBLEM THIS EXISTS FOR. E30, E37a and E43a drive UPSTREAM's binary,
+# the shim shipped inside the demo AppImage, not this project's. Upstream only
 # understands the old ANYLINUX_* variable names. If the harness stops sending
 # them, upstream runs with the feature OFF.
 #

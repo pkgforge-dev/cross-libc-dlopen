@@ -16,8 +16,8 @@ cp cross-libc-dlopen.so runtime-select gl-fwd.so egl-fwd.so gles-fwd.so /w/build
 for t in icd-harness vkprobe corpus invariants soak cudaprobe bindprobe; do
     gcc -O2 -o /w/build/$t /repo/tests/$t.c -ldl
 done
-# The GL and EGL probes. They link the BUNDLED sonames -- libGL.so.1,
-# libEGL.so.1 -- which is what puts the shim under test: ld.so binds those
+# The GL and EGL probes. They link the BUNDLED sonames, libGL.so.1 and
+# libEGL.so.1, which is what puts the shim under test: ld.so binds those
 # DT_NEEDED entries to whatever claims the soname in the process, and the shim
 # is built with exactly those sonames.
 gcc -O2 -o /w/build/glprobe  /repo/tests/glprobe.c  -lGL -lX11

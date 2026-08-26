@@ -57,7 +57,7 @@ XA='-screen 0 1024x768x24 +extension GLX +extension RANDR +render'
 
 # 41-extract.sh keeps the shipped dispatcher beside the AppDir at extraction
 # time. If it is missing, the AppDir has been used before and the slot holds
-# whatever the last run left there -- copying that as "upstream" would quietly
+# whatever the last run left there. Copying that as "upstream" would quietly
 # run the entire A/B against the patched build twice and report it as a pass.
 if [ ! -f "$DISPATCH_UPSTREAM" ] || [ ! -f "$APPDIR/.preload.baseline" ]; then
     echo "  FATAL: $DISPATCH_UPSTREAM or $APPDIR/.preload.baseline is missing."
@@ -73,7 +73,7 @@ fi
 #
 # The AppDir is shared state in a gitignored directory, it survives between
 # runs, and section J deliberately rewrites .preload. That is fine when the
-# suite is the only thing touching it -- and it is not: debugging one host by
+# suite is the only thing touching it, and it is not: debugging one host by
 # hand leaves the GL shims in .preload, and the NEXT full run then executes
 # sections A through I with shims that those cases know nothing about. It
 # happened in this repository and it cost a run: E53 and E53b failed on
@@ -105,7 +105,7 @@ fi
 reset_appdir
 
 # ONE PATH HERE IS NOT SPELLED BY THIS PROJECT, and getting it wrong turns
-# E30, E37a and E43a -- the controls the whole A/B rests on -- into silent
+# E30, E37a and E43a, the controls the whole A/B rests on, into silent
 # passes:
 #
 #   $DISPATCH   the slot quick-sharun writes and .preload names. Our build is
@@ -135,8 +135,8 @@ use_preload() {                # upstream | patched
 # One line out of a probe's output, for the report column. A probe that states
 # its own verdict on a line of its own gets that line; anything else falls back
 # to the first interesting-looking line. Without the first pass the fallback
-# pattern wins on an incidental match -- "provenance: .../libcuda.so.1" contains
-# "libc" -- and the report shows a neutral line for a case that failed loudly.
+# pattern wins on an incidental match, since "provenance: .../libcuda.so.1" contains
+# "libc", and the report shows a neutral line for a case that failed loudly.
 summarise() {                  # summarise <text>
     printf '%s' "$1" | grep -m1 -E '^(OK|FAILED|BINDINGS|SOAK|INVARIANTS|ABI)' ||
     printf '%s' "$1" | grep -m1 -iE 'GPU|GL_RENDERER|device|libc|load|SOAK|OK:|FAIL|zero|Error' ||
@@ -203,7 +203,7 @@ under() {                      # under <0|1> <prog> [args...]
 # The same, plus one host directory appended AFTER the bundled ones, for the
 # vendor-driver cases. A proprietary driver dlopens the rest of its own stack by
 # BARE SONAME, which cross-libc-dlopen deliberately never intercepts, so ld.so has
-# to be able to find it -- and ld.so here is the patched one with the cache
+# to be able to find it, and ld.so here is the patched one with the cache
 # inhibited, so --library-path is the only mechanism left (E13b). Bundled
 # directories stay FIRST so bundled libraries keep winning (section 7).
 under_at() {                   # under_at <0|1> <extra-dirs> <prog> [args...]
@@ -214,7 +214,7 @@ under_at() {                   # under_at <0|1> <extra-dirs> <prog> [args...]
 }
 
 # vkprobe reduced to one word, because "it did not work" arrives in three
-# different shapes -- an error code, a refusal to load, or a segfault -- and a
+# different shapes (an error code, a refusal to load, or a segfault), and a
 # harness that only recognises one of them scores a crash as a MISMATCH and
 # hides what actually happened.
 probe_verdict() {              # probe_verdict <0|1>
@@ -277,7 +277,7 @@ conf_dirs() {
 # A host with no software Vulkan ICD used to end the run here. That was right
 # while every host was a Vulkan host; it stopped being right the moment the
 # pre-glvnd glibc distros became a target, because Ubuntu 14.04's Mesa 10.1
-# predates Vulkan entirely and section J -- the reason to run there at all --
+# predates Vulkan entirely and section J, the reason to run there at all,
 # needs no Vulkan. So a missing ICD SKIPS the cases that need a device, by
 # name, and the rest of the suite runs (section 7's rule).
 ICD=$(ls /usr/share/vulkan/icd.d/*lvp*.json 2>/dev/null | head -1)
@@ -465,7 +465,7 @@ else
     # makes did not change and got stronger, which is exactly why nobody
     # noticed. docs/REPORT.md 9.16.
     #
-    # Every other case here forces something -- the feature, the ICD, the
+    # Every other case here forces something: the feature, the ICD, the
     # loader. This one forces nothing, which is the only version of the claim
     # that matches what was actually asked.
     run E40 OK "Selected GPU" env -u VK_DRIVER_FILES APPDIR="$APPDIR" \
@@ -474,8 +474,8 @@ else
 
     # E38 was here: glxgears, run on a host that has a libglvnd vendor library
     # and SKIPPED on one that does not. It is retired rather than renumbered,
-    # because its skip reason carried a verdict -- "no loader shim can supply a
-    # file the distribution does not ship" -- that was never tested and turned
+    # because its skip reason carried a verdict, "no loader shim can supply a
+    # file the distribution does not ship", that was never tested and turned
     # out to be wrong. Section J replaces it with E61 and E62, which measure
     # BOTH host classes instead of declining to look at one of them.
 fi
@@ -489,7 +489,7 @@ fi
 # The target is NVIDIA's WSL CUDA userspace, reachable through /dev/dxg. Read
 # the results in this order, because the headline is not the one you expect:
 #
-#   E41/E41b  it works -- AND SO DOES THE CONTROL. A vendor ships against the
+#   E41/E41b  it works, AND SO DOES THE CONTROL. A vendor ships against the
 #             oldest floor it can (this one is GLIBC_2.2.5), so a proprietary
 #             driver is the LEAST likely host library to need this fix. The
 #             claim these two cases support is the regression claim.
@@ -542,8 +542,8 @@ else
         under_at 0 "$WSLLIB" /w/build/cudaprobe "$CUDA"
 
     # E41c: the strongest form of the same finding, and the one E41b cannot
-    # make. NO preload in the process at all -- not this repo's, not
-    # upstream's -- so no interception, no shim and no version-compat
+    # make. NO preload in the process at all, neither this repo's nor
+    # upstream's, so no interception, no shim and no version-compat
     # forwarders. The vendor blob still drives the GPU. That is what "it never
     # needed the fix" means, stated so that nothing has to be taken on trust.
     run E41c OK "round-tripped through the GPU and verified" \
@@ -586,8 +586,8 @@ else
     run E44 FAIL "FAILED: cuInit" under_at 1 "" /w/build/cudaprobe "$CUDA"
 
     # E45: and the fix for it, which is not in this repository. On a real WSL
-    # host the directory IS discoverable -- WSL writes /etc/ld.so.conf.d/
-    # ld.wsl.conf itself, verbatim as reproduced below -- so a launcher that
+    # host the directory IS discoverable, because WSL writes /etc/ld.so.conf.d/
+    # ld.wsl.conf itself, verbatim as reproduced below, so a launcher that
     # reads the plain-text conf finds it without touching the binary cache that
     # caused the segfault the cache patch exists for. That is exactly what
     # host_library_dirs() in patches/sharun-library-path.patch computes; the
@@ -608,13 +608,13 @@ else
 
     # E46: the vendor's own binary. cudaprobe is ours; nvidia-smi is theirs, it
     # dlopens libnvidia-ml.so.1 by itself, and on Alpine it cannot run at all
-    # without the AppImage's runtime -- musl's ld.so will not load a glibc
+    # without the AppImage's runtime, because musl's ld.so will not load a glibc
     # executable. That last part is the control this section otherwise lacks.
     if [ -x "$WSLLIB/nvidia-smi" ]; then
         run E46 OK "GPU 0:" under_at 1 "$WSLLIB" "$WSLLIB/nvidia-smi" -L
         # E46a: the same binary with no AppImage runtime under it. LD_LIBRARY_PATH
         # stands in for the /etc/ld.so.cache entry WSL writes, so this measures
-        # the LOADER and not the discovery gap E44 already covers -- without it
+        # the LOADER and not the discovery gap E44 already covers. Without it
         # the glibc host fails for E44's reason and says nothing about libc.
         nat=$(env LD_LIBRARY_PATH="$WSLLIB" "$WSLLIB/nvidia-smi" -L 2>&1); nrc=$?
         natline=$(printf '%s' "$nat" | tr '\n' ' ' | cut -c1-58)
@@ -648,7 +648,7 @@ fi
 # The guest is one source file built twice: by glibc on the floor (E47, the
 # control) and by musl on Alpine (E48/E49). Under the bundled glibc 2.44 the
 # musl build is loaded through cross-libc-dlopen itself, which is what drops its
-# libc edge -- no patchelf, no stand-in, the real code path.
+# libc edge, with no patchelf and no stand-in, the real code path.
 echo
 echo "-- G. cross-libc ABI: does the DATA mean the same on both sides? ---"
 if [ ! -x /w/build/abi-host ]; then
@@ -672,8 +672,8 @@ else
         # libc.musl-aarch64.so.1 and a hardcoded needle would never match.
         run E48 FAIL "$MUSL_SO" under 0 /w/build/abi-host \
             /w/build/libabi_musl.so musl
-        # E49: and with it on, every crossing holds -- allocator, errno, FILE*,
-        # mutex and condvar -- with one libc in the process.
+        # E49: and with it on, every crossing holds (allocator, errno, FILE*,
+        # mutex and condvar) with one libc in the process.
         run E49 OK "ABI CROSSING PASSED" under 1 /w/build/abi-host \
             /w/build/libabi_musl.so musl
 
@@ -762,7 +762,7 @@ else
             env APPDIR="$APPDIR" CROSS_LIBC_DLOPEN_RUNTIME=host "$RSEL" -- /w/build/vkprobe
         # E52: and the same through to real silicon. This needs
         # /usr/lib/wsl/lib on the path, which the selector now derives from
-        # /etc/ld.so.conf -- the file E45 put in place, verbatim from a real
+        # /etc/ld.so.conf, the file E45 put in place, verbatim from a real
         # WSL distro, and the same computation the sharun patch does.
         if [ -e /dev/dxg ] && [ -f "$CUDA" ]; then
             run E52 OK "round-tripped through the GPU and verified" \
@@ -781,7 +781,7 @@ fi
 # the CPU. "No GPU" was the standing caveat of the whole project.
 #
 # It was wrong for a second reason. WSL2 publishes no DRM render node, so radv,
-# anv and radeonsi cannot initialise -- but Mesa's d3d12 GALLIUM driver does not
+# anv and radeonsi cannot initialise, but Mesa's d3d12 GALLIUM driver does not
 # need one. It talks to /dev/dxg through Microsoft's libdxcore, and Debian
 # packages it as dri/d3d12_dri.so. That makes the host's own OpenGL driver a
 # hardware driver, and the AppImage's bundled libglvnd has a real vendor library
@@ -791,7 +791,7 @@ fi
 # driver with `glXCreateContext failed`, which reads like a display or driver
 # fault and is neither: d3d12_dri.so dlopens libd3d12.so by BARE SONAME, sharun
 # assembles the only search path there is, and its host-GPU directory list is
-# hardcoded -- /run/opengl-driver/lib and /run/current-system/sw/lib are on it,
+# hardcoded, since /run/opengl-driver/lib and /run/current-system/sw/lib are on it,
 # /usr/lib/wsl/lib is not. E44 is the same bug in CUDA and E52 is the same bug
 # in Design R. All three are what patches/sharun-library-path.patch computes.
 echo
@@ -815,12 +815,12 @@ else
     # E53a: the AppImage exactly as it stands, on the hardware driver.
     run E53a OK "glXCreateContext failed" render_verdict_hw 1 "" glxgears -info
     # E53: the same command with the directories the host's own ld.so.conf
-    # names handed to sharun through its own fallback knob -- no file edited,
+    # names handed to sharun through its own fallback knob, with no file edited,
     # nothing patched, exactly what the patch would have computed.
     run E53  OK "GL_RENDERER   = D3D12" render_verdict_hw 1 "$HOSTDIRS" glxgears -info
     # E53b: and the A/B, which does NOT flip. The host GL stack here is
     # glibc-built against an older glibc than the bundle, so there is nothing
-    # for the shim to do -- the same result as E41b and for the same reason.
+    # for the shim to do, the same result as E41b and for the same reason.
     # What E53 measures is hardware, not the shim; saying otherwise would be
     # claiming a control that did not happen.
     run E53b OK "GL_RENDERER   = D3D12" render_verdict_hw 0 "$HOSTDIRS" glxgears -info
@@ -843,7 +843,7 @@ use_preload patched
 # carry a file that does not exist. That is an INTERFACE gap, and the repair is
 # a different one: replace the bundled dispatcher (src/gl-fwd.c).
 #
-# This section was previously one line -- E38, SKIPPED, with the reason "that
+# This section was previously one line: E38, SKIPPED, with the reason "that
 # gap is host packaging, not libc" and the verdict "not fixable from a loader
 # shim". The reason was true. The verdict was never tested, and it was wrong.
 echo
@@ -889,7 +889,7 @@ gl_run() {                     # gl_run <keep-exit-code:0|1> <binary> [args...]
     : > /tmp/gl_case.out
     # GLPATH is EMPTY on every host that does not need it, and that is not a
     # detail: handing sharun the host's library directories changes what the
-    # NO-SHIM controls (E61, E63, E65) do. Measured -- with the host dirs on
+    # NO-SHIM controls (E61, E63, E65) do. Measured, with the host dirs on
     # the path, glxgears renders on Alpine with no shim at all, through the X
     # server's own softpipe GLX, and E61 stops being a control for anything.
     # So the directories are added only where a pre-flight showed the host's
@@ -922,8 +922,8 @@ gl_render() { gl_run 0 "$@"; }
 # Both tools are written in modern Python. Asked by VERSION rather than by
 # running them, because a SyntaxError from an f-string on python3.4 arrives as
 # a non-zero exit with a traceback, which the harness would score as a finding
-# about the AppDir. Neither case is host-dependent -- they measure the bundle
-# and the checked-in table -- so skipping them on an old host loses nothing
+# about the AppDir. Neither case is host-dependent, because they measure the bundle
+# and the checked-in table, so skipping them on an old host loses nothing
 # that the other hosts do not already establish.
 PY_OK=no
 command -v python3 >/dev/null 2>&1 &&
@@ -953,8 +953,8 @@ elif [ ! -f /w/build/gl-fwd.so ] || [ ! -f /w/build/glprobe ]; then
         skip $c "gl-fwd.so or glprobe was not built on the floor"
     done
 else
-    # The probes have to run the way the AppImage's own binaries do -- through
-    # sharun, under the bundled loader, with the .preload applied -- or they are
+    # The probes have to run the way the AppImage's own binaries do, through
+    # sharun, under the bundled loader, with the .preload applied, or they are
     # measuring a different process from the one under test. sharun dispatches
     # on the name it was invoked as, so a copy of it in bin/ with the probe's
     # name and the real binary in shared/bin/ is the whole installation.
@@ -969,7 +969,7 @@ else
     # Asked by RUNNING it, once, before anything is predicted, because the
     # answer is a property of how the host packages its own driver and cannot
     # be read off a file. Ubuntu 16.04's swrast_dri.so needs libLLVM-6.0.so.1,
-    # which is reachable there only through /etc/ld.so.cache -- and the bundled
+    # which is reachable there only through /etc/ld.so.cache, and the bundled
     # ld.so is patched not to read the cache (E13b). What the user sees is
     # `libGL error: unable to load driver: swrast_dri.so` and then an X error
     # from glXCreateContext: a display fault, apparently. It is the same bug as
@@ -978,7 +978,7 @@ else
     #
     # What is SCORED is the diagnostic, not the outcome. The outcome differs by
     # host and neither answer is wrong; the claim that holds everywhere is that
-    # when this bites, the process names the library it could not find -- never
+    # when this bites, the process names the library it could not find, never
     # a missing symbol, never silence.
     GLPATH=""
     use_gl_shims gl
@@ -1003,7 +1003,7 @@ else
     #
     # The shim's claim is TRANSPARENCY: an application gets what the host's own
     # GL and EGL would have given it. So the yardstick is the host, not a
-    # constant -- and predicting "OK" everywhere is how the suite ended up
+    # constant, and predicting "OK" everywhere is how the suite ended up
     # calling Ubuntu 16.04 a MISMATCH for something that fails there with no
     # AppImage in the process at all:
     #
@@ -1014,8 +1014,8 @@ else
     #
     # Mesa 18.0.5 does not produce that pixel on this host at all. A shim that
     # then produced it would be inventing one. So E64 and E66 predict THE
-    # NATIVE RESULT, and where the host cannot be asked -- no compiler, no
-    # headers -- they fall back to the per-host-class prediction and say so.
+    # NATIVE RESULT, and where the host cannot be asked (no compiler, no
+    # headers) they fall back to the per-host-class prediction and say so.
     NGL_WANT=OK;  NGL_NEEDLE="OK: GL is complete"
     NEGL_WANT=OK; NEGL_NEEDLE="OK: EGL is complete"
     NATIVE=none
@@ -1041,8 +1041,8 @@ else
         # E78/E79 are the controls, and they are scored: a control nobody
         # checks is a control that can quietly stop running.
         # ⛔ What E78 and E79 assert is that the control RAN, not that it
-        # passed. Either answer is a legitimate property of a host -- 16.04's
-        # native EGL fails -- but "it printed no verdict at all" is neither,
+        # passed. Either answer is a legitimate property of a host, since 16.04's
+        # native EGL fails, but "it printed no verdict at all" is neither,
         # and it is the dangerous one: a native probe that cannot reach a
         # display relaxes E64's prediction to FAIL, and a completely broken
         # shim then scores MATCH for failing too. A control that is allowed to
@@ -1127,7 +1127,7 @@ else
 
     # E68: the shim carries the SONAME it impersonates, so anything that
     #      resolves that name back to the shim would make every trampoline jump
-    #      to itself -- unbounded recursion inside the first GL call, with a
+    #      to itself, an unbounded recursion inside the first GL call, with a
     #      stack overflow for a diagnostic. Pointed straight at itself here, it
     #      says so and leaves the table absent, and the application gets its own
     #      documented failure instead. A guard that has never been fired is a
@@ -1150,7 +1150,7 @@ else
 
     # E74/E74b: what the shims cost a process that never draws. The old
     #      constructor loaded the host GL stack in EVERY process that had the
-    #      shims in .preload, Vulkan-only ones included -- 30 MB of host Mesa
+    #      shims in .preload, Vulkan-only ones included, is 30 MB of host Mesa
     #      mapped into something that would never call it (REPORT.md 9.9).
     #      Nothing resolves until something calls now, and this is that claim at
     #      AppImage scale rather than in the four-symbol object E71 uses.

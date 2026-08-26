@@ -1,5 +1,5 @@
-/* T4.1 -- exactly one libc family mapped.
- * T4.2 -- every collision-surface soname resolves INSIDE $APPDIR. */
+/* T4.1: exactly one libc family mapped.
+ * T4.2: every collision-surface soname resolves INSIDE $APPDIR. */
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <link.h>

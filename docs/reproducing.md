@@ -18,7 +18,7 @@ or, on a machine with PowerShell and no POSIX shell:
 ```
 
 Every prediction must hold. ⭐ **The expected totals live in
-[`REPORT.md`](REPORT.md) and nowhere else** -- one fact, one home, so a number
+[`REPORT.md`](REPORT.md) and nowhere else**: one fact, one home, so a number
 that moves moves in one file. Run this before every commit. A MISMATCH is a
 finding, not a harness bug: investigate before coding.
 
@@ -53,21 +53,21 @@ sh scripts/run-appimage.sh --only ubuntu1404
 ```
 
 Five stages, not two: `alpine:3.22` (musl, classic Mesa), `debian:trixie-slim`
-(glibc, glvnd), `ubuntu:14.04` and `ubuntu:16.04` (glibc, **pre-glvnd** -- the
+(glibc, glvnd), `ubuntu:14.04` and `ubuntu:16.04` (glibc, **pre-glvnd**, the
 third host class), and a fifth that is not a host at all but a different
 APPIMAGE: a real GTK4 application that bundles its own Mesa. `-Only` takes
 `alpine`, `debian`, `ubuntu1404`, `ubuntu1604`, `gtk4`, `both` or `all`.
 
 Each host has its own expected total and its own named skips.
-[`REPORT.md`](REPORT.md) §8 carries all five, with the host each came from.
+[`REPORT.md`](REPORT.md) section 8 carries all five, with the host each came from.
 It downloads the demo AppImage once into `.tmp` (sha256 verified), extracts it
 inside a container because the payload is DwarFS, builds `src/` on the glibc
 2.31 **floor**, builds the musl half of the ABI probe on Alpine, and then runs
 the same suite on each host. The gtk4 stage downloads a second AppImage
-(~30 MB, sha256 verified) and extracts it into its OWN directory -- the two
+(~30 MB, sha256 verified) and extracts it into its OWN directory. The two
 AppDirs are different shapes and mixing them is not hypothetical; section 5.
 
-⚠ **The two Ubuntu hosts have no Vulkan at all** -- Mesa 10.1 predates it -- so
+⚠ **The two Ubuntu hosts have no Vulkan at all**, because Mesa 10.1 predates it, so
 sections A-E and H SKIP by name there while F, G and J still run. That is why
 their totals are 26 and not 45, and the nineteen skips are the count of what
 those hosts cannot be asked rather than of anything that failed.
@@ -125,7 +125,7 @@ E53a the AppImage on the d3d12 driver  Error: glXCreateContext failed
 E53  the same, plus the conf dirs      GL_RENDERER = D3D12 (NVIDIA RTX 3050 Ti)
 ```
 
-E40 is the one to look at first. Every other case forces something -- the
+E40 is the one to look at first. Every other case forces something: the
 feature, the ICD, the loader. E40 replaces the AppDir's **dispatcher slot** and
 runs it with no `CROSS_LIBC_DLOPEN_*` and no `VK_DRIVER_FILES` at all, which is
 the only form of the claim that matches what was asked.
