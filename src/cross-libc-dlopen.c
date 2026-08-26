@@ -1,8 +1,19 @@
 /* Cross-libc dlopen loader
  *
- * Allows loading OpenGL/Vulkan drivers (and their dependency closure) from
- * the HOST system even when those were built against a different libc, like
- * a newer glibc or musl, instead of shipping any driver in the AppImage.
+ * Loads OpenGL/Vulkan drivers, and their dependency closure, from the HOST
+ * system even when those were built against a different libc such as a newer
+ * glibc or musl, instead of shipping any driver in the bundle. The host libc
+ * itself never enters the process.
+ *
+ * A host object's symbol version requirements are stripped from a private
+ * memfd copy, which turns every reference into a plain name lookup against
+ * whatever is already loaded. Every version tag goes at once: a verdef left
+ * without its versym table segfaults ld.so. A musl-built object carries no
+ * version information to begin with and rides the same dependency resolver.
+ *
+ * Anything outside the bundle root counts as a host library. Sharun already
+ * hands the dynamic linker the full search list, so bundled libraries keep
+ * winning.
  *
  * ON BY DEFAULT whenever this object is preloaded, because preloading it is
  * already the deliberate act. CROSS_LIBC_DLOPEN=0 turns it off, which is what
@@ -42,34 +53,17 @@ typedef void *(*dlopen_func_t)(const char *filename, int flags);
 
 #define VISIBLE __attribute__((visibility("default")))
 
-// print to stderr when CROSS_LIBC_DLOPEN_DEBUG=1
 static int cross_libc_dlopen_debug_enabled(void) {
 	const char *v = cld_getenv("CROSS_LIBC_DLOPEN_DEBUG", NULL);
 	return v && strcmp(v, "1") == 0;
 }
 
+// Every trace line carries the object's own name, because a process under this
+// loader has more than one preload writing to stderr.
 #define DEBUG_PRINT(...) do \
 	if (cross_libc_dlopen_debug_enabled()) \
 		fprintf(stderr, " [cross-libc-dlopen.so] >> " __VA_ARGS__); \
 	while (0)
-
-// Cross-libc dlopen
-//
-// Loads OpenGL/Vulkan drivers straight from the HOST system even when they
-// were built against a different libc (newer glibc or musl), the host libc
-// itself never enters the process.
-//
-// Host objects get their symbol version requirements stripped from a memfd
-// copy, turning every reference into a plain name lookup against whatever
-// is already loaded. Every version tag goes at once, a verdef without its
-// versym table segfaults ld.so. musl drivers carry no version info, they
-// just ride along the same dependency resolver.
-//
-// On by default when preloaded. CROSS_LIBC_DLOPEN=0 turns it off.
-//
-// Anything outside of $APPDIR counts as host library, sharun already hands
-// the dynamic linker the full search list so bundled libraries keep winning.
-// ---------------------------------------------------------------------------
 
 // unknown dynamic tags are ignored by ld.so
 #define CLD_NEUTRAL_TAG 0x414e594c /* 'ANYL' */
@@ -88,11 +82,11 @@ static int cross_libc_dlopen_debug_enabled(void) {
 // failure, where a consumer preloads the object, forgets the marker, and gets
 // a run that does nothing and says nothing about why.
 //
-// ⛔ THE OFF SWITCH IS NOW LOAD-BEARING. CROSS_LIBC_DLOPEN=0 is what every A/B
+// ⛔ THE OFF SWITCH IS LOAD-BEARING. CROSS_LIBC_DLOPEN=0 is what every A/B
 // control in experiments/40-appimage.sh sets for its "feature off" arm, and
 // what E23 sets to measure version-compat.c's definitions with no dlopen
-// interception in the process. Before this change those arms could rely on the
-// variable being unset; now they must say 0, and they do.
+// interception in the process. An arm that leaves the variable unset measures
+// the feature ON, and reports whatever it predicted.
 //
 // Anything other than 0 is on, including an empty value, so
 // CROSS_LIBC_DLOPEN= reads as "present and not disabling" rather than as
