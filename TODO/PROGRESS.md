@@ -60,22 +60,28 @@ dispatcher in `.preload`, not one carrying somebody else's. Adopting that
 changes what the suite claims about upstream, which is why it was left for a
 decision rather than taken.
 
-### 2. E50's aarch64 hazard count, which is now measurable and unmeasured
+### 2. The corpus sweep dies partway, and E33/E34 are scored against nothing
 
-**E49 is diagnosed and fixed.** It aborted with SIGABRT on every aarch64 host
-stage, and the cause is a real limitation rather than a harness fault: musl's
-`pthread_mutex_t` is 40 bytes on aarch64 and glibc's is 48, so a musl object
-that allocates one with its own `sizeof` and calls `pthread_mutex_init` gets
-glibc's init writing 48 bytes into 40. ⚠ No crossing is involved. The probe
-declines that call now and reports it as a live hazard. `docs/REPORT.md` 9.18
-and section 11.
+⛔ **New, and it had been invisible.** `tests/corpus.c` loads every library in
+the host's directory in ONE process. On two hosts that process dies partway and
+produces no verdict line at all, so the total is 0 and both cases are scored
+against nothing:
 
-**E50 is the open half.** It requires exactly **two** live hazards, that is an
-x86-64 number, and aarch64's is not established. ⛔ Its earlier zero was never
-a finding: the count came from a process that had already aborted. With the
-guard in place the scan completes, so the next run states a real number.
-⭐ Take that number and decide whether the assertion should become
-architecture-aware the way E22's condvar probe is. **Do not pin a guess.**
+| host | feature ON | feature OFF |
+|---|---|---|
+| `alpine:3.22` | `Segmentation fault (core dumped)` | `TOTAL=298 OK=3` |
+| `debian:trixie-slim` | `FATAL: HWAddressSanitizer requires a kernel with tagged address ABI.` | 99 OK lines, then the same |
+
+Both causes went to `/dev/null` until this session. ⭐ This is **T-15's**
+premise, which was inferred from reading another project and is now observed
+here. Its fresh-process-per-library design covers both. ⚠ The Alpine
+segmentation fault is **not yet attributed to a library**, and until it is,
+nobody should assume it is the corpus's fault rather than this project's.
+
+⭐ **E49 and E50 are done.** E49 MATCHes on aarch64, and E50 reports 2 live
+hazards on x86-64 and 3 on aarch64, the third being the mutex. E50 reads the
+condition out of `abi-host`'s size table instead of carrying a per-architecture
+number. `docs/REPORT.md` 9.18.
 
 ### 3. The pin is a maintained act now. Expect it to go stale again
 
