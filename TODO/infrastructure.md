@@ -21,6 +21,39 @@ Build, CI and orchestration.
 - **Prove.** Six deliberately broken branches, each with the run URL and the
   step that refused, recorded here.
 
+### What has been seen to refuse, and where
+
+⭐ **Four of these were not planted.** They are gates that went red on a runner
+against a real defect somebody committed, which is stronger evidence than a
+plant: nobody chose the shape of the failure.
+
+| gate | on a runner | evidence |
+|---|---|---|
+| every headline number has one home | ⭐ yes, unplanted | run [32948974925](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32948974925), hygiene, step `every headline number has exactly one home`: `46/46 appears in 2 files: TODO/PROGRESS.md docs/REPORT.md`. The commit was a `PROGRESS.md` rewrite whose sentence warning that the number lives in two places contained the number |
+| the evidence table refuses a broken stage | ⭐ yes, unplanted | run [32947794151](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32947794151), `evidence table (aarch64)`: `cp: cannot stat '/lib64/libc.so.6'`, `suite: stage 2 failed`, exit 1. That is pull request #9 against `main`, where the loader path is still hardcoded |
+| the AppImage suite's sha256 pin | ⭐ yes, unplanted | run [32948154287](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32948154287): the upstream asset had been replaced and the suite refused rather than measuring an unknown binary |
+| the AppImage suite's AppDir shape | ⭐ yes, unplanted | run [32951892766](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32951892766): `cp: cannot stat 'AppDir/lib/foreign-dlopen.so'`, on both architectures, after upstream renamed the dispatcher slot |
+| the old repository name, two spellings | locally | `sh scripts/verify-gates.sh`, planted and clean, exit codes read unpiped |
+| no tool is credited, two spellings | locally | the same |
+| shell scripts parse | locally | the same |
+| no CR in a shell script | locally | the same |
+| ⭐ the dash ratchet | locally | the same. Added this session, and it is the reason the count is 8 rather than 7 |
+| the drift check's six sections | locally | each planted separately: a stale citation behind a command, a tracked `.AppImage`, a tracked ELF under an innocent name, a dash added and a dash removed, the two orchestrators pinning different bytes, and an `INDEX.md` row disagreeing with its entry |
+
+### ⛔ What is still not proven, and why
+
+- **The endings gate.** `.gitattributes` normalises a CRLF file on the way into
+  the index, so the defect cannot be planted from the working tree at all.
+  `verify-gates.sh` reports it as unproven rather than as passing.
+- **The `generated` job**, both steps: a stale `forward-shim.c` and a version
+  trap that no longer covers this libc. Measured locally before the port; not
+  measured on a runner.
+- **The artefact verifier's floor rule** and the build matrix.
+
+⚠ Those four need a runner and a deliberate push, which is what the approach
+above describes and what remains of this entry. The four unplanted rows do not
+substitute for them: they prove four different gates.
+
 ---
 
 ## T-11 A machine-readable suite result
