@@ -56,15 +56,23 @@ person looking for one fact.
 
 ---
 
-## The three markers, and nothing else
+## The five markers, and nothing else
 
-⛔ ⭐ ⚠ and no others.
+⛔ ⭐ ⚠ ✅ ❌ and no others.
 
 | marker | meaning |
 |---|---|
 | ⛔ | a rule that has already been broken, or one whose violation is unrecoverable. A hard stop |
 | ⭐ | reach for this first. The highest-value item on the page |
 | ⚠ | a trap. It works until it does not, and the failure is quiet |
+| ✅ | a state that IS so, in a table of states |
+| ❌ | a state that is NOT so, in the same table |
+
+⛔ **The tick and the cross are for a STATE TABLE and nothing else.** They say
+what a row is, not what a reader should do, which is the whole difference
+between them and the three above. ⚠ A tick in running prose is a decoration
+and the first three are not: it reads as approval of a sentence, which is not
+a state anybody can check.
 
 ⛔ **They do not stack.** No `⛔⛔`. Once a page has three levels of stop, a
 reader has to weigh them, and weighing is what a marker exists to prevent.
@@ -72,8 +80,13 @@ reader has to weigh them, and weighing is what a marker exists to prevent.
 ⭐ **Use them sparingly enough that they are still visible.** A page where every
 paragraph carries one has no markers at all.
 
-⚠ The check enforces this. A `✅` in a table, or a `->` written as an arrow
-glyph, fails it -- both were found in this repository and both were removed.
+⚠ The check enforces this, and enforcing the tick and cross needed a local
+divergence. The template's `check-docs.sh` hardcodes three markers, and it is
+in a repository this one does not write to, so
+[`../../.github/workflows/gates.yml`](../../.github/workflows/gates.yml)
+widens the allowlist in the copy it fetches and asserts that the patch
+applied. An arrow glyph written instead of `->` still fails, which is what
+that check was catching here before.
 
 ---
 

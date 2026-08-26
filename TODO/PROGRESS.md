@@ -1,3 +1,4 @@
+
 # PROGRESS
 
 ⭐ **Read this first, every session.** It is the only file that carries a work
@@ -11,15 +12,37 @@ baseline.
 
 ## Where the work is right now
 
-⭐ **[Pull request #8](https://github.com/pkgforge-dev/cross-libc-dlopen/pull/8)
-is MERGED**, squashed to `e82fd62` on `main`, with all ten required checks
-green and an admin override of the code-owner review that branch protection
-requires. Its body was rewritten to match the tree before it went in, and it
-is the readable account of what landed.
+⭐ **[`v0.1.0` is published.](https://github.com/pkgforge-dev/cross-libc-dlopen/releases/tag/v0.1.0)**
+22 assets: both architectures, both variants, the loose objects for the default
+one, and a `.tar`, `.zip` and `.sha256` for each. Tagged on `21e9236`, built on
+the glibc 2.31 floor, body generated from the manifests by
+`scripts/release-notes.sh`. Nothing in it was typed at release time.
 
-⚠ **The old `main` had failing gates and a failing secret sweep.** Both are
-green on `e82fd62`, so this is also the first time the default branch has been
-green. Work from here starts on a NEW branch.
+⚠ **The old `main` had failing gates AND a failing secret sweep.** Both are
+green now, so this is also the first time the default branch has been green.
+
+**The tracker is empty and there is one branch.** Pull requests #8 and #10
+merged; #1, #2 and #6 were auto-closed by Renovate when their bumps landed in
+#8; #3, #4 and #5 were closed as superseded, verified against the pins on
+`main`; #9 was closed because its diff no longer applies, with the reason and
+the open policy question written into it. Issue #7 is answered and closed.
+`main` is the only branch.
+
+| workflow | latest |
+|---|---|
+| `gates` | ✅ on `main` |
+| `secret-sweep` | ✅ on `main` |
+| `release` | ✅ on `v0.1.0`, published |
+| `appimage-suite` | ⛔ red on `main`, run [32959228414](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32959228414) |
+
+⛔ **The nine cases that MISMATCH on `main`**, both architectures, so the next
+session starts from a list rather than a re-run:
+
+| case | what is known |
+|---|---|
+| E30, E37a | the control arm stopped contrasting. Item 1 |
+| E33, E34 | the corpus sweep dies partway. Item 2 |
+| E59, E62, E64, E66, E77 | ⚠ **not yet diagnosed.** E64 and E66 exit 139, a segmentation fault, on the aarch64 musl host. Whether they share a cause with E33 and E34 is unknown and worth asking first |
 
 | suite | command | state |
 |---|---|---|
@@ -125,32 +148,34 @@ which `.gitattributes` makes unplantable from the working tree; the two
 `generated` steps; and the artefact verifier's floor rule. Those need a runner
 and a deliberate push.
 
-⛔ **One guard remains unproven and cannot be proven without publishing:**
-`release.yml` refuses a tag whose commit is not an ancestor of the default
-branch. `package-release.sh`'s two were planted this session and both refuse.
+⛔ **One guard remains unproven**, `release.yml`'s ancestor refusal. Item 6 has
+why the release going green did not test it. `package-release.sh`'s two were
+planted this session and both refuse.
 
 T-11 and T-16's cheaper half were not started. T-16's is a `glprobe` change,
 and it can only be verified by a GL-capable suite run.
 
-### 6. The release, which is now unblocked and not done
+### 6. The release is cut. What it did NOT prove
 
-⭐ **`release.yml` is on the default branch**, so the thing that made this
-impossible is gone. Nothing is published. The build and package path ran green
-on every commit of pull request #8, and `package-release.sh`'s two refusals
-were planted this session and both fire.
+⭐ **`v0.1.0` is published**, on `21e9236`, 22 assets, both architectures and
+both variants. The `release` workflow went green end to end on the tag: the
+evidence table on both runners, the floor-checked build, the packaging, the
+generated body, and the publish.
 
-To publish: push a `v*` tag on `e82fd62` or later and watch the run.
+⚠ **A first release is not proof that the release path is right**, only that it
+ran. Two things in it are still unproven:
 
-⛔ **The last session did not push it, and the reason was a permission rather
-than a doubt.** The operator's block said publishing a release was not
-permitted, and pushing a `v*` tag runs `release.yml`, which publishes. That is
-a conflict between an instruction to release and a permission not to, and the
-permission won because publishing is irreversible and outward facing. ⚠ Check
-the block you were given before assuming it is yours to do.
+- ⛔ **`release.yml`'s ancestor refusal.** It rejects a tag whose commit never
+  reached the default branch. `v0.1.0`'s commit did, so the check passed
+  without being tested. Firing it needs a tag on a commit that is NOT an
+  ancestor of `main`, and if the guard fails, that publishes. It is the one
+  guard in this family nobody has seen refuse.
+- **The floor rule at publish time** fired on nothing, because no artefact
+  exceeded the floor. `package-release.sh`'s other two refusals were planted
+  and both work.
 
-⚠ **`release.yml`'s ancestor refusal is still the one unproven guard in this
-family**, and firing it needs a tag whose commit is NOT an ancestor of `main`,
-which is a deliberate act with a real publish behind it if the guard fails.
+⚠ There is no second release to diff against, so `release-notes.sh`'s changelog
+range took its "First release" branch. The `prev..TAG` branch is untested.
 
 ---
 

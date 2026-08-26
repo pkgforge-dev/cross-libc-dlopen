@@ -23,11 +23,29 @@ if [ "${CLD_INSTALL_DEPS:-0}" = 1 ]; then
 	[ "$ARCH" = aarch64 ] && pkgs="$pkgs gcc-aarch64-linux-gnu libc6-dev-arm64-cross"
 	# libc6-dev-arm64-cross is not optional: the cross compiler alone has no
 	# headers and the build dies on dirent.h, which reads like a source bug.
+	# ⛔ NEITHER OF THESE DISCARDS ITS OUTPUT ANY MORE, and that is T-13's
+	# shape for the fourth time in this tree. Both were `>/dev/null 2>&1`, so
+	# a failure printed "could not install:" followed by the package list and
+	# nothing about the cause. Measured: build aarch64 (docker) failed exactly
+	# that way and the log could not distinguish a mirror having a bad minute
+	# from bullseye's archives having moved, which are a retry and an
+	# emergency respectively.
+	#
+	# ⚠ The update's own failure is now fatal on its own. It used to be
+	# ignored, so a package list that never downloaded surfaced one line later
+	# as an install failure, which names the wrong step.
 	export DEBIAN_FRONTEND=noninteractive
-	apt-get update -qq >/dev/null 2>&1
+	if ! apt-get update -qq >/tmp/cld-apt-update.log 2>&1; then
+		printf 'build-in-env: apt-get update failed. Its output:\n' >&2
+		sed 's/^/  | /' /tmp/cld-apt-update.log >&2
+		die "no package list, so the prerequisites cannot be installed"
+	fi
 	# shellcheck disable=SC2086
-	apt-get install -y -qq --no-install-recommends $pkgs >/dev/null 2>&1 ||
+	if ! apt-get install -y -qq --no-install-recommends $pkgs >/tmp/cld-apt-install.log 2>&1; then
+		printf 'build-in-env: apt-get install failed. Its output:\n' >&2
+		sed 's/^/  | /' /tmp/cld-apt-install.log >&2
 		die "could not install: $pkgs"
+	fi
 fi
 
 case "$ARCH" in
