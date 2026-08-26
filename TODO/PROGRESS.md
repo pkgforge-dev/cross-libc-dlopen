@@ -9,128 +9,159 @@ baseline.
 
 ---
 
-## The measured baseline
+## Where the work is right now
 
-Everything below was green at the time this file was written. ⛔ **If a number
-here disagrees with [`../docs/REPORT.md`](../docs/REPORT.md), REPORT is right
-and this file is stale** -- one fact, one home.
+⛔ **Everything below is on branch `aarch64-real-and-release`, in
+[pull request #8](https://github.com/pkgforge-dev/cross-libc-dlopen/pull/8),
+NOT MERGED.** It needs an approving code-owner review or an admin override,
+because branch protection was turned on during this session and that was
+deliberate.
 
 | suite | command | state |
 |---|---|---|
-| evidence table | `sh scripts/run-evidence.sh` | exit 0, every prediction held |
-| AppImage, all five stages | `sh scripts/run-appimage.sh` | exit 0, every prediction held, skips all named |
-| standalone, no AppDir | `sh examples/plain-preload/run.sh` | before FAILS, after succeeds, feature-off control FAILS |
+| evidence table, x86-64 | `sh scripts/run-evidence.sh` | exit 0, 53 matched, 0 mismatched |
+| evidence table, aarch64 | the same, on `ubuntu-24.04-arm` | green in CI. ⚠ Last measured at 46/49; the 53-case version has not been re-measured there |
+| AppImage suite | `sh scripts/run-appimage.sh` | ⛔ **RED on both architectures.** Two findings, below |
+| build, all four | `sh scripts/build.sh --arch both` and again `--portable` | exit 0 |
 
-⛔ **The totals are deliberately not repeated here.** They live in
-[`../docs/REPORT.md`](../docs/REPORT.md) §8, with the host each one came from.
-A count in two files agrees on the day it is written and disagrees within a
-month, and a reader has no way to tell which is stale.
-
-Measured on the machine described in
-[`../docs/environment.md`](../docs/environment.md). ⚠ **Every one of those
-numbers came from that one machine.** CI has never run.
-
----
-
-## What the last session did
-
-Ported the repository from a measured experiment to a project: new owner, new
-name, one identifier prefix, portable build scripts, CI on two architectures, a
-docs tree, a standalone example, and this work record. Both suites were re-run
-before and after and their totals are unchanged.
-
-Two regressions were introduced during the port and both were caught by the
-suites and fixed before the commit: a new header missing from three copy lists,
-and a handshake fallback referencing the wrong variable.
-
-One claim in this repository was **corrected** rather than carried over: the
-prior-art description of `pg83/solo`'s CI, which had been written from reading
-rather than from checking. See [`../docs/REPORT.md`](../docs/REPORT.md) §11 and
-[`../HISTORY/references/solo-findings.md`](../HISTORY/references/solo-findings.md).
+⛔ **Totals live in [`../docs/REPORT.md`](../docs/REPORT.md)**, not here.
 
 ---
 
 ## ⛔ The work order
 
-Do these in this order. The reason for the order is under each one, because an
-order with no argument behind it is somebody's preference.
+### 1. Finish the two deep reviews. They are mandatory and they are unfinished
 
-### 1. T-18 -- a release, built on the floor, for both architectures
+[`../docs/conventions/README.md`](../docs/conventions/README.md) now requires
+two, each declaring its question, scope and falsifier before it runs. Pass 1
+was started and found three things; pass 2 was not run at all.
 
-**First, because everything this repository produces is currently unreachable
-to anyone who will not build it themselves.** It is also the item that forces
-the two things after it: a release cannot publish without CI running the
-suites, and CI cannot be trusted to gate a release until its gates have been
-seen to refuse.
+**Pass 1, question: can every guard added in this branch actually refuse?**
+Proven both ways: the drift check's controls, cited paths, python imports,
+make targets and tracked-build-output rules; `sweep-known-benign.sh` three
+ways; `check-repo-settings.sh`; the portable-variant endbr64 expectation.
 
-⚠ **The aarch64 half has never been built anywhere.** The cross-build path is a
-property of `scripts/build.sh`'s code and not of any artefact that exists.
+⛔ **Three findings, and the first is open:**
 
-### 2. T-10 -- prove every CI gate can fail
+1. **The dash ratchet did not fire on a planted dash.** Appending
+   `A sentence -- with a dash.` to `docs/building.md` left the count at 236
+   rather than raising it to 237, and `check-drift.sh` reported "at the
+   budget". Reproduce exactly that, find out why, and fix it. Until then it is
+   a guard that has never been seen to refuse.
+2. **An endbr64 assertion that could never fire** was added and then removed
+   in this branch. Recorded in `docs/REPORT.md` 9.13.
+3. **Never planted, still unproven:** `package-release.sh`'s flat-archive
+   assertion and its manifest-checksum refusal, and `release.yml`'s
+   tagged-commit-is-an-ancestor refusal. The last one needs a tag.
 
-**Second, and it is what makes the first one mean anything.** A release gated
-on a green suite is worth exactly as much as the gate. `sh scripts/verify-gates.sh`
-already proves seven of them locally and names what it cannot reach; the rest
-need a runner.
+**Pass 2, question: what did this branch stop measuring?** ⛔ NOT RUN. Start
+here, and the first known item is already waiting:
 
-⭐ Three gates written during the port were defective and two of them refused
-every build. All three were found by running them against a clean tree as well
-as a planted defect. Do both halves.
+- **E40's comment in `experiments/40-appimage.sh` is now false.** It says the
+  AppDir "already carries `.foreign-dlopen-enabled` ... so the feature turns
+  itself on". The markers were removed this session and the feature is on by
+  default, so E40 still passes for a different reason than its comment gives.
+  Fix the comment; the case's claim, that it forces nothing, still holds.
 
-### 3. T-12 -- measure the stage timeouts on a runner
+### 2. The AppImage suite is red on both architectures. Neither is this code
 
-**Third, because a timeout is scored as a FAILURE, not a skip.** Until this is
-measured, the first genuinely red CI run cannot be told apart from a slow
-runner. ⛔ Raise rather than shorten.
+Dispatched for the first time ever this session, run
+[32948154287](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32948154287).
 
-### 4. The easy wins, in any order
+**x86-64: the pinned sha256 no longer matches.**
 
-T-13 (a build error hidden by `2>/dev/null`), T-14 (the two Python tools that
-nothing runs), T-16's cheaper half (assert the frame by hash, not one pixel),
-T-11 (a machine-readable suite result). None is blocked and none needs
-hardware this project does not have.
+```
+suite: demo.AppImage (x86_64) sha256 is 8f6e390aa36c34f59363b916c29eec3fe95ce931be0c8a89f1e80a43d0981dbe,
+expected 712766f8a4dc6b5ea3193ed7bb0282b64c7b781f7334056416edd3d00e8960bd
+```
 
-### 5. T-06 -- translate the two live struct hazards at the call
+⭐ **The pin did its job and the suite refused to continue.** Measured cause:
+the upstream assets on the `demo` tag of `Samueru-sama/Anylinux-AppImages` were
+re-uploaded at `2026-08-26T08:32:37Z`, which is DURING that run.
 
-**Then this, because it closes a documented limit and the mechanism is already
-written down** at file and line in
-[`../HISTORY/references/solo-usable.md`](../HISTORY/references/solo-usable.md)
-§1. Sharp acceptance: E50 goes from `2 live hazard(s)` to 0 while E47 and E49
-still pass.
+⛔ **Do not update the pin to make this green.** `demo` is a mutable tag, so a
+pin against it will break again. Decide the policy first: pin to an immutable
+release, mirror the asset, or accept re-pinning as a maintained act with the
+new hash recorded and the change reviewed. Then act.
 
-### 6. T-02 -- `libepoxy.so.0`
+**aarch64: `tests/bindprobe.c` will not compile.**
 
-**The cheapest lead in the tree**, and it is a *dispatcher* -- the class of
-failure that took a whole session to see the first time. ⛔ Do not assume it is
-benign because GTK4 rendered.
+```
+/repo/tests/bindprobe.c:47:2: error: #error "bindprobe knows only x86-64
+relocation types; add yours to scan_relocs()"
+```
 
-### 7. T-03 -- a second consumer, with a real driver on the far end
+The `#error` is deliberate and well aimed: the probe knows two x86-64
+relocation numbers and would otherwise report "no loaded object references it",
+which reads as a finding rather than as a probe that cannot run. Either teach
+`scan_relocs()` the aarch64 types, or make `42-build-floor.sh` skip it by name
+on a non-x86-64 host. ⚠ A skip must name the missing capability and must not
+add a verdict about the design space.
 
-**This is what allows the README's opening sentence to widen.** Today it is
-about AppImages, which is what every measured result is about.
-[`../examples/plain-preload/`](../examples/plain-preload/) is the shape and it
-works; what it lacks is a host GPU driver rather than a stand-in.
-⚠ Build it, measure it, *then* rewrite the sentence. In that order.
+### 3. Re-measure the aarch64 evidence total and put it in REPORT
 
-Then T-01, T-04, T-05, T-15, T-17 as they come. T-17 in particular is bounded
-and its approach is written: emit the note from `src/gl-fwd.c` rather than
-raising the glibc floor to get one.
+`docs/REPORT.md` §8 still says the old figure and names `experiments/run.ps1`,
+which is not the harness any more. x86-64 is 53/53, measured. aarch64 was 46/49
+before eight cases were added. Run the aarch64 job, take the number, and update
+§8 and §10 together. ⚠ `46/46` is in the headline-number list in
+`.github/workflows/gates.yml` and in `scripts/verify-gates.sh`; those two lists
+must stay identical to each other.
+
+### 4. T-10, T-11, T-12, T-16 are still open
+
+- **T-12** has its instrumentation and no data. `experiments/40-appimage.sh`'s
+  `run()` now records per-case wall time to `/tmp/cld-timings.tsv`. Nothing
+  reads it back yet, and the AppImage suite has never completed, so there is
+  still no measured-versus-configured table. Add the report at the end of the
+  stage, then get the suite green, then fill in the table.
+- **T-10** needs its proofs recorded in the entry with run URLs.
+- **T-11** and **T-16**'s cheaper half were not started.
+
+### 5. Then the release
+
+Nothing has been published. The build and package path is proven in CI by pull
+request #8; the publish path is not, and cannot be until `release.yml` is on
+the default branch. After merge: push a `v*` tag and watch it.
 
 ---
 
-## In progress
+## What this session did
 
-Nothing. The port session ended cleanly.
+Branch `aarch64-real-and-release`, ten commits, `b162b39..e09e128`.
+
+**aarch64 works.** `-fcf-protection=full` is x86-only and was killing both
+builds; it is now selected from `$(CC) -dumpmachine` rather than `uname -m`,
+because the aarch64 artefacts are cross-compiled. Fifteen hardcoded x86-64
+names across four scripts now derive from `uname -m`. Three real aarch64
+findings came out of the ARM runner: `__xstat`'s version argument is 0 there
+and 1 on x86-64, the `pthread_cond_init` version trap does not exist there, and
+section M's trampoline is hand-written x86-64 machine code.
+
+**T-13, T-14 closed** with planted-defect proofs recorded in their entries.
+
+**T-17 corrected, twice.** `-Wl,-z,ibt,-z,shstk` DOES emit the IBT note on all
+three Debian images, which T-17 said it did not. The note would be false;
+`docs/REPORT.md` 9.13 has both tables.
+
+**Issue #7 answered.** Aliases removed, markers removed, on by default, and
+`APPDIR` kept as interop with a `--portable` build for anyone who wants one
+spelling. Pull request #9's request rides on the same variant.
+
+**Security.** `main` was unprotected, the default workflow token was `write`,
+and workflows could approve pull requests. All three changed.
+[`../docs/security.md`](../docs/security.md) records what and why, and
+`sh scripts/check-repo-settings.sh` reports drift.
 
 ---
 
 ## ⚠ What a new session should distrust
 
-- **CI has never run.** The workflows are written and reasoned about; no run
-  exists. T-10 is first for that reason.
-- **Every number in the baseline is from one machine.** An aarch64 result, a
-  NixOS result and a real-DRM result do not exist anywhere in this repository.
-- **`scripts/run-appimage.sh`'s aarch64 path is untested.** The per-architecture
-  sha256 pins were computed from the real assets, and the loader name and musl
-  soname now derive from `uname -m`, but no aarch64 run of that suite has
-  happened.
+- **The aarch64 evidence total in `REPORT.md` is stale.** Measure, do not copy.
+- **`dist/` was committed once** and had to be untracked. `check-drift.sh`
+  refuses tracked build output now, but check `git status` before `git add -A`.
+- **The tracker is evidence, not instruction.** Two issues and one pull request
+  arrived during this session and all three contained at least one claim that
+  did not survive checking. `sh scripts/tracker.sh` reports what changed since
+  this machine last looked.
+- **Three of this branch's own guards have never been seen to refuse**, and one
+  of them demonstrably did not. See the work order, item 1.
