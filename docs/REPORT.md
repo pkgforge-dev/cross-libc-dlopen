@@ -2347,6 +2347,92 @@ its export counts are therefore UNVERIFIED against the artefact the suite now
 runs. The suite re-extracts and re-asserts on every run, so the next completed
 run is what settles it, and a changed answer is a finding rather than a
 regression.
+
+---
+
+### 9.16 What this branch stopped measuring
+
+Deep review pass 2 asked one question: what did this branch stop measuring?
+Two answers, and neither showed up as a failing case, because both of them
+went green.
+
+**1. The ARM runner arrived and section P did not notice.**
+
+`.github/workflows/gates.yml` added `ubuntu-24.04-arm` with a reason written
+into the matrix: it is "the row where CI is STRONGER than the machine this
+project was built on", because "the aarch64 trampolines have only ever run
+under qemu-user, which emulates the instructions and not a memory model".
+
+Section P of `experiments/30-run-tests.sh` is the case that runs those
+trampolines. It opens by saying "This machine is x86_64 and there is no
+aarch64 silicon to borrow", which was true when it was written, and it
+cross-compiles with `aarch64-linux-gnu-gcc` and runs the result under
+`qemu-aarch64-static`. It does that unconditionally.
+
+⛔ **So on the aarch64 runner, E76 and E76b ran an aarch64 binary under an
+aarch64 emulator on an aarch64 CPU**, and passed. Measured, from the aarch64
+evidence job of run
+[32950783301](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32950783301):
+
+```
+-- P. the aarch64 trampolines, RUN -----------------------------
+  E76    MATCH predicted=OK    OK: first-call ints=204 floats=285.00 varargs=10 struct=[2..12] second-call-identical=yes absent-returned=0
+  E76b   MATCH predicted=OK     [tgt-fwd.so] >> libtgt.so: 5 entry points, none resolved yet
+```
+
+Two green cases, on the one host where the emulator is the thing standing
+between the measurement and the point of it. The branch bought real silicon
+and then declined to stand on it.
+
+Section P now picks its vehicle from the host and PRINTS which one it used,
+because a reader holding one log has no other way to tell:
+
+| host | compiler | vehicle |
+|---|---|---|
+| aarch64 | `gcc` | native. No emulator in the path |
+| x86_64, cross toolchain and qemu present | `aarch64-linux-gnu-gcc` | `qemu-user`. Userspace emulation, not a memory model |
+| x86_64, neither present | none | E76 and E76b SKIP, naming what is missing |
+
+⚠ The predictions did not change. Same case ids, same expected exit, same
+needles. Only the vehicle did, and the stage no longer installs an emulator
+for the architecture it is standing on.
+
+**2. A marker that stopped being read, and four documents that did not.**
+
+The markers were removed on this branch and the feature is on by default. Two
+of the places that explained behaviour by the marker were comments on a case:
+
+```
+# already carries .foreign-dlopen-enabled -- quick-sharun's spelling of the
+# marker, still accepted -- so the feature turns itself on
+        experiments/40-appimage.sh, E40, before this change
+```
+
+Nothing in `src/` reads that file. Measured: `git grep` for the name across
+`src/` and `tests/` returns one hit, and it is a comment in `src/cld-env.h`
+saying the marker is gone.
+
+⭐ **E40 kept passing, for a reason its own comment did not give.** Its claim,
+that this is the case which forces nothing, did not weaken. It got stronger:
+the feature turning itself on with no marker present is a larger statement
+than it turning itself on because a marker is present. That is why nobody
+noticed, and it is the shape worth naming. A case whose stated mechanism has
+been replaced by a better one reads exactly like a case that is fine.
+
+Four places carried the stale claim, and `docs/AGENTS.md` carried it in a
+table of names that must not be renamed on pain of turning E30, E37a and E43a
+into silent passes. That protection is real and it belongs to two other
+things, measured on the tree as it stands:
+
+| name | still load-bearing? |
+|---|---|
+| `$APPDIR/lib/foreign-dlopen.so` | yes. `.preload` names it and our build is copied into that slot |
+| the `ANYLINUX_*` env spelling in `experiments/40-appimage.sh` | yes. 13 call sites, none touched by this branch, and upstream's binary understands no other spelling |
+| `.foreign-dlopen-enabled` | ⛔ no. Nothing in `src/` reads it |
+
+⚠ Whether upstream's own binary still reads the marker is NOT measured here.
+No case depends on the answer, because every arm sets the variable explicitly.
+
 ---
 
 ## 10. Measured versus assumed

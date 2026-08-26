@@ -7,10 +7,16 @@ apt-get update -qq >/dev/null 2>&1
 # The aarch64 cross toolchain and qemu-user are for section P, which RUNS the
 # aarch64 trampolines rather than only assembling them. They are installed
 # best-effort: if the host has no network for them the section SKIPS by name
-# (section 7) rather than failing a suite whose other 44 cases are unaffected.
+# (section 7) rather than failing a suite whose other cases are unaffected.
+#
+# ⚠ Not on an aarch64 host, where section P builds with the native gcc and
+# runs on the CPU. Installing an emulator for the architecture you are
+# standing on is how E76 came to run under qemu on real aarch64 silicon.
 apt-get install -y -qq gcc binutils python3 >/dev/null 2>&1
-apt-get install -y -qq --no-install-recommends \
-    gcc-aarch64-linux-gnu libc6-dev-arm64-cross qemu-user-static >/dev/null 2>&1
+if [ "$(uname -m)" != aarch64 ]; then
+    apt-get install -y -qq --no-install-recommends \
+        gcc-aarch64-linux-gnu libc6-dev-arm64-cross qemu-user-static >/dev/null 2>&1
+fi
 cd /work
 
 # ⚠ The same three architecture-carrying names stage 2 derives, derived the
@@ -930,37 +936,70 @@ echo "-- P. the aarch64 trampolines, RUN -----------------------------"
 # for another platform REPLACES the cached image for that tag, so the next run
 # of the suite gets `exec container process: Exec format error` from an image
 # it has used a hundred times. That cost a run here.
-if ! command -v qemu-aarch64-static >/dev/null 2>&1 ||
-   ! command -v aarch64-linux-gnu-gcc >/dev/null 2>&1; then
+# ⭐ WHEN THE HOST IS THE TARGET, DO NOT EMULATE IT. Everything above was
+# written on an x86_64 machine, where qemu-user is the only way to run these
+# instructions at all. CI now also runs this stage on ubuntu-24.04-arm, and
+# there the emulator is not a bridge, it is a layer between the trampoline and
+# the CPU that is the whole reason for running there.
+#
+# ⛔ Measured: on that runner E76 and E76b passed THROUGH qemu-aarch64-static,
+# on aarch64 silicon. .github/workflows/gates.yml added that runner saying in
+# so many words that qemu "emulates the instructions and not a memory model",
+# so the one host where the memory model is real was the one host still not
+# using it. docs/REPORT.md 9.16.
+#
+# The prediction is identical on both paths. Only the vehicle differs, and the
+# vehicle is PRINTED, because a reader looking at one log has no other way to
+# tell which of the two produced it.
+a64_vehicle=''
+if [ "$(uname -m)" = aarch64 ]; then
+    A64=gcc
+    a64_vehicle="native: the host IS aarch64, no emulator in the path"
+    a64run()  { env LD_PRELOAD="$PWD/tgt-fwd.so" \
+                    CROSS_LIBC_DLOPEN_GL_HOST_DIR="$PWD" "$@"; }
+    a64dbg()  { env LD_PRELOAD="$PWD/tgt-fwd.so" \
+                    CROSS_LIBC_DLOPEN_GL_HOST_DIR="$PWD" \
+                    CROSS_LIBC_DLOPEN_DEBUG=1 "$@"; }
+elif command -v qemu-aarch64-static >/dev/null 2>&1 &&
+     command -v aarch64-linux-gnu-gcc >/dev/null 2>&1; then
+    A64=aarch64-linux-gnu-gcc
+    a64_vehicle="qemu-user on $(uname -m): userspace emulation, not a memory model"
+    a64run()  { qemu-aarch64-static -L /usr/aarch64-linux-gnu \
+                    -E LD_PRELOAD="$PWD/tgt-fwd.so" \
+                    -E CROSS_LIBC_DLOPEN_GL_HOST_DIR="$PWD" "$@"; }
+    a64dbg()  { qemu-aarch64-static -L /usr/aarch64-linux-gnu \
+                    -E LD_PRELOAD="$PWD/tgt-fwd.so" \
+                    -E CROSS_LIBC_DLOPEN_GL_HOST_DIR="$PWD" \
+                    -E CROSS_LIBC_DLOPEN_DEBUG=1 "$@"; }
+else
+    A64=''
+fi
+
+if [ -z "$A64" ]; then
     skip E76 "no qemu-aarch64-static or aarch64-linux-gnu-gcc: apt-get install qemu-user-static gcc-aarch64-linux-gnu libc6-dev-arm64-cross"
     skip E76b "as E76"
 else
+    echo "   vehicle: $a64_vehicle"
     # Absolute, both ways: `cd a64 && ...` followed by `cd ..` walks out of
     # /work entirely if the copy failed, and everything after it then runs
     # somewhere unexpected.
     mkdir -p /work/a64
     cp gl-fwd.c ld-conf.h cld-env.h tgt.c tgt-fwd.h tramp2.c /work/a64/
     cd /work/a64
-    A64=aarch64-linux-gnu-gcc
     $A64 -shared -fPIC -O2 tgt.c -o libtgt.so -Wl,-soname,libtgt.so 2>"$BERR" || bfail "libtgt.so (aarch64)"
     $A64 -shared -fPIC -O2 -Wall -Wextra -Wno-format-truncation \
          -DGLFWD_TABLE='"tgt-fwd.h"' -DGLFWD_TAG='"tgt-fwd.so"' \
          -DGLFWD_GETPROC='"t_getproc"' \
          -Wl,-soname,libtgt.so gl-fwd.c -o tgt-fwd.so -ldl 2>"$BERR" || bfail tgt-fwd.so
     $A64 -O2 tramp2.c -o tramp2 ./tgt-fwd.so 2>"$BERR" || bfail "tramp2 (aarch64)"
-    qemu() {
-        qemu-aarch64-static -L /usr/aarch64-linux-gnu \
-            -E LD_PRELOAD="$PWD/tgt-fwd.so" -E CROSS_LIBC_DLOPEN_GL_HOST_DIR="$PWD" "$@"
-    }
     # E76: the same four shapes E69 puts through the x86-64 resolver, through
     #      the aarch64 one. x0-x7, x8's indirect-result pointer and q0-q7 all
     #      surviving a bl in the middle of the forward, and the index arriving
     #      in x17 because x16 was already the branch register.
-    run E76 OK "OK: first-call ints=204" qemu ./tramp2
+    run E76 OK "OK: first-call ints=204" a64run ./tramp2
     # E76b: and the absent path, which is the arch-specific `mov x0,#0 / movi
     #       d0,#0` rather than x86-64's `xor/pxor`.
-    run E76b OK "ABSENT entry point called: t_absent" \
-        qemu -E CROSS_LIBC_DLOPEN_DEBUG=1 ./tramp2
+    run E76b OK "ABSENT entry point called: t_absent" a64dbg ./tramp2
     cd ..
 fi
 

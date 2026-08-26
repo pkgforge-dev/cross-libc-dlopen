@@ -86,15 +86,19 @@ if [ -n "$stray" ]; then
 fi
 reset_appdir
 
-# TWO NAMES HERE ARE NOT THIS PROJECT'S, and renaming them would turn E30,
-# E37a and E43a -- the controls the whole A/B rests on -- into silent passes:
+# ONE NAME HERE IS NOT THIS PROJECT'S, and renaming it would turn E30, E37a
+# and E43a -- the controls the whole A/B rests on -- into silent passes:
 #
 #   $LP/foreign-dlopen.so     the slot quick-sharun writes and .preload names.
 #                             Our build is copied INTO it; the path stays
 #                             upstream's because .preload says so.
-#   .foreign-dlopen-enabled   the marker quick-sharun creates. Still accepted
-#                             by src/cld-env.h, so E40 keeps measuring what it
-#                             says it measures.
+#
+# ⚠ .foreign-dlopen-enabled USED TO BE THE SECOND, and is not any more. It is
+# quick-sharun's opt-in marker and it is still present in the AppDir, but
+# nothing in src/ reads it: the markers were removed and the feature is on by
+# default whenever the object is preloaded. Whether upstream's own binary
+# still reads it is not measured here and no case below depends on the answer,
+# because every arm sets the variable explicitly. docs/REPORT.md 9.16.
 #
 # And every `env` below sets the OLD variable spelling beside the new one,
 # because upstream's binary only understands the old one. Losing it does not
@@ -399,10 +403,16 @@ else
     # E40: the whole thing stated the way a user would.
     #
     # Replace exactly one file inside the AppDir, lib/foreign-dlopen.so, and run
-    # it. No CROSS_LIBC_DLOPEN_* variables and no VK_DRIVER_FILES: the AppDir
-    # already carries .foreign-dlopen-enabled -- quick-sharun's spelling of the
-    # marker, still accepted -- so the feature turns itself on, and the
-    # Vulkan loader finds the host's ICD by itself.
+    # it. No CROSS_LIBC_DLOPEN_* variables and no VK_DRIVER_FILES: the feature
+    # is ON BY DEFAULT once the object is preloaded, so it turns itself on and
+    # the Vulkan loader finds the host's ICD by itself.
+    #
+    # ⚠ This comment used to say the AppDir's .foreign-dlopen-enabled marker
+    # was what turned it on. That was true when the marker was read and it is
+    # not now: the markers were removed, nothing in src/ reads that file, and
+    # the case has been passing for the other reason since. The claim the case
+    # makes did not change and got stronger, which is exactly why nobody
+    # noticed. docs/REPORT.md 9.16.
     #
     # Every other case here forces something -- the feature, the ICD, the
     # loader. This one forces nothing, which is the only version of the claim

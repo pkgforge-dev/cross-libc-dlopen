@@ -48,11 +48,17 @@ build by name when the host is newer.
 
 ---
 
-## Two names in this tree are not this project's
+## One name in this tree is not this project's
 
 ⛔ `$APPDIR/lib/foreign-dlopen.so` is the slot `quick-sharun` writes and
-`.preload` names. `.foreign-dlopen-enabled` is the marker it creates. Both stay
-spelled upstream's way.
+`.preload` names. It stays spelled upstream's way.
+
+⚠ **`.foreign-dlopen-enabled` was the second name here, and is not one any
+more.** It is `quick-sharun`'s opt-in marker and an AppDir still carries it,
+but nothing in `src/` reads it: the markers were removed and the feature is on
+by default whenever the object is preloaded. It stayed listed as load-bearing
+in four places for the rest of the branch, and one of them was the comment
+explaining why a case passed. [`../REPORT.md`](../REPORT.md) 9.16.
 
 ⚠ **The `ANYLINUX_*` environment names are a different case and they are
 gone.** `src/cld-env.h` no longer reads any of them, because nothing consumed

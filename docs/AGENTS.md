@@ -160,7 +160,7 @@ is in [`gates.yml`](../.github/workflows/gates.yml).
 | `src/forward-shim.c`, `src/gl-fwd-*.h` | ⛔ **generated.** [`conventions/code.md`](conventions/code.md) has the regeneration commands |
 | `inventories/*.json` | measured symbol inventories the generator consumes |
 | `.gitattributes` | enforces LF on `.sh`. A CR makes every command in a script report "not found" while naming something else |
-| `$APPDIR/lib/foreign-dlopen.so`, `.foreign-dlopen-enabled` | ⚠ **these two names are upstream's.** Renaming either turns E30, E37a and E43a into silent passes. `sh scripts/verify-upstream-controls.sh` proves the difference |
+| `$APPDIR/lib/foreign-dlopen.so` | ⚠ **this name is upstream's**, and `.preload` is what names it. Renaming it turns E30, E37a and E43a into silent passes, and so does dropping the `ANYLINUX_*` spelling from the `env` calls in `experiments/40-appimage.sh`, which drive upstream's own binary. `sh scripts/verify-upstream-controls.sh` proves the difference. ⚠ `.foreign-dlopen-enabled` was listed here and is not any more: nothing in `src/` reads it. [`REPORT.md`](REPORT.md) 9.16 |
 
 ---
 
