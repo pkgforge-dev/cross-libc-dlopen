@@ -7,7 +7,22 @@
 # PIN EVERY THIRD-PARTY ACTION TO A COMMIT, NOT A TAG. A tag moves, and a moved
 # tag runs code nobody reviewed with the permissions this workflow granted.
 #
-#   gh api repos/actions/checkout/git/ref/tags/v5 --jq .object.sha
+#   gh api repos/actions/checkout/git/ref/tags/v7 --jq .object.sha
+#
+# ⛔ ONE BOT OWNS THESE PINS, AND IT IS RENOVATE. Both Renovate, from the
+# organisation, and Dependabot, from a .github/dependabot.yml added during the
+# port, were open on the same three actions at once and producing duplicate
+# pull requests for each. Dependabot is the one that was retired, and the
+# reason is a permission rather than a preference: Renovate is configured at
+# organisation level, so retiring IT would need a write outside this
+# repository, which docs/conventions/git.md section 4 forbids. Retiring
+# Dependabot is one file inside the boundary.
+#
+# ⚠ Both bots were checked first, and both preserve the pin: each rewrites the
+# commit AND the trailing version comment, and both resolved to the same SHA.
+# Renovate writes `# v7` where Dependabot wrote `# v7.0.1`; the SHA is the pin
+# and the comment is documentation, so that is a legibility difference and not
+# a safety one.
 
 name: gates
 
@@ -31,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
 
@@ -162,7 +177,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: version traps still cover this libc
         run: make -C src traps
@@ -203,7 +218,7 @@ jobs:
             engine: native
             runner: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: what is available
         run: sh scripts/build.sh --check --arch ${{ matrix.arch }}
@@ -224,7 +239,7 @@ jobs:
       - name: the manifest
         run: cat build/${{ matrix.arch }}/build-manifest.json
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: artefacts-${{ matrix.arch }}-${{ matrix.engine }}
           path: build/${{ matrix.arch }}/
@@ -244,7 +259,7 @@ jobs:
           - arch: aarch64
             runner: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # ⚠ The timeouts inside the stages are wall-clock and were tuned on one
       # machine. A slow shared runner exceeding one scores a FAILURE, not a
@@ -264,7 +279,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: build and exercise allocprobe and icd-harness
         run: |
