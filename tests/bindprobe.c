@@ -39,12 +39,27 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined(__x86_64__)
-/* scan_relocs() below knows two relocation type numbers and they are x86-64's.
- * On another architecture it would find nothing and report "no loaded object
- * references it", which reads as a FINDING rather than as a probe that cannot
- * run here. Fail at build time instead, and say what to add. */
-#error "bindprobe knows only x86-64 relocation types; add yours to scan_relocs()"
+/* Two relocation types carry the address the loader chose for a named symbol:
+ * the PLT slot and the GOT entry. What they MEAN is architecture independent.
+ * What they are NUMBERED is not, so they are a table here rather than two
+ * constants inlined into the scan.
+ *
+ * ⚠ An unknown architecture must not fall through to an empty table. With no
+ * type matching, the scan records nothing, every symbol prints "(no loaded
+ * object references it)", and that reads as a finding about the driver stack
+ * rather than as a probe that cannot run here. main() does catch the total
+ * case and exits 2 with "nothing was measured", but a reader skimming the
+ * per-symbol lines meets the wrong sentence first. Refuse at build time and
+ * name what to add.
+ */
+#if defined(__x86_64__)
+#  define CLD_R_JUMP_SLOT R_X86_64_JUMP_SLOT
+#  define CLD_R_GLOB_DAT  R_X86_64_GLOB_DAT
+#elif defined(__aarch64__)
+#  define CLD_R_JUMP_SLOT R_AARCH64_JUMP_SLOT
+#  define CLD_R_GLOB_DAT  R_AARCH64_GLOB_DAT
+#else
+#  error "bindprobe knows only x86-64 and aarch64 relocation types; add yours above"
 #endif
 
 #define MAX_SYMS 16
@@ -122,7 +137,7 @@ static void scan_relocs(const char *obj, ElfW(Addr) base,
 	if (!rela || !symtab || !strtab || !bytes) return;
 	for (ElfW(Xword) i = 0; i < bytes / sizeof *rela; i++) {
 		unsigned type = ELF64_R_TYPE(rela[i].r_info);
-		if (type != R_X86_64_JUMP_SLOT && type != R_X86_64_GLOB_DAT) continue;
+		if (type != CLD_R_JUMP_SLOT && type != CLD_R_GLOB_DAT) continue;
 		unsigned long si = ELF64_R_SYM(rela[i].r_info);
 		if (!si) continue;
 		const char *name = strtab + symtab[si].st_name;

@@ -43,6 +43,14 @@ blocks `libX11.so.6` and `libdbus-1.so.3`. See REPORT.md section 5.3.
 10 736 056 bytes. Extracted with `--appimage-extract`; the embedded filesystem
 is DwarFS, not squashfs.
 
+⛔ **That hash is not what the suite pins any more, and this table has not been
+re-measured against what it does pin.** The upstream release is a mutable tag
+and the asset was replaced; the build the suite now runs is a different size.
+⚠ Everything below is UNVERIFIED against it until a completed AppImage run
+says otherwise. The hash above is left as written because it names the binary
+these answers were actually taken from, which is the only thing that makes
+them checkable. [`REPORT.md`](REPORT.md) 9.15 has the policy and the new pins.
+
 | Question | Answer |
 |---|---|
 | **Bundled glibc version** | **2.44**, from `ld.so (GNU libc) stable release version 2.44` |

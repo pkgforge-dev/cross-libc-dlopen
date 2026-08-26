@@ -2257,6 +2257,96 @@ name the defect without putting it in citation shape, the way
 them sit in the file as literals. Both dodges are the same dodge: a checker
 that reads the tree cannot tell a claim from a quotation of a broken one.
 
+
+---
+
+### 9.15 The pinned AppImage: which repository, and what a stale pin means
+
+The AppImage suite downloads two binaries from a third party and runs them. The
+sha256 pin is what makes the suite's results about a known artefact. Run
+[32948154287](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32948154287)
+refused with
+
+```
+suite: demo.AppImage (x86_64) sha256 is 8f6e390aa36c34f59363b916c29eec3fe95ce931be0c8a89f1e80a43d0981dbe,
+expected 712766f8a4dc6b5ea3193ed7bb0282b64c7b781f7334056416edd3d00e8960bd
+```
+
+⭐ **The pin did its job.** What follows is about what to do next, which is a
+policy question and not a bug.
+
+**Correcting the account of when.** It was recorded here that the assets were
+re-uploaded during that run. Measured from the API, they were not:
+
+| event | time |
+|---|---|
+| run created | `2026-08-26T08:31:03Z` |
+| run ended, refusing | `2026-08-26T08:31:41Z` |
+| every asset on that release re-created | `2026-08-26T08:32:37Z` |
+
+The re-upload post-dates the run's end by 56 seconds. So the mismatch the run
+hit was caused by an EARLIER replacement, and the assets were then replaced
+again a minute later. The object the run downloaded no longer exists, so
+whether `8f6e390a` was a complete asset or a torn read cannot be established
+now. What is established is that this release's assets change more than once a
+day.
+
+**Which repository.** `pkgforge-dev/Anylinux-AppImages` is the upstream:
+`fork: false`, 234 stars. `Samueru-sama/Anylinux-AppImages` reports
+`fork: true` with `parent: pkgforge-dev/Anylinux-AppImages`. The suite was
+taking both assets from the fork.
+
+⚠ **One of the two cannot move, and the reason is what is being measured.**
+
+| asset | upstream | fork |
+|---|---|---|
+| `gtk4-demo-<arch>.AppImage` | published | published |
+| `vkcube+glxgears-host-drivers-demo-<arch>.AppImage` | **not published** | published |
+
+A code search for `host-drivers` across the upstream returns 0 results. The
+upstream's `vkcube+glxgears-demo-<arch>.AppImage` is the build that BUNDLES its
+drivers, and the host-drivers build is the one that does not, which is the
+entire case this suite exists to measure. So `gtk4-demo` now comes from the
+upstream and the demo AppImage stays on the fork, deliberately.
+
+**The policy, and why it is the one that was available.**
+
+| option | verdict |
+|---|---|
+| pin to an immutable release | ⛔ not available. Measured: BOTH repositories publish exactly one release each, and both are tagged `demo` |
+| mirror the asset into this repository | ⛔ refused by `scripts/check-drift.sh` section 2c, which rejects any tracked `*.AppImage` by shape |
+| mirror to a release of our own | needs a published release, and nothing has been published yet |
+| ⭐ re-pin as a maintained act, recorded and reviewed | adopted |
+
+⛔ **A re-pin is a decision, so the refusal now says what the decision is
+about.** The old message printed one sentence whatever had happened, and three
+different things can disagree: the pin, the bytes that arrived, and the digest
+the release publishes today. `scripts/suite-lib.sh` reads the third from the
+release API, which needs no download, and names the case. All five paths
+proven, unpiped, exit codes read directly:
+
+| what disagrees | verdict printed | exit |
+|---|---|---|
+| nothing | `sha256 ok` | 0 |
+| pin only, bytes match the published asset | `UPSTREAM RE-UPLOADED IT` | 1 |
+| bytes only, published asset still matches the pin | `THE DOWNLOAD IS WRONG, NOT THE PIN` | 1 |
+| all three differ | `NEITHER MATCHES` | 1 |
+| API unreachable | cause not established, refuse anyway | 1 |
+
+The second row was proven against the real asset: the pin that failed in that
+run, against the file as it stands today.
+
+⚠ **The four pins were recomputed from the bytes, not copied from the API.**
+Each was downloaded and hashed here, and each then agreed with the digest the
+release publishes, which is a cross-check rather than the source.
+
+⛔ **`docs/ground-truth.md`'s inventory of the demo AppImage was taken against
+the OLD binary**, sha256 `712766f8...`, 10 736 056 bytes. The newly pinned
+build is 10 817 560 bytes. Its bundled glibc version, its stub library set and
+its export counts are therefore UNVERIFIED against the artefact the suite now
+runs. The suite re-extracts and re-asserts on every run, so the next completed
+run is what settles it, and a changed answer is a finding rather than a
+regression.
 ---
 
 ## 10. Measured versus assumed
