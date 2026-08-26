@@ -140,18 +140,12 @@ unfenced() {
 anchor='(src|scripts|tests|tools|docs|experiments|examples|inventories)/[A-Za-z0-9_./*-]+'
 missing=0
 
-# ⛔ A COMMENT CITING A MOVED FILE IS AS STALE AS A LINK TO ONE, and until this
-# was widened only documents were read. Measured when it went in: 68 repository
-# paths are cited from comments, and two of them did not exist. One was
-# `docs/REPORT.md` in src/Makefile, left behind by the split because the
-# rewriter walked markdown and a Makefile comment is not markdown. The other
-# was a path this check had already caught once in a document and never looked
-# for in code.
+# ⛔ A comment citing a moved file is as stale as a link to one, and only
+# documents were read before. It found two on its first run, one of them
+# `docs/REPORT.md` in src/Makefile.
 #
-# ⚠ A CODE SPAN IS STRIPPED HERE TOO. A comment naming a path that deliberately
-# does not exist is recording a finding, not citing a file, and this file's own
-# section 2 comment does exactly that. Backticks are how the two are told
-# apart, in a comment as in a document.
+# ⚠ A code span is stripped here too: a comment naming a path that
+# deliberately does not exist is recording a finding, not citing a file.
 comments() {
 	git ls-files 'src/*.c' 'src/*.h' 'tests/*.c' 'tests/*.h' |
 		tr '\n' '\0' | xargs -0 awk '
@@ -296,7 +290,9 @@ head_ "dashes used as punctuation"
 #   a line ending in ` --`      a string a program prints
 #
 # ⚠ A string a program prints is OUT OF SCOPE and the gap is recorded rather
-# than papered over: 71 occurrences. Five sit on `verdict` lines that code.md
+# than papered over: 71 occurrences, a dash inside a quoted run on a
+# non-comment line. An earlier count said 106 and misclassified separators and
+# C block-comment continuation lines. Five sit on `verdict` lines that code.md
 # forbids tidying, and src/gl-fwd.c emits a string whose spelling
 # docs/diagnostics.md documents, so emitter and matcher change together.
 #
@@ -331,10 +327,13 @@ prose_hash() {
 
 # A banner divides sections and is not a sentence; a synopsis documents an
 # end-of-options separator. Both are dropped before the dash is looked for.
+# ⚠ Both are narrow on purpose, and the first drafts were not: a banner
+# BEGINS with a dash run rather than containing one, and a synopsis needs the
+# bracket. Each earlier form hid a real prose dash.
 dashes() {
 	{ prose_md; prose_c; prose_hash; } |
-		grep -vE '\-{4,}' |
-		grep -vE ' -- [A-Z][A-Z_]*( |$|\[)' |
+		grep -vE '^[^:]*:[0-9]+:[[:space:]]*(#|//|\*|/\*)?[[:space:]]*-{3,}' |
+		grep -vE ' -- [A-Z][A-Z_]* \[' |
 		grep -E ' -- | --$'
 }
 
@@ -354,16 +353,12 @@ fi
 # ------------------------- 2d. a link's TEXT is a path that exists ----------
 head_ "link text against the tree"
 
-# ⛔ THE TARGET RESOLVING IS NOT ENOUGH. A link reads [`some/path`](other/path),
-# and a reader believes the part they can see. When HISTORY/ moved under docs/,
-# two links in docs/todo/measurement.md kept `HISTORY/references/...` as their
-# TEXT while the target was rewritten correctly, so every check passed and the
-# page still showed a reader a directory that no longer exists.
+# ⛔ The target resolving is not enough: a reader believes the text. When
+# HISTORY/ moved, two links kept the old path as their TEXT and every check
+# passed.
 #
-# ⚠ ONLY TEXT CONTAINING A SLASH IS CHECKED, and the distinction is what makes
-# this usable. [`code.md`](../conventions/code.md) is a short label, not a
-# claim about where the file is, and eleven links here are written that way on
-# purpose. A slash makes it a path, and a path can be wrong.
+# ⚠ Only text containing a slash is read. A bare filename is a label, not a
+# claim about where the file is.
 # ⚠ A FENCED BLOCK IS SKIPPED, for the reason section 2 skips one: the page
 # that states this rule has to be able to show the shape it is about, and a
 # specimen inside a fence is being named rather than used.
@@ -400,16 +395,9 @@ fi
 # --------------------------------------- 4b. prose lives under docs/ --------
 head_ "what the root holds"
 
-# ⛔ THE ROOT NAMES WHAT THE PROJECT BUILDS. Prose lives under docs/, so that
-# a reader looking for a document has one place to look and a reader looking at
-# the root sees code. Three markdown files are the exception, because every
-# one of them is a file a visitor or a tool opens by convention rather than by
-# following a link: GitHub renders README.md, offers CONTRIBUTING.md when a
-# pull request is opened, and surfaces SECURITY.md on the security tab.
-#
-# ⚠ A fourth would not be refused by GitHub, which is the point of checking it
-# here: HISTORY/ and TODO/ sat at the root for the life of this project and
-# nothing said they should not.
+# ⛔ The root names what the project builds; prose lives under docs/. The three
+# exceptions are opened by convention rather than by a link. ⚠ HISTORY/ and
+# TODO/ sat at the root for the life of the project and nothing said no.
 root_md=$(git ls-files --full-name -- '*.md' | grep -v '/' | sort)
 extra=$(printf '%s\n' "$root_md" |
         grep -vxE 'README\.md|CONTRIBUTING\.md|SECURITY\.md' || true)
