@@ -33,7 +33,16 @@ the open policy question written into it. Issue #7 is answered and closed.
 | `gates` | ✅ on `main` |
 | `secret-sweep` | ✅ on `main` |
 | `release` | ✅ on `v0.1.0`, published |
-| `appimage-suite` | ⛔ red on `main`, for the reasons in the work order below |
+| `appimage-suite` | ⛔ red on `main`, run [32959228414](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32959228414) |
+
+⛔ **The nine cases that MISMATCH on `main`**, both architectures, so the next
+session starts from a list rather than a re-run:
+
+| case | what is known |
+|---|---|
+| E30, E37a | the control arm stopped contrasting. Item 1 |
+| E33, E34 | the corpus sweep dies partway. Item 2 |
+| E59, E62, E64, E66, E77 | ⚠ **not yet diagnosed.** E64 and E66 exit 139, a segmentation fault, on the aarch64 musl host. Whether they share a cause with E33 and E34 is unknown and worth asking first |
 
 | suite | command | state |
 |---|---|---|
