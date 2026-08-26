@@ -1,21 +1,22 @@
 # cross-libc `dlopen`
 
-**Load the host's GPU drivers into a process that carries its own libc.**
+**Let an application that bundles its own libc `dlopen` the host's GPU drivers,
+including drivers linked against musl.**
 
 A bundled application ships its glibc so it runs anywhere. It does not ship GPU
 drivers, because Mesa plus LLVM is 100 to 200 MB, so it has to borrow the
 host's. Two separate things stop it, and they give different symptoms.
 
-| | the gap | what you see |
-|---|---|---|
-| **1** | the host's driver was built against a **different libc**: a newer glibc, or musl | `version 'GLIBC_2.38' not found`, or `libc.musl-x86_64.so.1: cannot open shared object file` |
-| **2** | the host has the capability but ships **nothing in the shape the bundled loader looks for**, with no `libGLX_<vendor>.so.0` behind libglvnd | ⭐ `couldn't get an RGB, Double-buffered visual`, a message about visuals for a fault about neither visuals nor libc |
+| | the gap | what you see | what repairs it |
+|---|---|---|---|
+| **1** | the host's driver was built against a **different libc**: a newer glibc, or musl | `version 'GLIBC_2.38' not found`, or `libc.musl-x86_64.so.1: cannot open shared object file` | `cross-libc-dlopen.so`, an `LD_PRELOAD`ed `dlopen` interposer |
+| **2** | the host has the capability but ships **nothing in the shape the bundled loader looks for**, with no `libGLX_<vendor>.so.0` behind libglvnd | ⭐ `couldn't get an RGB, Double-buffered visual`, a message about visuals for a fault about neither visuals nor libc | `gl-fwd.so` and its EGL and GLES siblings |
 
-Gap 1 is repaired by an `LD_PRELOAD`ed `dlopen` interposer. It rewrites the host
-object in a private copy so its symbol version requirements stop mattering. Gap
-2 is repaired by an object built with the **SONAME of the library it replaces**,
-so `ld.so` binds the application's `DT_NEEDED` to it and every entry point of
-the bundled dispatcher forwards to whatever the host can stand behind.
+Gap 1 is repaired by rewriting the host object in a private copy, so its symbol
+version requirements stop mattering. Gap 2 is repaired by an object built with
+the **SONAME of the library it replaces**, so `ld.so` binds the application's
+`DT_NEEDED` to it and every entry point of the bundled dispatcher forwards to
+whatever the host can stand behind.
 
 ⭐ **This is a preload, not an AppImage feature.** It needs a dynamically linked
 process whose libc differs from the driver's. An AppImage is the hardest such
@@ -47,16 +48,17 @@ LD_PRELOAD=/path/to/cross-libc-dlopen.so ./your-program
 ⭐ There is nothing to switch on. Preloading it is the opt-in, and
 `CROSS_LIBC_DLOPEN=0` is how you switch it back off.
 
+⭐ **Packaging it? `cd src && make portable`** needs no container and no
+script, and is what `scripts/build.sh --portable` runs.
+
 For a bundle, put `cross-libc-dlopen.so`, `gl-fwd.so`, `egl-fwd.so` and
 `gles-fwd.so` in the bundle's `lib/` and name them in `.preload`.
 [`docs/integrating.md`](docs/integrating.md) has the detail per target.
 
-⛔ **Build on the oldest glibc you intend to support, never the newest.** A
-build on a new glibc emits references to symbol versions an older bundled glibc
-does not have, so the artefact fails to load inside somebody else's application
-rather than failing at your build. `scripts/build.sh` defaults to a container
-for that reason and refuses a native build, by name, when the host is newer
-than the floor. [`docs/building.md`](docs/building.md).
+`scripts/build.sh` builds in a container on glibc 2.31 by default, so the
+artefacts load into any bundle. ⚠ The one way to get this wrong is a native
+build on a newer glibc, and the script refuses that by name.
+[`docs/building.md`](docs/building.md) has the measurement.
 
 ---
 

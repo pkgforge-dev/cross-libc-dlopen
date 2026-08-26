@@ -28,8 +28,9 @@ SOFLAGS  = -shared -fPIC
 
 # Appended to every compile, for a caller that wants a BUILD VARIANT without
 # restating the defaults above and letting the two drift apart.
-# `scripts/build.sh --strict-env` passes -DCLD_STRICT_ENV through this, which
-# builds objects that read CROSS_LIBC_DLOPEN_ROOT and ignore APPDIR.
+# `make portable` and `scripts/build.sh --portable` pass -DCLD_STRICT_ENV
+# through this. ⚠ It named `--strict-env` until issue #13, an option build.sh
+# has never parsed.
 EXTRA_CFLAGS ?=
 
 # CET is an x86 feature. On aarch64 gcc, -fcf-protection=full is not a warning
@@ -39,8 +40,14 @@ EXTRA_CFLAGS ?=
 # ⚠ Selected by what the COMPILER TARGETS, not by uname: the aarch64 artefacts
 # are CROSS-compiled, so the machine running make is x86-64 while the object
 # being produced is not. -dumpmachine is the only one of the two that knows.
+#
+# ⚠ Asked, not assumed: a toolchain built without CET refuses the flag on x86
+# too, and that reaches the compiler as a hard error. Issue #13.
 CC_TARGET  := $(shell $(CC) -dumpmachine 2>/dev/null)
-CET_CFLAGS := $(if $(filter x86_64% i386% i686% amd64%,$(CC_TARGET)),-fcf-protection=full,)
+CET_OK     := $(shell printf 'int main(void){return 0;}' > .cet-probe.c 2>/dev/null && \
+                $(CC) -fcf-protection=full -c .cet-probe.c -o .cet-probe.o >/dev/null 2>&1 && \
+                echo yes; rm -f .cet-probe.c .cet-probe.o)
+CET_CFLAGS := $(if $(filter x86_64% i386% i686% amd64%,$(CC_TARGET)),$(if $(CET_OK),-fcf-protection=full,),)
 
 ROOT     = ..
 FLOOR   ?= $(ROOT)/inventories/appdir.json
@@ -72,6 +79,11 @@ GLVND   ?= $(ROOT)/.tmp/AppDir/lib
 GLES    ?= $(ROOT)/.tmp/gtk4x/AppDir/lib
 
 all: cross-libc-dlopen.so gl-fwd.so egl-fwd.so gles-fwd.so runtime-select
+
+# The packager's variant, without the build script. docs/building.md says what
+# the two flags do and why the CET one is dropped.
+portable:
+	$(MAKE) EXTRA_CFLAGS='-DCLD_STRICT_ENV $(EXTRA_CFLAGS)' CET_CFLAGS= all
 
 # The preload carries the shim: it is already in the global lookup scope, so
 # its exports satisfy undefined symbols in anything dlopen'd later (E2, E5).
