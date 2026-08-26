@@ -90,7 +90,7 @@ Entries whose deliverable is a number that does not exist yet.
 
 ## T-04 Two struct sizes where this project and solo disagree
 
-- **Source.** Reference sweep of `pg83/solo`, [`HISTORY/references/solo-findings.md`](../history/references/solo-findings.md) F2.
+- **Source.** Reference sweep of `pg83/solo`, [`../history/references/solo-findings.md`](../history/references/solo-findings.md) F2.
 - **Category** measurement, **Priority** medium, **Effort** low,
   **Status** open
 - **Problem.** solo's `dev/abi-diff.txt` lists `struct_rusage` as 144 bytes on
@@ -136,7 +136,7 @@ Entries whose deliverable is a number that does not exist yet.
 ## T-06 Translate the two live struct hazards at the call
 
 - **Source.** Reference sweep of `pg83/solo`, at
-  [`HISTORY/references/solo-usable.md`](../history/references/solo-usable.md) section 1.
+  [`../history/references/solo-usable.md`](../history/references/solo-usable.md) section 1.
 - **Category** measurement, **Priority** high, **Effort** medium,
   **Status** open
 - **Problem.** [`docs/limits.md`](../limits.md) states the two live

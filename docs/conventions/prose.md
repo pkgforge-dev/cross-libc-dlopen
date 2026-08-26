@@ -184,6 +184,34 @@ OpenGL broken on every musl distribution for an entire session
 
 ---
 
+## A link's text is what a reader believes
+
+⛔ **If the text of a link names a path, that path must exist.** A reader
+trusts the half they can see, so a target that resolves is not enough on its
+own:
+
+```
+[`the/path/shown`](the/path/followed)
+  ^ believed              ^ checked, until this rule
+```
+
+⚠ **This is measured, not hypothetical.** When `HISTORY/` moved under `docs/`,
+two links kept `HISTORY/references/...` as their text while their targets were
+rewritten correctly. Every check passed and both pages went on showing a
+reader a directory that no longer existed.
+
+⭐ **A bare filename is a label, not a path.** [`code.md`](code.md) says which
+document, not where it lives, and eleven links here are written that way on
+purpose. A slash is what turns the text into a claim about the tree, which is
+why the check reads only text containing one.
+
+The check is section 2d of
+[`../../scripts/check-drift.sh`](../../scripts/check-drift.sh). A link whose
+target is a URL is skipped, because `Azathothas/TEMPLATE` as link text is an
+owner and a repository rather than a path here.
+
+---
+
 ## One fact, one home
 
 Every measured number lives in exactly one document.

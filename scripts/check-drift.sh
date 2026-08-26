@@ -103,7 +103,15 @@ head_ "cited paths"
 # should not be, a tracked file.
 # Exempt BY NAME rather than by pattern, so adding one is a deliberate act and
 # a typo in a path of ours is still caught.
-foreign=" docs/guide/cross-libc.md src/main.rs src/utils.rs docs/methodology/references.md tests/bindprobe "
+# ⚠ THREE MORE ARE BUILT BINARIES, cited in their own source's usage line the
+# way a reader would type them. tests/abi-host.c builds tests/abi-host, and the
+# same for cudaprobe and soak. The .c is tracked and the binary is not, and
+# should not be.
+#
+# ⚠ scripts/common/check-no-secrets.sh belongs to Azathothas/TEMPLATE and is
+# fetched at a URL by .github/workflows/secret-sweep.yml, which names that URL
+# on the same line.
+foreign=" docs/guide/cross-libc.md src/main.rs src/utils.rs docs/methodology/references.md tests/bindprobe tests/abi-host tests/cudaprobe tests/soak scripts/common/check-no-secrets.sh "
 
 # ⚠ A FENCED BLOCK IS A TRANSCRIPT, NOT A CITATION, and this check skips one.
 # docs/report/README.md's evidence is quoted command output, and output that records a
@@ -131,9 +139,35 @@ unfenced() {
 # it went 89 -> 90 across the move.
 anchor='(src|scripts|tests|tools|docs|experiments|examples|inventories)/[A-Za-z0-9_./*-]+'
 missing=0
-unfenced |
+
+# ⛔ A COMMENT CITING A MOVED FILE IS AS STALE AS A LINK TO ONE, and until this
+# was widened only documents were read. Measured when it went in: 68 repository
+# paths are cited from comments, and two of them did not exist. One was
+# `docs/REPORT.md` in src/Makefile, left behind by the split because the
+# rewriter walked markdown and a Makefile comment is not markdown. The other
+# was a path this check had already caught once in a document and never looked
+# for in code.
+#
+# ⚠ A CODE SPAN IS STRIPPED HERE TOO. A comment naming a path that deliberately
+# does not exist is recording a finding, not citing a file, and this file's own
+# section 2 comment does exactly that. Backticks are how the two are told
+# apart, in a comment as in a document.
+comments() {
+	git ls-files 'src/*.c' 'src/*.h' 'tests/*.c' 'tests/*.h' |
+		tr '\n' '\0' | xargs -0 awk '
+			/^[ \t]*(\/\/|\*|\/\*)/ { gsub(/`[^`]*`/, ""); print }' 2>/dev/null
+	{ git ls-files '*.sh' '*.py' '*.yml' ':(exclude)docs/history/*'
+	  git ls-files 'src/Makefile'; } |
+		tr '\n' '\0' | xargs -0 awk '
+			/^[ \t]*#([ \t]|$)/ { gsub(/`[^`]*`/, ""); print }' 2>/dev/null
+}
+
+{ unfenced; comments; } |
 	grep -hoE "\`([^\` ]+ )*$anchor" 2>/dev/null |
 	grep -oE "$anchor" | sed 's/[.,)]*$//' | sort -u > /tmp/cd_paths.txt
+{ comments; } | grep -oE "(^|[^\`A-Za-z0-9_-])$anchor" | grep -oE "$anchor" |
+	sed 's/[.,)]*$//' | sort -u >> /tmp/cd_paths.txt
+sort -u -o /tmp/cd_paths.txt /tmp/cd_paths.txt
 while IFS= read -r p; do
 	[ -n "$p" ] || continue
 	case "$p" in */) continue ;; esac
@@ -315,6 +349,76 @@ if [ -n "$hits" ]; then
 	say "       docs/conventions/prose.md has the four replacements."
 else
 	say "no dash used as punctuation"
+fi
+
+# ------------------------- 2d. a link's TEXT is a path that exists ----------
+head_ "link text against the tree"
+
+# ⛔ THE TARGET RESOLVING IS NOT ENOUGH. A link reads [`some/path`](other/path),
+# and a reader believes the part they can see. When HISTORY/ moved under docs/,
+# two links in docs/todo/measurement.md kept `HISTORY/references/...` as their
+# TEXT while the target was rewritten correctly, so every check passed and the
+# page still showed a reader a directory that no longer exists.
+#
+# ⚠ ONLY TEXT CONTAINING A SLASH IS CHECKED, and the distinction is what makes
+# this usable. [`code.md`](../conventions/code.md) is a short label, not a
+# claim about where the file is, and eleven links here are written that way on
+# purpose. A slash makes it a path, and a path can be wrong.
+# ⚠ A FENCED BLOCK IS SKIPPED, for the reason section 2 skips one: the page
+# that states this rule has to be able to show the shape it is about, and a
+# specimen inside a fence is being named rather than used.
+#
+# ⚠ A URL TARGET IS SKIPPED, because `Azathothas/TEMPLATE` as the text of a
+# link to github.com is an owner and a repository, not a path in this tree.
+# Six links are written that way. The target is what says which kind it is.
+for f in $(docs); do
+	d=$(dirname "$f")
+	awk '
+		FNR == 1           { fence = 0 }
+		/^[ \t]*(```|~~~)/ { fence = !fence; next }
+		fence              { next }
+		                   { print }
+	' "$f" |
+	sed -n 's/.*\[`\([^`]*\)`\](\([^)]*\)).*/\1\t\2/p' |
+	while IFS="$(printf '\t')" read -r txt tgt; do
+		case "$txt" in */*) ;; *) continue ;; esac
+		case "$txt" in http*|\$*|*" "*) continue ;; esac
+		case "$tgt" in http*|\#*|mailto:*) continue ;; esac
+		[ -e "$d/$txt" ] && continue
+		[ -e "${txt#./}" ] && continue
+		printf '%s\n' "  FAIL link text names a path that does not exist: $f -> $txt"
+	done
+done > /tmp/cd_linktext.txt
+if [ -s /tmp/cd_linktext.txt ]; then
+	cat /tmp/cd_linktext.txt
+	fail=1
+	say "       The text is what a reader believes. Make it the target."
+else
+	say "every link text that names a path names one that exists"
+fi
+
+# --------------------------------------- 4b. prose lives under docs/ --------
+head_ "what the root holds"
+
+# ⛔ THE ROOT NAMES WHAT THE PROJECT BUILDS. Prose lives under docs/, so that
+# a reader looking for a document has one place to look and a reader looking at
+# the root sees code. Three markdown files are the exception, because every
+# one of them is a file a visitor or a tool opens by convention rather than by
+# following a link: GitHub renders README.md, offers CONTRIBUTING.md when a
+# pull request is opened, and surfaces SECURITY.md on the security tab.
+#
+# ⚠ A fourth would not be refused by GitHub, which is the point of checking it
+# here: HISTORY/ and TODO/ sat at the root for the life of this project and
+# nothing said they should not.
+root_md=$(git ls-files --full-name -- '*.md' | grep -v '/' | sort)
+extra=$(printf '%s\n' "$root_md" |
+        grep -vxE 'README\.md|CONTRIBUTING\.md|SECURITY\.md' || true)
+if [ -n "$extra" ]; then
+	bad "markdown at the repository root that is not an entry point:"
+	printf '%s\n' "$extra" | sed 's/^/         /'
+	say "       docs/ is where a document lives. docs/conventions/docs.md."
+else
+	say "only the entry documents are at the root ($(printf '%s\n' "$root_md" | grep -c . ) of them)"
 fi
 
 # ------------------------------- 5. INDEX agrees with the entries -----------
