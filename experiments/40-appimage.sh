@@ -1182,6 +1182,38 @@ else
     use_gl_shims
 fi
 
+
+# ------------------------------------------------------------------- T-12 ---
+# ⛔ THE INSTRUMENTATION EXISTED AND NOTHING READ IT BACK. run() has been
+# recording each case's wall time to $TIMINGS since T-12 was opened, and until
+# the suite first completed there was nothing to read: no run ever reached the
+# end. This prints it.
+#
+# Every `timeout` in this file is a wall-clock value tuned on one developer
+# machine, and ⚠ a timeout is scored as a FAILURE rather than a skip, so a slow
+# shared runner reads as a regression. ⛔ The rule when one is close is RAISE,
+# never shorten: shortening hides the problem and makes the failure mode less
+# legible. TODO/infrastructure.md T-12 holds the measured-versus-configured
+# table, per runner, taken from these lines.
+#
+# ⚠ The margin column is against the SMALLEST timeout in this file, not against
+# the one that case actually carries, because a case's timeout is written
+# inline in its own command and is not knowable here. It is a floor on the
+# margin, so a case that looks safe by this column is safe by its own.
+if [ -s "$TIMINGS" ]; then
+    _tmin=$(grep -oE 'timeout( -k [0-9]+)? [0-9]+' "$0" |
+            awk '{print $NF}' | sort -n | head -1)
+    : "${_tmin:=25}"
+    echo
+    echo "-- T-12: measured wall time per case, slowest first ---------------"
+    printf '   %-6s %8s %10s\n' case seconds "vs ${_tmin}s"
+    sort -k1,1nr "$TIMINGS" | head -12 | while IFS="$(printf '\t')" read -r _s _id; do
+        [ -n "$_id" ] || continue
+        printf '   %-6s %8s %9s%%\n' "$_id" "$_s" "$((_s * 100 / _tmin))"
+    done
+    echo "   total recorded: $(wc -l < "$TIMINGS" | tr -d ' ') case(s), $(awk '{t+=$1} END{print t+0}' "$TIMINGS")s of wall time"
+    echo "   smallest timeout configured in this file: ${_tmin}s"
+fi
 echo
 echo "================================================================"
 echo " predictions matched: $PASS   mismatched: $FAIL   skipped: $SKIP"
