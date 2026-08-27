@@ -248,8 +248,8 @@ done < /tmp/cd_targets.txt
 head_ "the AppImage pins, both orchestrators"
 
 # ⛔ THIS CHECK EXISTS BECAUSE THEY DIVERGED. scripts/run-appimage.sh and
-# experiments/appimage.ps1 run the same stage scripts against the same two
-# downloads, and each carries its own copy of the sha256 pair. A change that
+# experiments/appimage.ps1 run the same stage scripts against the same
+# downloads, and each carries its own copy of the sha256 pins. A change that
 # re-pinned the shell side left the PowerShell side refusing on the old hash,
 # and docs/reproducing.md sends a reader on a machine without a POSIX shell to
 # exactly that file. A pin in two files is one pin and two chances to be wrong.
@@ -269,7 +269,7 @@ elif [ "$sh_pins" != "$ps_pins" ]; then
 	say "       experiments/appimage.ps1        : $ps_pins"
 	say "       Both drive the same stages. docs/report/09-the-second-boundary.md 9.15 has the policy."
 else
-	say "both orchestrators pin the same two assets"
+	say "both orchestrators pin the same assets"
 fi
 
 # ------------------------------------------------ 4. no dash as punctuation -
