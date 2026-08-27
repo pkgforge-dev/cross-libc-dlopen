@@ -71,6 +71,18 @@ about it.
 
 ---
 
+### A `dlopen` by soname can stop finding a library your own RUNPATH names
+
+The `dlopen` this project interposes runs with the interposer as its caller,
+and the search consults the **caller's** `DT_RPATH` and `DT_RUNPATH`. A binary
+that reaches a plugin by soname through its own runpath gets
+`cannot open shared object file` under the preload and works without it. Reach
+the library through `LD_LIBRARY_PATH` instead, or `dlopen` an object that
+NEEDs the soname you want, which is what gstreamer does to its va plugin.
+Measured while writing E97, in [`experiments/30-run-tests.sh`](../experiments/30-run-tests.sh).
+
+---
+
 ### `couldn't get an RGB, Double-buffered visual` is not about visuals
 
 Or about libc. It is the message a glvnd dispatcher gives when the host ships no

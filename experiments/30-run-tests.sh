@@ -1004,6 +1004,184 @@ else
 fi
 
 echo
+echo "-- Q. libva's driver search: LIBVA_DRIVERS_PATH is ours to assemble"
+#
+# libva never dlopens its driver by soname. va_openDriver() walks a search
+# list and dlopens the ABSOLUTE path it constructs from each entry,
+# <dir>/<name>_drv_video.so. The list is LIBVA_DRIVERS_PATH, or the
+# VA_DRIVERS_PATH compiled into whichever libva is running. That compiled
+# default names the layout of the distro that BUILT it, so a bundled libva
+# carries its build host's answer into a process on a different one. No
+# library path can correct that, because no soname lookup ever happens.
+#
+# The feature under test: when libva.so.2 is in the process, the preload
+# appends the host's <libdir>/dri directories to LIBVA_DRIVERS_PATH,
+# behind anything already set, and touches nothing in a process that never
+# loads libva. The bundle's own lib/dri is never added: a bundle that
+# ships VA drivers manages this variable itself, and those entries already
+# sit ahead of anything appended here.
+#
+# The fake libva below implements va_openDriver's CONTRACT: getenv,
+# colon-split, constructed absolute path, RTLD_NOW|RTLD_GLOBAL|RTLD_NODELETE,
+# dlsym __vaDriverInit_1_0. The fake drivers answer with the directory
+# they were built for, so the verdict line names WHICH directory won rather
+# than merely that a directory did. The answer round-trips through the
+# driver's own function, so a pass is not "a string appeared".
+mkdir -p /work/va/host/lib/dri /work/va/userdri /work/va/bundle/lib/dri
+cat > va_drv.c <<'CEOF'
+#include <stddef.h>
+static const char *const va_vendor = VA_VENDOR;
+int __vaDriverInit_1_0(void *ctx) { (void)ctx; return 0; }
+const char *va_driver_vendor(void) { return va_vendor; }
+CEOF
+gcc -shared -fPIC -O2 -DVA_VENDOR='"HOST"'   va_drv.c -o /work/va/host/lib/dri/vastub_drv_video.so 2>"$BERR" || bfail vastub-HOST
+gcc -shared -fPIC -O2 -DVA_VENDOR='"USER"'   va_drv.c -o /work/va/userdri/vastub_drv_video.so 2>"$BERR" || bfail vastub-USER
+gcc -shared -fPIC -O2 -DVA_VENDOR='"BUNDLE"' va_drv.c -o /work/va/bundle/lib/dri/vastub_drv_video.so 2>"$BERR" || bfail vastub-BUNDLE
+
+cat > va_libva.c <<'CEOF'
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <stdlib.h>
+#include <string.h>
+static void *drv;
+int vaInitialize(void) {
+    const char *search = secure_getenv("LIBVA_DRIVERS_PATH");
+    if (!search || !*search) return 1;
+    char *copy = strdup(search);
+    if (!copy) return 1;
+    int rc = 1;
+    for (char *dir = strtok(copy, ":"); dir; dir = strtok(NULL, ":")) {
+        char path[4096];
+        snprintf(path, sizeof path, "%s/%s%s", dir, "vastub", "_drv_video.so");
+        void *h = dlopen(path, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+        if (!h) continue;   /* silent on files that are not there, as libva is */
+        int (*init)(void *) = (int (*)(void *))dlsym(h, "__vaDriverInit_1_0");
+        if (init && init(NULL) == 0) { drv = h; rc = 0; break; }
+        dlclose(h);
+    }
+    free(copy);
+    return rc;
+}
+const char *va_stub_vendor(void) {
+    if (!drv) return "(no driver)";
+    const char *(*f)(void) = (const char *(*)(void))dlsym(drv, "va_driver_vendor");
+    return f ? f() : "(no vendor)";
+}
+CEOF
+gcc -shared -fPIC -O2 va_libva.c -o /work/va/libva.so.2 \
+    -Wl,-soname,libva.so.2 -ldl 2>"$BERR" || bfail libva.so.2
+
+# Consumer A links libva at startup, the shape of every ffmpeg/mpv/browser
+cat > va_consumer.c <<'CEOF'
+#include <stdio.h>
+#include <stdlib.h>
+extern int vaInitialize(void);
+extern const char *va_stub_vendor(void);
+int main(void) {
+    const char *e = getenv("LIBVA_DRIVERS_PATH");
+    if (vaInitialize() != 0) { printf("NO-DRIVER env=[%s]\n", e ? e : "(unset)"); return 1; }
+    printf("DRIVER=%s env=[%s]\n", va_stub_vendor(), e ? e : "(unset)");
+    return 0;
+}
+CEOF
+gcc -O2 va_consumer.c -o va_consumer \
+    -L/work/va -l:libva.so.2 -Wl,-rpath,/work/va 2>"$BERR" || bfail va_consumer
+
+# Consumer B never loads libva: the guard's other arm
+cat > va_nolib.c <<'CEOF'
+#include <stdio.h>
+#include <stdlib.h>
+int main(void) {
+    const char *e = getenv("LIBVA_DRIVERS_PATH");
+    printf("env=[%s]\n", e ? e : "(unset)");
+    return 0;
+}
+CEOF
+gcc -O2 va_nolib.c -o va_nolib 2>"$BERR" || bfail va_nolib
+
+# Consumer C dlopens a PLUGIN that NEEDs libva, the shape of gstreamer
+# loading libgstva.so: libva rides in as a dependency of the dlopened
+# object, after main. Direct references keep the NEEDED alive against
+# --as-needed. (dlopen("libva.so.2") directly from the consumer does NOT
+# work here, and the reason is its own finding: an interposed dlopen's
+# caller is the preload, so the consumer's own RUNPATH is not searched.
+# A bundle-shaped process reaches libva through LD_LIBRARY_PATH or through
+# a dlopened object's dependency, which is the shape below.)
+cat > va_late.c <<'CEOF'
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <stdio.h>
+#include <stdlib.h>
+int main(void) {
+    void *h = dlopen("/work/va/va_plugin.so", RTLD_NOW);
+    if (!h) { printf("NO-PLUGIN %s\n", dlerror()); return 1; }
+    int (*init)(void) = (int (*)(void))dlsym(h, "plugin_va_init");
+    const char *(*vend)(void) = (const char *(*)(void))dlsym(h, "plugin_va_vendor");
+    const char *e = getenv("LIBVA_DRIVERS_PATH");
+    if (!e || !*e) { printf("NO-DRIVER env=[(unset)]\n"); return 1; }
+    if (init() != 0) { printf("NO-DRIVER env=[%s]\n", e); return 1; }
+    printf("DRIVER=%s env=[%s]\n", vend(), e);
+    return 0;
+}
+CEOF
+cat > va_plugin.c <<'CEOF'
+extern int vaInitialize(void);
+extern const char *va_stub_vendor(void);
+int plugin_va_init(void) { return vaInitialize(); }
+const char *plugin_va_vendor(void) { return va_stub_vendor(); }
+CEOF
+gcc -shared -fPIC -O2 va_plugin.c -o /work/va/va_plugin.so \
+    -L/work/va -l:libva.so.2 -Wl,-rpath,/work/va 2>"$BERR" || bfail va_plugin
+gcc -O2 va_late.c -o va_late -ldl 2>"$BERR" || bfail va_late
+
+# E95: libva linked at startup. /work/va/host/lib stands in for the host's
+#      libdir on the process's search list; the conventional directories
+#      cannot know /work, so only the assembled list can answer.
+run E95 OK "DRIVER=HOST env=[/work/va/host/lib/dri" \
+    env LD_LIBRARY_PATH=/work/va/host/lib \
+        LD_PRELOAD=/work/cross-libc-dlopen.so ./va_consumer
+
+# E96: the control, and the case that fails without the feature. Feature
+#      off means the variable stays unset, the fake libva walks nothing,
+#      and the driver is never found.
+run E96 FAIL "NO-DRIVER env=[(unset)]" \
+    env CROSS_LIBC_DLOPEN=0 LD_LIBRARY_PATH=/work/va/host/lib \
+        LD_PRELOAD=/work/cross-libc-dlopen.so ./va_consumer
+
+# E97: the late load. gstreamer dlopens its va plugin, which pulls libva in
+#      after main; the check that assembles the list runs after that very
+#      dlopen returns, which is still before vaInitialize can read it.
+run E97 OK "DRIVER=HOST env=[/work/va/host/lib/dri" \
+    env LD_LIBRARY_PATH=/work/va/host/lib \
+        LD_PRELOAD=/work/cross-libc-dlopen.so ./va_late
+
+# E98: a value already set keeps its place. The user's directory is tried
+#      first and answers USER; the host directory is APPENDED behind it,
+#      the same place the conventions put every appended path entry.
+run E98 OK "DRIVER=USER env=[/work/va/userdri:/work/va/host/lib/dri" \
+    env LIBVA_DRIVERS_PATH=/work/va/userdri LD_LIBRARY_PATH=/work/va/host/lib \
+        LD_PRELOAD=/work/cross-libc-dlopen.so ./va_consumer
+
+# E99: the bundle's own dri directory never enters the list. An absence,
+#      and `run` can only assert presence, so the absence is turned into a
+#      word, the way E85 does.
+run E99 OK "bundle-dri-absent" sh -c \
+    'out=$(env CROSS_LIBC_DLOPEN_ROOT=/work/va/bundle \
+                LD_LIBRARY_PATH=/work/va/host/lib \
+                LD_PRELOAD=/work/cross-libc-dlopen.so \
+                ./va_consumer 2>&1)
+     case "$out" in
+         */work/va/bundle/*) echo "bundle-dri-PRESENT: $out" ;;
+         *"DRIVER=HOST"*)    echo "bundle-dri-absent" ;;
+         *)                  echo "no-driver: $out" ;;
+     esac'
+
+# E100: no libva in the process, so the variable is not ours to write.
+#       Consumer B links nothing of the kind and the feature is ON.
+run E100 OK "env=[(unset)]" \
+    env LD_PRELOAD=/work/cross-libc-dlopen.so ./va_nolib
+
+echo
 echo "================================================================"
 echo " predictions matched: $PASS   mismatched: $FAIL"
 echo "================================================================"
