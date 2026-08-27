@@ -554,6 +554,71 @@ static int glfwd_host_has_vendor(void) {
 	return glfwd_each_dir(glfwd_try_vendor, NULL);
 }
 
+/* The bundled EGL dispatcher is the libglvnd this AppImage was built with, and
+ * libglvnd finds a host's EGL vendor only through __EGL_VENDOR_LIBRARY_DIRS,
+ * or the datadir compiled into it. That compiled default is the BUILD host's
+ * layout, /usr/share/glvnd/egl_vendor.d, which a non-FHS host does not have.
+ * NixOS is exactly that case: its vendor json sits under
+ * /run/opengl-driver/share/glvnd/egl_vendor.d, and the launcher publishes the
+ * host's data roots in XDG_DATA_DIRS. So derive the variable from
+ * XDG_DATA_DIRS, probing <dir>/glvnd/egl_vendor.d for each entry, the same
+ * act the launcher does for a bundle that ships its own share directory.
+ *
+ * Only the EGL and GLES shims set GLFWD_VENDOR_DIR, and only they forward to
+ * an EGL dispatcher that reads this variable; the GL shim has NULL and is
+ * skipped. An existing value is never clobbered, so a user's or a launcher's
+ * choice wins, and a host whose XDG_DATA_DIRS names no vendor directory is
+ * left on the compiled default rather than pointed at an empty list. */
+static void glfwd_set_egl_vendor_env(void) {
+	const char *vdir = GLFWD_VENDOR_DIR;
+	if (!vdir)
+		return;
+	if (cld_getenv("__EGL_VENDOR_LIBRARY_DIRS", NULL))
+		return;
+	const char *prefix = "/usr/share/";
+	size_t plen = strlen(prefix);
+	if (strncmp(vdir, prefix, plen) != 0)
+		return;
+	const char *sub = vdir + plen;      /* "glvnd/egl_vendor.d" */
+
+	const char *xdg = cld_getenv("XDG_DATA_DIRS", NULL);
+	if (!xdg)
+		return;
+	char *copy = strdup(xdg);
+	if (!copy)
+		return;
+
+	char result[4096];
+	size_t used = 0;
+	result[0] = '\0';
+	for (char *dir = strtok(copy, ":"); dir; dir = strtok(NULL, ":")) {
+		char cand[PATH_MAX];
+		if (*dir != '/')
+			continue;
+		int n = snprintf(cand, sizeof cand, "%s/%s", dir, sub);
+		if (n < 0 || (size_t)n >= sizeof cand)
+			continue;
+		DIR *d = opendir(cand);
+		if (!d)
+			continue;
+		closedir(d);
+		size_t clen = strlen(cand);
+		if (used + clen + (used > 0 ? 1 : 0) + 1 > sizeof result)
+			break;
+		if (used > 0)
+			result[used++] = ':';
+		memcpy(result + used, cand, clen);
+		used += clen;
+		result[used] = '\0';
+	}
+	free(copy);
+
+	if (used > 0 && !cld_getenv("__EGL_VENDOR_LIBRARY_DIRS", NULL)) {
+		setenv("__EGL_VENDOR_LIBRARY_DIRS", result, 0);
+		glfwd_log("__EGL_VENDOR_LIBRARY_DIRS=%s, from XDG_DATA_DIRS\n", result);
+	}
+}
+
 /* --------------------------------------------------------------- the load */
 
 static void *glfwd_open_target(const char **how) {
@@ -597,6 +662,7 @@ static void *glfwd_open_target(const char **how) {
 	                    glfwd_host_has_vendor();
 	int use_bundled = force_bundled || bundle_vendor || host_vendor;
 	if (use_bundled && have_bundled) {
+		glfwd_set_egl_vendor_env();  /* the dispatcher finds its vendor through it */
 		/* RTLD_GLOBAL so the dispatcher's whole export table reaches the global
 		 * scope: the entry points this shim does not own must still resolve. */
 		void *h = dlopen(bundled, RTLD_LAZY | RTLD_GLOBAL | RTLD_NODELETE);
@@ -664,6 +730,7 @@ static void *glfwd_open_target(const char **how) {
 	}
 
 	if (!use_bundled && have_bundled) {
+		glfwd_set_egl_vendor_env();  /* same need: this dispatcher reads it too */
 		void *h = dlopen(bundled, RTLD_LAZY | RTLD_GLOBAL | RTLD_NODELETE);
 		if (h) {
 			*how = "bundled dispatcher (nothing better on this host)";
