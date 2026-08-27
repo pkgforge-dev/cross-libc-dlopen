@@ -121,6 +121,28 @@ target is the bundled dispatcher whenever the bundle *or* the host has a vendor
 library for it, and the host's own library only otherwise; `examples/` shows the
 failure this rule exists to prevent.
 
+### VA-API drivers
+
+VA-API needs one thing the library path cannot give. `libva.so.2` never opens
+its driver by soname: it constructs `<dir>/<name>_drv_video.so` and opens that
+absolute path, walking `LIBVA_DRIVERS_PATH` or a default compiled into the
+libva being run. That default names the layout of the distro that built the
+library, so a bundled libva looks for the runtime host's drivers in the wrong
+place and no `--library-path` can fix it.
+
+When `libva.so.2` is in the process, the preload assembles the answer: every
+host `<libdir>/dri` directory it finds is appended to `LIBVA_DRIVERS_PATH`,
+behind anything already set. A process that never loads libva is not touched.
+The bundle's own `lib/dri` is never added. A bundle that ships VA drivers
+manages the variable itself, and its entries stay ahead of anything appended
+here.
+
+Measured with a stand-in driver by E95 through E100 in
+[`experiments/30-run-tests.sh`](../experiments/30-run-tests.sh), on the glibc
+2.31 floor. ⚠ **A real `iHD_drv_video.so` or `i965_drv_video.so` carried
+across a libc boundary is UNVERIFIED.** What that needs is a host with one
+installed, and [`report/README.md`](report/README.md) does not have that run.
+
 ### A plain binary, no bundle anywhere
 
 ```bash

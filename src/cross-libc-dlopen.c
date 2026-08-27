@@ -1434,6 +1434,201 @@ VISIBLE void cross_libc_dlopen_init_now(void) {
 	cld_load_global_scope_libs();
 }
 
+// ---------------------------------------------------------------------------
+// libva's driver search list (LIBVA_DRIVERS_PATH)
+//
+// libva never dlopens its driver by soname. va_openDriver() walks a search
+// list and dlopens the ABSOLUTE path it constructs from each entry,
+// <dir>/<name>_drv_video.so. The list is LIBVA_DRIVERS_PATH, or the
+// VA_DRIVERS_PATH compiled into the libva being run. That compiled default
+// names the layout of whatever distro BUILT that libva, and a bundled
+// libva therefore carries its build host's answer into a process running
+// on a different one. No library path can correct this, because no soname
+// lookup happens; the list is ours to assemble, the same act sharun
+// performs for ld.so.
+//
+// Why only when libva is loaded: the variable is libva's, and a process
+// that never loads libva gets nothing written into its environment. The
+// check is dl_iterate_phdr, once from the constructor (libva linked at
+// startup) and once after every successful dlopen until it fires (libva
+// dlopened late, as gstreamer loads its va plugin). Either route has fired
+// before vaInitialize can read the variable: a dlopen of libva itself is
+// the last load that can precede that read, and the check runs after that
+// very dlopen returns.
+//
+// Nothing here opens a library (conventions/code.md): appending directories
+// to a search list is not searching it, and libva does its own searching
+// from the result. The bundle's own lib/dri is deliberately never included:
+// a bundle that ships VA drivers manages LIBVA_DRIVERS_PATH itself, and
+// whatever it set already sits ahead of anything appended here.
+//
+// The existing value keeps priority and is never clobbered: anything this
+// assembles goes at the END, the same place the conventions put appended
+// library-path entries, so a user's or a launcher's choice always wins.
+#define CLD_VA_LIBVA_SONAME "libva.so."
+#define CLD_VA_DRIVERS_PATH "LIBVA_DRIVERS_PATH"
+
+#if defined(__x86_64__)
+#  define CLD_TRIPLET "x86_64-linux-gnu"
+#elif defined(__aarch64__)
+#  define CLD_TRIPLET "aarch64-linux-gnu"
+#elif defined(__i386__)
+#  define CLD_TRIPLET "i386-linux-gnu"
+#else
+#  define CLD_TRIPLET "unknown"
+#endif
+
+// The conventional libdirs of the hosts this runs on, each probed as
+// <dir>/dri. Debian and Ubuntu keep their VA drivers under the triplet
+// directory, Alpine in /usr/lib/dri, Fedora in /usr/lib64/dri. A missed
+// access() costs nothing.
+static const char *const cld_va_libdirs[] = {
+	"/usr/lib/" CLD_TRIPLET, "/lib/" CLD_TRIPLET,
+	"/usr/lib64", "/lib64",
+	"/usr/lib", "/lib",
+	"/usr/local/lib", "/usr/local/lib64",
+	NULL
+};
+
+static int cld_va_phdr_cb(struct dl_phdr_info *info, size_t size, void *data) {
+	(void)size;
+	const char *name = info->dlpi_name;
+	const char *base = strrchr(name, '/');
+	base = base ? base + 1 : name;
+	if (strncmp(base, CLD_VA_LIBVA_SONAME,
+	            sizeof(CLD_VA_LIBVA_SONAME) - 1) == 0) {
+		*(int *)data = 1;
+		return 1;
+	}
+	return 0;
+}
+
+static int cld_va_libva_loaded(void) {
+	// dlpi_name is the soname for DT_NEEDED libraries and a path for
+	// dlopened ones, so the basename is what has to match either way
+	int found = 0;
+	dl_iterate_phdr(cld_va_phdr_cb, &found);
+	return found;
+}
+
+struct cld_va_list {
+	char buf[4096];
+	size_t used;
+};
+
+static int cld_va_has(const struct cld_va_list *l, const char *dir) {
+	size_t len = strlen(dir);
+	const char *p = l->buf;
+	while (*p) {
+		const char *end = strchr(p, ':');
+		if (!end) end = p + strlen(p);
+		if ((size_t)(end - p) == len && strncmp(p, dir, len) == 0)
+			return 1;
+		p = *end ? end + 1 : end;
+	}
+	return 0;
+}
+
+static void cld_va_add(struct cld_va_list *l, const char *dir) {
+	char path[PATH_MAX];
+	int n = snprintf(path, sizeof(path), "%s/dri", dir);
+	if (n < 0 || n >= (int)sizeof(path))
+		return;
+	if (access(path, X_OK) != 0)
+		return;
+	if (cld_va_has(l, path))
+		return;
+	int w = snprintf(l->buf + l->used, sizeof(l->buf) - l->used,
+	                 "%s%s", l->used ? ":" : "", path);
+	if (w < 0 || (size_t)w >= sizeof(l->buf) - l->used) {
+		DEBUG_PRINT("LIBVA_DRIVERS_PATH is full; %s omitted\n", path);
+		return;
+	}
+	l->used += (size_t)w;
+}
+
+// One guarded run. ⛔ The guard means "settled", not "ran": a constructor
+// that latched on "libva absent" would disarm the post-dlopen scan for the
+// process's whole life, and the late-load case would never fire. Measured
+// here as E97, which went exactly that way on the first revision. So the
+// scan re-runs after every successful dlopen until libva is found; before
+// that, each pass costs one phdr walk per dlopen, and a dlopen is already
+// the more expensive of the two.
+static int cld_va_done;
+
+static void cld_va_setup(void) {
+	if (cld_va_done)
+		return;
+
+	if (!cross_libc_dlopen_mode()) {
+		cld_va_done = 1;
+		return;
+	}
+
+	// Not loaded yet is NOT settled: the next dlopen may bring libva in.
+	if (!cld_va_libva_loaded()) {
+		DEBUG_PRINT("LIBVA_DRIVERS_PATH: libva not loaded, untouched\n");
+		return;
+	}
+	cld_va_done = 1;
+
+	struct cld_va_list l = { { 0 }, 0 };
+
+	// The value already set, the user's or the launcher's, keeps its
+	// place at the front of libva's walk.
+	const char *cur = getenv(CLD_VA_DRIVERS_PATH);
+	if (cur && *cur) {
+		int w = snprintf(l.buf, sizeof(l.buf), "%s", cur);
+		if (w < 0 || (size_t)w >= sizeof(l.buf)) {
+			DEBUG_PRINT("LIBVA_DRIVERS_PATH already overlong, left alone\n");
+			return;
+		}
+		l.used = (size_t)w;
+	}
+
+	// The process's own search list first: a launcher that already
+	// assembled the host library path (sharun) has written the host's
+	// answers there, and <libdir>/dri is where those answers keep VA.
+	const char *lp = getenv("LD_LIBRARY_PATH");
+	if (lp && *lp) {
+		char *copy = strdup(lp);
+		if (copy) {
+			for (char *p = strtok(copy, ":"); p; p = strtok(NULL, ":"))
+				if (is_host_library_path(p))
+					cld_va_add(&l, p);
+			free(copy);
+		}
+	}
+
+	for (size_t i = 0; cld_va_libdirs[i]; i++)
+		cld_va_add(&l, cld_va_libdirs[i]);
+
+	if (!l.used) {
+		DEBUG_PRINT("LIBVA_DRIVERS_PATH: libva loaded, no host dri "
+		            "directory found, untouched\n");
+		return;
+	}
+
+	if (cld_dryrun_enabled()) {
+		fprintf(stderr,
+		        " [cross-libc-dlopen.so] >> DRYRUN LIBVA_DRIVERS_PATH "
+		        "would be: %s\n", l.buf);
+		return;
+	}
+
+	if (setenv(CLD_VA_DRIVERS_PATH, l.buf, 1) != 0) {
+		DEBUG_PRINT("LIBVA_DRIVERS_PATH setenv failed: %s\n",
+		            strerror(errno));
+		return;
+	}
+	DEBUG_PRINT("LIBVA_DRIVERS_PATH=%s\n", l.buf);
+}
+
+__attribute__((constructor))
+static void cld_va_init(void) {
+	cld_va_setup();
+}
+
 // core libraries are never stripped nor loaded twice, rewriting the
 // dynamic linker or libc is a one way ticket to segfault city. ld-linux
 // carries no soname so RTLD_NOLOAD cannot catch it, hence this list
@@ -1801,13 +1996,20 @@ VISIBLE void *dlopen(const char *filename, int flags) {
 	int handled = 0;
 	void *host = cld_attempt(dlopen_orig, filename, flags, &handled);
 	if (handled) {
-		if (host)
+		if (host) {
+			// a successful load may have brought libva in; the call is
+			// one branch once it has fired (see the LIBVA section above)
+			cld_va_setup();
 			DEBUG_PRINT("cross-libc dlopen success: %s\n", filename);
-		else
+		} else {
 			DEBUG_PRINT("cross-libc dlopen failed: %s\n", filename);
+		}
 		return host;
 	}
 
 	DEBUG_PRINT("dlopen pass-through: %s\n", filename);
-	return dlopen_orig(filename, flags);
+	void *pass = dlopen_orig(filename, flags);
+	if (pass)
+		cld_va_setup();
+	return pass;
 }
