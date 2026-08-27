@@ -19,6 +19,7 @@ Open items with a route to closing them are in
 | **Two further hazards are argued, not measured** | `ucontext_t` and `O_LARGEFILE`. Nothing here crosses them, so there is no crossing to test. They stay labelled rather than counted |
 | **Entry points the host does not implement stay unimplemented** | on one measured host, 1097 of the GL entry points are extensions glvnd knows the names of and Mesa has no code for. What this project does is make the absent case **observable**: a call to one produces a line naming it, not a silent zero (E72, E73). Making Mesa implement them is not this project's work |
 | **A host with no EGL implementation cannot be given one** | Mesa 8.0.4 ships EGL 1.4 and `eglInitialize` fails there even with the right directory. Measured natively, with no bundle in the process at all: 16.04's EGL fails the same probe with nothing of this project loaded (E79) |
+| **A GTK4 GL renderer needs `glBufferStorage`; a host whose Mesa lacks it cannot run one** | GTK4 resolves GL through epoxy, which aborts with `No provider of glBufferStorage found` unless it finds `Desktop OpenGL 4.4`, `GL_ARB_buffer_storage` or `GL_EXT_buffer_storage`. Mesa 10.1 (`ubuntu:14.04`) lacks all three; measured once by hand, not yet as a numbered case: the GLX path created a context and issued GL commands through swrast, then epoxy aborted, rc=134 (SIGABRT). A shim forwards an entry point; it cannot implement one the host lacks |
 
 ## Not measured here, and stated as such
 

@@ -43,7 +43,7 @@
 [CmdletBinding()]
 param(
     [string]$Engine,
-    [ValidateSet('alpine', 'debian', 'ubuntu1404', 'ubuntu1604', 'gtk4', 'both', 'all')][string]$Only = 'all'
+    [ValidateSet('alpine', 'debian', 'ubuntu1404', 'ubuntu1604', 'gtk4', 'gtk4hd', 'both', 'all')][string]$Only = 'all'
 )
 
 Set-StrictMode -Version Latest
@@ -52,7 +52,7 @@ $ErrorActionPreference = 'Stop'
 $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Repo = Split-Path -Parent $Here
 $Work = Join-Path $Repo '.tmp'
-# ⛔ THESE FOUR VALUES ARE A TWIN OF scripts/run-appimage.sh's x86_64 branch,
+# ⛔ THESE SIX VALUES ARE A TWIN OF scripts/run-appimage.sh's x86_64 branch,
 # and check-drift.sh refuses when the two disagree. They diverged once, in the
 # change that re-pinned the shell suite and left this file refusing on the old
 # hash, and docs/reproducing.md points a reader here. docs/report/09-the-second-boundary.md 9.15 has
@@ -66,6 +66,11 @@ $Url  = 'https://github.com/Samueru-sama/Anylinux-AppImages/releases/download/de
 # host-drivers build exists only there. REPORT 9.15.
 $Gtk4Sha = '413243c9ecbaaafe40636afd06e0c3d558b8cc928ed20b9ec55a6e0f09b5d8b4'
 $Gtk4Url = 'https://github.com/pkgforge-dev/Anylinux-AppImages/releases/download/demo/gtk4-demo-x86_64.AppImage'
+# The same application in the host-drivers shape: glvnd dispatchers and no
+# Mesa. On a classic host gles-fwd has to resolve GLES through the host EGL.
+# From the fork, where every "host-drivers" asset lives (REPORT 9.15).
+$Gtk4HdSha = 'b8ab47805c8fe9c7378a9d0b5b11e19c796a09c3f2a7b6c993968530bd5c10cd'
+$Gtk4HdUrl = 'https://github.com/Samueru-sama/Anylinux-AppImages/releases/download/demo/gtk4-demo-host-drivers-x86_64.AppImage'
 
 function Resolve-Engine {
     if ($Engine) {
@@ -91,7 +96,7 @@ function Invoke-In {
         [Parameter(Mandatory)][string]$Script,
         [switch]$Privileged,
         [switch]$Gpu,
-        [switch]$Gtk4
+        [string]$GtkDir = ''
     )
     $path = Join-Path $Here $Script
     if (-not (Test-Path -LiteralPath $path)) { throw "Missing script: $path" }
@@ -109,7 +114,7 @@ function Invoke-In {
         if ($Gpu -and $script:GpuArgs) { $args += $script:GpuArgs }
         # Mounted as its own root, not as a subdirectory of the shared work
         # tree, so nothing can write one AppDir's files into the other's.
-        if ($Gtk4) { $args += @('-v', "$(Join-Path $Work 'gtk4x'):/g") }
+        if ($GtkDir) { $args += @('-v', "$(Join-Path $Work $GtkDir):/g") }
         $args += @($Image, 'sh', "/scripts/$Script")
         & $engineExe @args 2>&1 | Out-Host
         $rc = $LASTEXITCODE
@@ -221,7 +226,28 @@ if ($Only -in @('all', 'gtk4')) {
     }
     Write-Host ""
     Write-Host "######## a real application: gtk4-demo on musl Alpine ########" -ForegroundColor Yellow
-    if ((Invoke-In -Image 'alpine:3.22' -Script '47-gtk4.sh' -Gtk4) -ne 0) { $fail++ }
+    if ((Invoke-In -Image 'alpine:3.22' -Script '47-gtk4.sh' -GtkDir 'gtk4x') -ne 0) { $fail++ }
+}
+
+# The same application in the OTHER shape: a host-drivers gtk4 demo, bundling
+# the glvnd dispatchers and no Mesa. On a classic host gles-fwd has no
+# libGLESv2.so.2 to forward to and must resolve GLES through the host EGL's
+# eglGetProcAddress; this is the case report/10 said was measured-but-not-repaired.
+if ($Only -in @('all', 'gtk4hd')) {
+    $h = Join-Path $Work 'gtk4-demo-host-drivers.AppImage'
+    if (-not (Test-Path -LiteralPath $h)) {
+        Write-Host "downloading the host-drivers gtk4 demo AppImage (~22 MB)" -ForegroundColor DarkGray
+        Invoke-WebRequest -Uri $Gtk4HdUrl -OutFile $h
+    }
+    $hh = (Get-FileHash -LiteralPath $h -Algorithm SHA256).Hash.ToLower()
+    if ($hh -ne $Gtk4HdSha) { throw "gtk4-demo-host-drivers.AppImage sha256 is $hh, expected $Gtk4HdSha" }
+    if (-not (Test-Path -LiteralPath (Join-Path $Work 'gtk4hd\AppDir'))) {
+        $rc = Invoke-In -Image 'debian:trixie-slim' -Script '49-extract-gtk4-host-drivers.sh' -Privileged
+        if ($rc -ne 0) { throw "gtk4 host-drivers extraction failed (exit $rc)" }
+    }
+    Write-Host ""
+    Write-Host "######## a real application, host-drivers shape: gtk4-demo on musl Alpine ########" -ForegroundColor Yellow
+    if ((Invoke-In -Image 'alpine:3.22' -Script '50-gtk4-host-drivers.sh' -GtkDir 'gtk4hd') -ne 0) { $fail++ }
 }
 
 Write-Host ""

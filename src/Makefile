@@ -163,6 +163,7 @@ gles-fwd.so: gl-fwd.c gl-fwd-gles2.h ld-conf.h cld-env.h
 		-DGLFWD_VENDOR_PREFIX='"libEGL_"' \
 		-DGLFWD_VENDOR_DIR='"/usr/share/glvnd/egl_vendor.d"' \
 		-DGLFWD_GETPROC='"eglGetProcAddress"' \
+		-DGLFWD_ALT_SONAME='"libEGL.so.1"' \
 		-Wl,-soname,libGLESv2.so.2 gl-fwd.c -o $@ -ldl
 	@$(MAKE) --no-print-directory gl-fwd-verify SO=$@ TBL=gl-fwd-gles2.h
 

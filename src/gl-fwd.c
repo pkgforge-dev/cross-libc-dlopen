@@ -104,6 +104,14 @@
 #ifndef GLFWD_GETPROC
 #define GLFWD_GETPROC "glXGetProcAddressARB"
 #endif
+/* A classic host ships no libGLESv2.so.2 at all: its GLES implementation lives
+ * inside the classic-Mesa libEGL.so.1 and is reachable only through
+ * eglGetProcAddress. When the primary SONAME is absent from the host, look for
+ * this one instead of forwarding to a bundled dispatcher that has no vendor
+ * behind it. NULL says "none"; the GL and EGL shims do not set one. */
+#ifndef GLFWD_ALT_SONAME
+#define GLFWD_ALT_SONAME NULL
+#endif
 
 #if defined(__x86_64__)
 #  define GLFWD_TRIPLET "x86_64-linux-gnu"
@@ -442,14 +450,22 @@ static int glfwd_each_dir(int (*fn)(const char *dir, void *ctx), void *ctx) {
 	return 0;
 }
 
-static int glfwd_try_soname(const char *dir, void *ctx) {
-	char *out = ctx;
+/* The soname is carried in the context rather than read from GLFWD_SONAME:
+ * the ALT lookup below names a different soname than the one this object
+ * impersonates. */
+struct glfwd_soname_lookup {
+	const char *name;
 	char path[PATH_MAX];
-	if (snprintf(path, sizeof path, "%s/%s", dir, GLFWD_SONAME) >= (int)sizeof path)
+};
+
+static int glfwd_try_soname(const char *dir, void *ctx) {
+	struct glfwd_soname_lookup *c = ctx;
+	char buf[PATH_MAX];
+	if (snprintf(buf, sizeof buf, "%s/%s", dir, c->name) >= (int)sizeof buf)
 		return 0;
-	if (access(path, R_OK) != 0)
+	if (access(buf, R_OK) != 0)
 		return 0;
-	snprintf(out, PATH_MAX, "%s", path);
+	snprintf(c->path, sizeof c->path, "%s", buf);
 	return 1;
 }
 
@@ -604,7 +620,12 @@ static void *glfwd_open_target(const char **how) {
 
 	char host[PATH_MAX];
 	host[0] = '\0';
-	if (!force_bundled && glfwd_each_dir(glfwd_try_soname, host)) {
+	if (!force_bundled) {
+		struct glfwd_soname_lookup lk = { GLFWD_SONAME, "" };
+		if (glfwd_each_dir(glfwd_try_soname, &lk))
+			snprintf(host, sizeof host, "%s", lk.path);
+	}
+	if (!force_bundled && host[0]) {
 		/* RTLD_GLOBAL is the point here, not a detail. Natively an
 		 * application's DT_NEEDED libGL.so.1 sits in the global scope, and
 		 * classic Mesa's DRI driver imports _glapi_* with NO DT_NEEDED edge on
@@ -621,6 +642,25 @@ static void *glfwd_open_target(const char **how) {
 			return h;
 		}
 		glfwd_log("host %s would not load: %s\n", host, dlerror());
+	}
+
+	/* The classic host has no libGLESv2.so.2, so the primary lookup above
+	 * missed. Its GLES implementation still exists, folded into libEGL.so.1
+	 * and reachable through eglGetProcAddress, which is what GLFWD_GETPROC is
+	 * set to for this shim. Loading it here rather than the bundled dispatcher
+	 * is what turns GTK4's GLES renderer from a no-op into the host's real one. */
+	if (GLFWD_ALT_SONAME && !force_bundled) {
+		struct glfwd_soname_lookup lk = { GLFWD_ALT_SONAME, "" };
+		if (glfwd_each_dir(glfwd_try_soname, &lk)) {
+			void *h = dlopen(lk.path, RTLD_LAZY | RTLD_GLOBAL);
+			if (h) {
+				*how = "host EGL library (classic Mesa; GLES resolved "
+				       "through eglGetProcAddress)";
+				glfwd_log("target %s -- %s\n", lk.path, *how);
+				return h;
+			}
+			glfwd_log("host %s would not load: %s\n", lk.path, dlerror());
+		}
 	}
 
 	if (!use_bundled && have_bundled) {
