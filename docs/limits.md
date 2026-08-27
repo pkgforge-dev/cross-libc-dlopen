@@ -25,8 +25,7 @@ Open items with a route to closing them are in
 
 | limit | why |
 |---|---|
-| **Vulkan on real hardware** | every ICD result in the record is lavapipe. Mesa's Vulkan-on-D3D12 driver is `microsoft-experimental` and is not packaged. OpenGL *is* on hardware (E53), through the `d3d12` Gallium driver |
-| **DRM-native drivers (`radv`, `anv`, `radeonsi`)** | the measuring machine publishes no `/dev/dri`. Reported working from outside on an RX 580 by @Samueru-sama; not reproduced here, and not adopted as if it were |
+| **DRM-native `radv` and `radeonsi` drivers** | the primary measuring machine publishes no `/dev/dri`. Intel `anv` is measured on an external Alpine host in [`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) section 9.19; no measured host here provides the AMD drivers |
 | **aarch64 on real silicon** | the trampolines assemble and **run under qemu-user** (E76, E76b). qemu emulates the instructions, not a memory model. CI's `ubuntu-24.04-arm` runner is what closes this, and it is the one place CI is stronger than the machine this was built on |
 | **NVIDIA's closed-source stack in CI** | nothing stands in for it. The local result, 4096 bytes round-tripped through an RTX 3050 Ti and verified (E41), is in [`report/07-closed-source-driver-and-abi.md`](report/07-closed-source-driver-and-abi.md) section 7.1 |
 

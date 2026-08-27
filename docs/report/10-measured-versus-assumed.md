@@ -3,15 +3,19 @@
 **Measured:** every table and quoted output above, plus `sh scripts/run-evidence.sh`
 (53/53 on x86-64, 50/50 on aarch64), `sh scripts/run-appimage.sh` (45/45 glvnd glibc, 40/40 musl with five
 named skips, 26/26 on each pre-glvnd glibc host, 7/7 on the gtk4 stage), `tools/gap.py --fetch`, the eight-distro inventory, the AppImage inventory,
-the corpus test, and the five-distro `ld.so.cache` survey in
+the corpus test, the real mpv and `iHD` VA-API run in section 9.19, and the five-distro `ld.so.cache` survey in
 `../ground-truth.md`.
 
 **Assumed or UNVERIFIED:**
 
-- The tests still skipped above: hardware **Vulkan** and the DRM-native drivers
+- **A real `iHD_drv_video.so` crossing is measured and an
+  `i965_drv_video.so` crossing is not.** Section 9.19 carries the mpv run on
+  musl Alpine. No measured host here provides the older Intel driver.
+
+- The tests still skipped above: the DRM-native `radv` and `radeonsi` drivers
   (T5.1), the proprietary **graphics** driver (T5.2), and aarch64 hardware
-  (T5.3). Each names what would unblock it, and none of them is unblockable
-  from this machine. T3.3, `glxgears` on a musl host, is no longer among them.
+  (T5.3). Each names what would unblock it. Hardware Vulkan through Intel
+  `anv` is no longer among them; section 9.19 measures that path.
 - **Hardware GL on the CLASSIC-Mesa path has never run here, and the reason is
   structural.** The only GPU route on this machine is Mesa's `d3d12` Gallium
   driver over `/dev/dxg`, which needs Mesa >= 21; every glibc distro at Mesa >=

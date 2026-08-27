@@ -139,9 +139,9 @@ here.
 
 Measured with a stand-in driver by E95 through E100 in
 [`experiments/30-run-tests.sh`](../experiments/30-run-tests.sh), on the glibc
-2.31 floor. ⚠ **A real `iHD_drv_video.so` or `i965_drv_video.so` carried
-across a libc boundary is UNVERIFIED.** What that needs is a host with one
-installed, and [`report/README.md`](report/README.md) does not have that run.
+2.31 floor. A real `iHD_drv_video.so` carried from musl Alpine into the
+bundled glibc process is measured with mpv in REPORT 9.19. A real
+`i965_drv_video.so` crossing remains UNVERIFIED.
 
 ### A plain binary, no bundle anywhere
 

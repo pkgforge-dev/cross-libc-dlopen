@@ -1,9 +1,8 @@
 ## 2. Environment reached
 
-**Highest tier reached: Tier 5**, on hardware, for OpenGL and for compute. All
-Tier 4 invariants run. Tier 3 end-to-end runs under `xvfb` with software Vulkan,
-and Vulkan is the one path with no hardware result: Mesa's Vulkan-on-D3D12
-driver is not packaged (section 7.5).
+**Highest tier reached: Tier 5**, on hardware, for OpenGL, compute and Vulkan.
+All Tier 4 invariants run. The local Tier 3 end-to-end runs use software
+Vulkan under `xvfb`; section 9.19 records the external Intel hardware run.
 
 ```
 $ uname -srm                     # inside every test container
@@ -25,6 +24,20 @@ Python 3.13                      (host, for the Tier-0 tooling)
 | `archlinux:latest` | glibc 2.44 | selector matrix, newest released glibc |
 | `ubuntu:14.04` | glibc 2.19 | pre-glvnd glibc host, Mesa 10.1.3, no Vulkan at all |
 | `ubuntu:16.04` | glibc 2.23 | pre-glvnd glibc host, Mesa 18.0.5, no Vulkan at all |
+
+One external hardware run on 2026-08-27 adds the real VA-API result in
+section 9.19. It used an x86-64 Wayland session on Alpine
+`3.25.0_alpha20260805`, with these host packages:
+
+| package | version |
+|---|---|
+| `intel-media-driver` | `26.2.1-r0` |
+| `intel-gmmlib` | `22.10.0-r0` |
+| `libva` | `2.23.0-r0` |
+| Mesa | `26.1.6-r0` |
+
+The run forced the `iHD` VA-API driver. The exact Intel GPU model was not
+captured and remains UNVERIFIED.
 
 ⚠ The last two are served from `archive.ubuntu.com` at the DEFAULT path,
 because they are still inside their ESM window, and they are **not** on

@@ -524,9 +524,10 @@ section was written.** The gtk4 AppDir from 9.12 is 272 libraries rather than
 covered 2   n/a 1   unmeasured 3   UNCLASSIFIED 9
 ```
 
-Two of the three `unmeasured` are `libgbm.so.1` and `libva.so.2`, boundaries
-this report names below as having no AppImage here to measure them on. There is
-one now. And one of the nine UNCLASSIFIED is **`libepoxy.so.0`**, which is
+Two of the three `unmeasured` are `libgbm.so.1` and `libva.so.2`. The AppImage
+exists now, and section 9.19 measures `libva.so.2` with mpv and a real Intel
+media driver. `libgbm.so.1` remains unmeasured. One of the nine UNCLASSIFIED is
+**`libepoxy.so.0`**, which is
 itself a GL entry-point loader: it `dlopen`s `libGL`, `libEGL` and `libGLESv2`
 by soname and resolves through them. That is the same DISPATCHER shape as
 libglvnd, in the path of the application section 9.12 uses, and it is very
@@ -546,7 +547,8 @@ AppImage which bundles them is classified on sight rather than investigated from
 scratch: `libva.so.2` (`<name>_drv_video.so` from `/usr/lib/dri`),
 `libvdpau.so.1`, `libasound.so.2` (ALSA plugins), `libOpenCL.so.1`
 (`/etc/OpenCL/vendors`), `libgbm.so.1`. Each is the same shape as the OpenGL one
-and none of them is a libc problem. They are named, not fixed.
+and none of them is a libc problem. The `libva.so.2` boundary is fixed and
+measured in section 9.19. The others are named, not fixed.
 
 ### 9.11 The third host class: pre-glvnd GLIBC
 
@@ -1391,6 +1393,54 @@ maintain and the first to go stale.
 ⚠ Two aarch64 checks fewer than x86-64, 24 against 26, and that is the guard:
 the two `ok()` calls it skips are the allocation and the lock it declines to
 perform.
+
+### 9.19 A real VA-API application crosses the musl driver boundary
+
+E95 through E100 measure the driver search contract with a stand-in driver.
+The external Alpine host in section 2 measured the same path with mpv
+using the `mpv-v0.41.0-anylinux-x86_64.AppImage` artifact and the host's real
+`iHD_drv_video.so`. The AppImage carried glibc and the host driver was built
+for musl.
+
+The VA-API-only run used a null video output, so neither Vulkan nor OpenGL
+could make a software decode look successful:
+
+```bash
+APPIMAGE=mpv-v0.41.0-anylinux-x86_64.AppImage
+SAMPLE=sample.mp4
+LIBVA_DRIVER_NAME=iHD CROSS_LIBC_DLOPEN_DEBUG=1 "$APPIMAGE" --no-config --hwdec=vaapi-copy --vo=null --ao=null --frames=300 --msg-level=vd=debug "$SAMPLE"
+```
+
+The H.264 sample ended before the 300-frame limit. mpv decoded the complete
+six-second file and exited zero. The relevant output was:
+
+```
+[cross-libc-dlopen.so] >> LIBVA_DRIVERS_PATH=/usr/lib/dri:/lib/dri
+[cross-libc-dlopen.so] >> cross-libc-dlopen: rewriting /usr/lib/dri/iHD_drv_video.so
+[cross-libc-dlopen.so] >> cross-libc dlopen success: /usr/lib/dri/iHD_drv_video.so
+[vd] Trying hardware decoding via h264-vaapi-copy.
+Using hardware decoding (vaapi-copy).
+[vd] Decoder format: 478x850 [0:1] nv12 bt.709/bt.709/bt.1886/limited/auto CL=mpeg2/4/h264 crop=478x850+0+0 A=none
+VO: [null] 478x850 nv12
+Exiting... (End of file)
+```
+
+Two rendering runs kept the same VA-API decoder and changed only the video
+output. `--vo=gpu-next --gpu-api=vulkan` loaded both Intel Vulkan host drivers
+and rendered NV12 frames. `--vo=gpu --gpu-api=opengl` rendered 60 frames over
+EGL. The EGL forwarder resolved all 44 entry points, received 15 calls, and
+reported no absent call.
+
+⚠ The dependency walk printed this line before the successful driver load:
+
+```
+cross-libc-dlopen: dependency libigdgmm.so.12 could not be opened at all
+```
+
+The host had `/usr/lib/libigdgmm.so.12`, which resolved to
+`libigdgmm.so.12.10.0`. The complete hardware decode shows that this diagnostic
+did not describe the final load result in this run. Why the dependency walk
+missed it remains UNVERIFIED.
 
 ---
 

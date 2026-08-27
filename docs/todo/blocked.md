@@ -37,7 +37,7 @@ structural rather than a packaging accident.
 
 ---
 
-## Two of the rows above are not blocked any more
+## Five parts of the rows above are not blocked any more
 
 ⛔ **The rows keep their wording**, because the row is how each item has always
 been referred to and a silently edited premise is a record of nothing. The
@@ -65,7 +65,31 @@ The work is [`measurement.md`](measurement.md) **T-06**. ⚠ It is bounded, not
 free: interposing where the direction of a call is ambiguous translates
 something that needed no translation, which is a new defect of the same family.
 
+### "The unmeasured plugin boundaries": libva is measured
+
+The row already says an AppImage now bundles `libva.so.2`. REPORT 9.19 records
+mpv loading the real Alpine `iHD_drv_video.so`, decoding a complete H.264
+sample through VA-API, and rendering through both Vulkan and OpenGL-over-EGL.
+
+The row remains blocked for `libvdpau`, `libasound`, `libpulse`, `libOpenCL`,
+`libgbm` and the loadable X11 i18n modules. The correction closes only its
+`libva` part.
+
+### "Vulkan on hardware": measured on Intel
+
+REPORT 9.19 records the Intel Vulkan host drivers loading through the bridge
+and mpv rendering NV12 frames with `gpu-next`. The primary WSL2 machine still
+has no local route to hardware Vulkan, but the row's project-wide premise is
+closed by the external Alpine run.
+
+### "DRM-native drivers": `anv` is measured
+
+The same run loaded `/usr/lib/libvulkan_intel.so` and
+`/usr/lib/libvulkan_intel_hasvk.so` from a host with `/dev/dri`. The row remains
+blocked for `radv` and `radeonsi`; no measured host here provides either AMD
+driver.
+
 ### Everything else on the list stands
 
-Seven rows remain genuinely blocked, each by hardware, by what a distribution
+Six rows remain genuinely blocked, each by hardware, by what a distribution
 ships, or by a rule in [`RULES.md`](RULES.md).
