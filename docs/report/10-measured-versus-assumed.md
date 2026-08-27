@@ -21,13 +21,16 @@ the corpus test, and the five-distro `ld.so.cache` survey in
   is reported working on an RX 580 from outside
   (by @Samueru-sama); that
   is not reproduced here and is not adopted as if it were.
-- **A GLES application has been measured, a GLES-on-classic-host REPAIR has
-  not.** E83 shows gtk4-demo calling 46 GLES entry points, but that AppImage
-  bundles its own vendor library, so `gles-fwd.so` forwarded to the BUNDLED
-  dispatcher. No AppDir here is both GLES-bundling and host-drivers, so the
-  case the GLES shim was written for, a classic host with no EGL vendor, is
-  covered by construction and by the GL and EGL cases that share its code path,
-  not by a measurement of its own.
+- **A GLES application has been measured, and now the GLES-on-classic-host
+  REPAIR is too.** This entry used to say the repair had not been measured:
+  E83 shows gtk4-demo calling 46 GLES entry points, but that AppImage bundles
+  its own vendor library, so `gles-fwd.so` forwarded to the BUNDLED
+  dispatcher. The host-drivers shape closed it: on alpine:3.22, which ships
+  neither libGLESv2.so.2 nor an EGL vendor library, E91 to E94 measure
+  `gles-fwd.so` taking `GLFWD_ALT_SONAME`, choosing the host libEGL.so.1,
+  resolving all 358 entry points through `eglGetProcAddress` with none
+  absent, and gtk4-demo living past the timeout calling 46 GLES entry points
+  instead of dying inside a no-op dispatcher.
 - **The aarch64 trampolines RUN, under qemu-user, and have never touched
   aarch64 silicon.** This entry used to say "assembled, never run", which is a
   weaker claim, and `make gl-fwd-qemu-check` plus E76/E76b replaced it: qemu

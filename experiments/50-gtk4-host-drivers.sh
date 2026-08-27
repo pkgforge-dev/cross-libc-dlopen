@@ -114,10 +114,16 @@ else
 fi
 
 # E93: the whole table resolves through eglGetProcAddress, none absent. A shim
-#       that resolves 200 of 358 hands GTK4 158 silent zeros.
-got=$(grep -m1 -oE "[0-9]+ of 358 entry points resolved" /tmp/gtk.out | cut -d' ' -f1)
-[ "${got:-0}" = 358 ] && r=1 || r=0
-verdict E93 "$r" "gles-fwd: ${got:-0} of 358 entry points resolved (0 absent)"
+#       that resolves only part of the table hands GTK4 silent zeros for the
+#       rest, so the two numbers are read out of the log and compared rather
+#       than hardcoding the table size here.
+counts=$(grep -m1 -oE '[0-9]+ of [0-9]+ entry points resolved' /tmp/gtk.out |
+         awk '{ print $1, $3 }')
+got=${counts% *}; total=${counts#* }
+[ -z "$counts" ] && { got=0; total=0; }
+absent=$(( total > got ? total - got : 0 ))
+{ [ "$total" -gt 0 ] && [ "$got" = "$total" ]; } && r=1 || r=0
+verdict E93 "$r" "gles-fwd: $got of $total entry points resolved ($absent absent)"
 
 # E94: GTK4 actually rendered, not just probed. The bound is 10 for the same
 #       reason as E83: one call is a process that probed and stopped; a real
