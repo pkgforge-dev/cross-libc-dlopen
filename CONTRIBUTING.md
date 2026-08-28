@@ -43,7 +43,7 @@ and no dash is used as punctuation, in any spelling.
 ```bash
 sh scripts/run-evidence.sh     # about four minutes, and every prediction must hold
 sh scripts/check-drift.sh      # the documents still describe the tree
-sh scripts/check-charset.sh    # ASCII, apart from the five markers
+sh scripts/check-charset.sh    # ASCII, apart from the five markers and emoji
 ```
 
 A MISMATCH is a finding, not a harness bug. Investigate before coding.

@@ -185,7 +185,8 @@ jobs:
       #
       # docs/conventions/prose.md defines the markers this repository uses and
       # it now defines five: the three stops, plus the tick and the cross for
-      # a state table. The template's check-docs.sh hardcodes three, with no
+      # a state table. It also permits emoji. The template's check-docs.sh
+      # hardcodes three markers and bans every emoji outside them, with no
       # allowlist file and no variable, and it lives in another repository
       # that docs/conventions/git.md section 4 forbids writing to. So the
       # FETCHED COPY is patched, one line, before it runs. Every other rule in
@@ -198,6 +199,10 @@ jobs:
       # two markers this repository uses, and the failure reads as a prose
       # defect rather than a stale patch. That is not hypothetical, it is what
       # the first two attempts at this line did.
+      #
+      # ⚠ Emoji are allowed wholesale: the same ranges are added to the
+      # marker allowlist and to scripts/check-charset.sh. The penguin in the
+      # README title is the reason the ranges had to be added at all.
       - name: template checks
         run: |
           T=https://raw.githubusercontent.com/Azathothas/TEMPLATE/main
@@ -206,12 +211,12 @@ jobs:
             curl -fsSL -o "/tmp/$c.sh" "$T/scripts/common/$c.sh"
           done
 
-          sed -i 's#x{26A0}#x{26A0}|\\x{2705}|\\x{274C}#' /tmp/check-docs.sh
-          if ! grep -q '\\x{2705}' /tmp/check-docs.sh; then
+          sed -i 's#x{26A0}#x{26A0}|\\x{2705}|\\x{274C}|\\x{1F300}-\\x{1FAFF}|\\x{2190}-\\x{21FF}|\\x{2300}-\\x{23FF}|\\x{2500}-\\x{27BF}|\\x{2B00}-\\x{2BFF}|\\x{FE0F}#' /tmp/check-docs.sh
+          if ! grep -q '\\x{1F300}' /tmp/check-docs.sh; then
             echo "the emoji allowlist patch did not apply to check-docs.sh."
             echo "The template changed the line it targets. Re-read"
             echo "scripts/common/check-docs.sh upstream and re-aim it."
-            echo "Do NOT drop the tick and cross from prose.md to go green."
+            echo "Do NOT drop the markers or the emoji ranges to go green."
             exit 1
           fi
 
