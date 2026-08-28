@@ -240,6 +240,8 @@ following a link: this one, [`CONTRIBUTING.md`](CONTRIBUTING.md) and
 
 ## Credits
 
+- **@Azathothas** for carrying multiple tests in WSL and prototyping 
+  the initial implementation.
 - **@Samueru-sama** for the OpenGL gap and the mechanism behind gap 2, arriving
   from outside against a repository that had written it off, plus the
   `mesa-egl` directory fix and a seven-distribution matrix on a real RX 580.
