@@ -1,8 +1,12 @@
-# cross-libc `dlopen`
+<div align="center">
+
+# cross-libc `dlopen` 🐧
+
+</div>
 
 An application that bundles its own glibc can run anywhere, but it cannot
-bundle GPU drivers. Mesa plus LLVM is 100 to 200 MB, so the drivers have to
-come from the host. Two things can stop that, and they fail differently.
+bundle GPU drivers. Mesa plus LLVM is heavy, so the drivers have to
+come from the host, but this has two main issues and they fail differently.
 
 ## The two problems
 
