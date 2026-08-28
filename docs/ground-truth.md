@@ -43,15 +43,15 @@ blocks `libX11.so.6` and `libdbus-1.so.3`. See [`report/05-design-b-generated-sh
 10 736 056 bytes. Extracted with `--appimage-extract`; the embedded filesystem
 is DwarFS, not squashfs.
 
-⛔ **That hash is not what the suite pins any more.** The upstream release is a
+⛔ **That hash is not what the suite runs any more.** The upstream release is a
 mutable tag and the asset was replaced. The hash above is left as written
 because it names the binary these answers were taken from, which is the only
 thing that makes them checkable, and the **verdict** column below says what
-each row is against the build the suite pins today.
-[`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) 9.15 has the pin policy and 9.17 has the
+each row is against the build the suite verified today.
+[`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) 9.15 has the verification policy and 9.17 has the
 re-measurement, including why two rows are UNVERIFIED rather than corrected.
 
-| Question | Answer | against the build pinned today |
+| Question | Answer | against the build verified today |
 |---|---|---|
 | **Bundled glibc version** | **2.44**, from `ld.so (GNU libc) stable release version 2.44` | unchanged |
 | Legacy split libs bundled? | **Yes**: `libpthread.so.0`, `libdl.so.2`, `librt.so.1`, `libutil.so.1`, `libresolv.so.2`. `libanl.so.1` is **absent** | unchanged |

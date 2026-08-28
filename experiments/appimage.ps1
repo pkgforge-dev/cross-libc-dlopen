@@ -52,24 +52,61 @@ $ErrorActionPreference = 'Stop'
 $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Repo = Split-Path -Parent $Here
 $Work = Join-Path $Repo '.tmp'
-# ⛔ THESE SIX VALUES ARE A TWIN OF scripts/run-appimage.sh's x86_64 branch,
-# and check-drift.sh refuses when the two disagree. They diverged once, in the
-# change that re-pinned the shell suite and left this file refusing on the old
-# hash, and docs/reproducing.md points a reader here. docs/report/09-the-second-boundary.md 9.15 has
-# the pin policy; do not edit one side alone.
-$Sha  = '82a11a92d8c201739925e6aa25e5a845ca8bb754aedd5b8eecc27eee583994ea'
+# ⛔ NO CHECKED-IN SHA256, AND THAT IS THE POLICY. The upstream publishes one
+# release and its tag is `demo`; the assets are replaced without notice, so a
+# pinned digest is stale before it lands. The digest is read from the release
+# API at run time and the download is verified against it. docs/report/09-the-second-boundary.md 9.15.
 $Url  = 'https://github.com/pkgforge-dev/Anylinux-AppImages/releases/download/demo/vkcube+glxgears-host-drivers-demo-x86_64.AppImage'
 # The OTHER shape of AppImage: self-contained, its own Mesa, its own vendor
 # libraries, a real GTK4 application, and the only AppDir here that bundles
 # libGLESv2.so.2, which is what the GLES forwarding table is read out of.
 # From pkgforge-dev, the upstream. REPORT 9.15.
-$Gtk4Sha = 'df365771bc3ccd0b5c5c189e614a43346ff7dafcec2e4d449132adac9200410c'
 $Gtk4Url = 'https://github.com/pkgforge-dev/Anylinux-AppImages/releases/download/demo/gtk4-demo-x86_64.AppImage'
 # The same application in the host-drivers shape: glvnd dispatchers and no
 # Mesa. On a classic host gles-fwd has to resolve GLES through the host EGL.
 # From the upstream. REPORT 9.15.
-$Gtk4HdSha = '2bbd6caa79335ff0810740229e3af662a61fff697b32cb1298a92b6306b29ed4'
 $Gtk4HdUrl = 'https://github.com/pkgforge-dev/Anylinux-AppImages/releases/download/demo/gtk4-demo-host-drivers-x86_64.AppImage'
+$UpstreamRepo = 'pkgforge-dev/Anylinux-AppImages'
+$UpstreamTag = 'demo'
+
+function Get-UpstreamDigest {
+    param([Parameter(Mandatory)][string]$Repo, [Parameter(Mandatory)][string]$Tag, [Parameter(Mandatory)][string]$Asset)
+    $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/tags/$Tag" `
+        -Headers @{ Accept = 'application/vnd.github+json' }
+    foreach ($a in $rel.assets) {
+        if ($a.name -eq $Asset) { return ($a.digest -replace '^sha256:', '').ToLower() }
+    }
+    throw "asset $Asset is not published in $Repo release $Tag"
+}
+
+# Download, then verify against the digest the release publishes TODAY. The
+# demo tag is rolling, so there is no checked-in value to compare with; the
+# release API is the authority. A cached copy from an earlier run is only
+# reused when it still matches what the release publishes now.
+function Invoke-VerifiedDownload {
+    param(
+        [Parameter(Mandatory)][string]$Url,
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$Label,
+        [Parameter(Mandatory)][string]$Repo,
+        [Parameter(Mandatory)][string]$Tag,
+        [Parameter(Mandatory)][string]$Asset
+    )
+    $want = Get-UpstreamDigest -Repo $Repo -Tag $Tag -Asset $Asset
+    if (-not (Test-Path -LiteralPath $Path) -or
+        (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLower() -ne $want) {
+        Write-Host "downloading $Label" -ForegroundColor DarkGray
+        Invoke-WebRequest -Uri $Url -OutFile $Path
+    }
+    $got = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLower()
+    if ($got -ne $want) {
+        $want2 = Get-UpstreamDigest -Repo $Repo -Tag $Tag -Asset $Asset
+        if ($got -ne $want2) {
+            throw "$Label sha256 is $got, the release publishes $want2. The asset changed during the run, or the download is wrong."
+        }
+    }
+    Write-Host "$Label sha256 ok (matches the release today)" -ForegroundColor DarkGray
+}
 
 function Resolve-Engine {
     if ($Engine) {
@@ -161,13 +198,7 @@ $script:GpuArgs = Resolve-GpuArgs
 
 # ---- the AppImage, fetched once and checksummed -------------------------
 $img = Join-Path $Work 'demo.AppImage'
-if (-not (Test-Path -LiteralPath $img)) {
-    Write-Host "downloading the demo AppImage (~10 MB)" -ForegroundColor DarkGray
-    Invoke-WebRequest -Uri $Url -OutFile $img
-}
-$got = (Get-FileHash -LiteralPath $img -Algorithm SHA256).Hash.ToLower()
-if ($got -ne $Sha) { throw "demo.AppImage sha256 is $got, expected $Sha" }
-Write-Host "demo.AppImage sha256 ok" -ForegroundColor DarkGray
+Invoke-VerifiedDownload -Url $Url -Path $img -Label 'demo.AppImage' -Repo $UpstreamRepo -Tag $UpstreamTag -Asset 'vkcube+glxgears-host-drivers-demo-x86_64.AppImage'
 
 if (-not (Test-Path -LiteralPath (Join-Path $Work 'AppDir'))) {
     # Extraction runs the AppImage's own ELF runtime and the payload is DwarFS,
@@ -213,12 +244,7 @@ foreach ($u in @(
 # library over the bundle's own.
 if ($Only -in @('all', 'gtk4')) {
     $g = Join-Path $Work 'gtk4-demo.AppImage'
-    if (-not (Test-Path -LiteralPath $g)) {
-        Write-Host "downloading the gtk4 demo AppImage (~30 MB)" -ForegroundColor DarkGray
-        Invoke-WebRequest -Uri $Gtk4Url -OutFile $g
-    }
-    $gh = (Get-FileHash -LiteralPath $g -Algorithm SHA256).Hash.ToLower()
-    if ($gh -ne $Gtk4Sha) { throw "gtk4-demo.AppImage sha256 is $gh, expected $Gtk4Sha" }
+    Invoke-VerifiedDownload -Url $Gtk4Url -Path $g -Label 'gtk4-demo.AppImage' -Repo $UpstreamRepo -Tag $UpstreamTag -Asset 'gtk4-demo-x86_64.AppImage'
     if (-not (Test-Path -LiteralPath (Join-Path $Work 'gtk4x\AppDir'))) {
         $rc = Invoke-In -Image 'debian:trixie-slim' -Script '48-extract-gtk4.sh' -Privileged
         if ($rc -ne 0) { throw "gtk4 extraction failed (exit $rc)" }
@@ -234,12 +260,7 @@ if ($Only -in @('all', 'gtk4')) {
 # eglGetProcAddress; this is the case report/10 said was measured-but-not-repaired.
 if ($Only -in @('all', 'gtk4hd')) {
     $h = Join-Path $Work 'gtk4-demo-host-drivers.AppImage'
-    if (-not (Test-Path -LiteralPath $h)) {
-        Write-Host "downloading the host-drivers gtk4 demo AppImage (~22 MB)" -ForegroundColor DarkGray
-        Invoke-WebRequest -Uri $Gtk4HdUrl -OutFile $h
-    }
-    $hh = (Get-FileHash -LiteralPath $h -Algorithm SHA256).Hash.ToLower()
-    if ($hh -ne $Gtk4HdSha) { throw "gtk4-demo-host-drivers.AppImage sha256 is $hh, expected $Gtk4HdSha" }
+    Invoke-VerifiedDownload -Url $Gtk4HdUrl -Path $h -Label 'gtk4-demo-host-drivers.AppImage' -Repo $UpstreamRepo -Tag $UpstreamTag -Asset 'gtk4-demo-host-drivers-x86_64.AppImage'
     if (-not (Test-Path -LiteralPath (Join-Path $Work 'gtk4hd\AppDir'))) {
         $rc = Invoke-In -Image 'debian:trixie-slim' -Script '49-extract-gtk4-host-drivers.sh' -Privileged
         if ($rc -ne 0) { throw "gtk4 host-drivers extraction failed (exit $rc)" }

@@ -103,7 +103,7 @@ matter, for the reason above.
 carries**, rather than adding a second entry.
 
 ⛔ **Do not assume the name, and do not hardcode either spelling.** Upstream has
-changed it once: the demo AppImage this repository's suite pins shipped
+changed it once: the demo AppImage this repository's suite runs shipped
 `lib/foreign-dlopen.so` and now ships `lib/cross-libc-dlopen.so`. Read the
 bundle's own `.preload` and use what is in it, which is what
 `experiments/41-extract.sh` does before `experiments/40-appimage.sh` touches

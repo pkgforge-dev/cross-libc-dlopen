@@ -42,32 +42,19 @@ case "$ONLY" in
 	*) die "--only must be alpine, debian, ubuntu1404, ubuntu1604, gtk4, gtk4hd, both or all" ;;
 esac
 
-# ---------------------------------------------------- the pinned downloads --
-# One sha256 PER ARCHITECTURE, each computed from the asset itself. Copying a
-# number out of a document is how a pin stops being a pin.
-#
-# ⛔ THE TAG IS MUTABLE. `pkgforge-dev/Anylinux-AppImages` publishes exactly one
-# release and its tag is `demo`, so there is no version to pin to instead.
-# Re-pinning is therefore a maintained act rather than a failure, and
-# docs/report/09-the-second-boundary.md 9.15 is the policy. The refusal in
-# suite-lib.sh says which of the pin, the bytes and the published asset
-# disagreed, so a re-pin is a decision and not a shrug.
+# ------------------------------------------------------- the demo downloads --
+# ⛔ NO CHECKED-IN SHA256, AND THAT IS THE POLICY. The upstream publishes one
+# release and its tag is `demo`; the assets are replaced without notice, so a
+# pinned digest is stale before it lands and every run would need a re-pin to
+# survive. The suite reads the digest the release API publishes at run time
+# and verifies the download against it, refusing on a mismatch.
+# docs/report/09-the-second-boundary.md 9.15 is the policy.
 ARCH=$(asset_suffix)
 UPSTREAM_REPO=pkgforge-dev/Anylinux-AppImages
 TAG=demo
 DEMO_ASSET="vkcube+glxgears-host-drivers-demo-$ARCH.AppImage"
 GTK4_ASSET="gtk4-demo-$ARCH.AppImage"
 GTK4HD_ASSET="gtk4-demo-host-drivers-$ARCH.AppImage"
-case "$ARCH" in
-	x86_64)
-		DEMO_SHA=82a11a92d8c201739925e6aa25e5a845ca8bb754aedd5b8eecc27eee583994ea
-		GTK4_SHA=df365771bc3ccd0b5c5c189e614a43346ff7dafcec2e4d449132adac9200410c
-		GTK4HD_SHA=2bbd6caa79335ff0810740229e3af662a61fff697b32cb1298a92b6306b29ed4 ;;
-	aarch64)
-		DEMO_SHA=8695a8882c54ee94d7c07e1eaecc04a57b40feab05d3edace982fb24cddf37e9
-		GTK4_SHA=c1919057ad4dc08d0e8e0b6e1d1055b46b156478b96f16f4ec7b3e5132eddc5e
-		GTK4HD_SHA=8d9dc1958f417a9722e8a73dec811db17fd8e877e77dcdb6b8a521ba3d956326 ;;
-esac
 DEMO_URL="https://github.com/$UPSTREAM_REPO/releases/download/$TAG/$DEMO_ASSET"
 GTK4_URL="https://github.com/$UPSTREAM_REPO/releases/download/$TAG/$GTK4_ASSET"
 GTK4HD_URL="https://github.com/$UPSTREAM_REPO/releases/download/$TAG/$GTK4HD_ASSET"
@@ -91,7 +78,7 @@ in_container() {                       # in_container <image> <script> [flags...
 		"$_img" sh "/scripts/$_scr"
 }
 
-fetch_verified "$DEMO_URL" "$WORK/demo.AppImage" "$DEMO_SHA" "demo.AppImage ($ARCH)" "$UPSTREAM_REPO" "$TAG" "$DEMO_ASSET"
+fetch_verified "$DEMO_URL" "$WORK/demo.AppImage" "demo.AppImage ($ARCH)" "$UPSTREAM_REPO" "$TAG" "$DEMO_ASSET"
 
 # Extraction runs the AppImage's own ELF runtime and the payload is DwarFS, so
 # it happens inside a container. --privileged: hosted runners allow it, a
@@ -129,7 +116,7 @@ esac
 # vendor libraries. It is what found the shim preferring a host vendor library
 # over the bundle's own.
 case "$ONLY" in all|gtk4)
-	fetch_verified "$GTK4_URL" "$WORK/gtk4-demo.AppImage" "$GTK4_SHA" "gtk4-demo.AppImage ($ARCH)" "$UPSTREAM_REPO" "$TAG" "$GTK4_ASSET"
+	fetch_verified "$GTK4_URL" "$WORK/gtk4-demo.AppImage" "gtk4-demo.AppImage ($ARCH)" "$UPSTREAM_REPO" "$TAG" "$GTK4_ASSET"
 	if [ ! -d "$WORK/gtk4x/AppDir" ]; then
 		in_container debian:trixie-slim 48-extract-gtk4.sh --privileged ||
 			die "gtk4 extraction failed"
@@ -147,7 +134,7 @@ esac
 # libGLESv2.so.2 to forward to and must resolve GLES through the host EGL's
 # eglGetProcAddress; this is the case report/10 said was measured-but-not-repaired.
 case "$ONLY" in all|gtk4hd)
-	fetch_verified "$GTK4HD_URL" "$WORK/gtk4-demo-host-drivers.AppImage" "$GTK4HD_SHA" "gtk4-demo-host-drivers.AppImage ($ARCH)" "$UPSTREAM_REPO" "$TAG" "$GTK4HD_ASSET"
+	fetch_verified "$GTK4HD_URL" "$WORK/gtk4-demo-host-drivers.AppImage" "gtk4-demo-host-drivers.AppImage ($ARCH)" "$UPSTREAM_REPO" "$TAG" "$GTK4HD_ASSET"
 	if [ ! -d "$WORK/gtk4hd/AppDir" ]; then
 		in_container debian:trixie-slim 49-extract-gtk4-host-drivers.sh --privileged ||
 			die "gtk4 host-drivers extraction failed"

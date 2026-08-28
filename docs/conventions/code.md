@@ -53,7 +53,7 @@ build by name when the host is newer.
 ⛔ **The AppDir's dispatcher slot is the file `quick-sharun` writes and
 `.preload` names, and its name is upstream's to change.** It has changed:
 `lib/foreign-dlopen.so` up to the build hashed `712766f8`, and
-`lib/cross-libc-dlopen.so` in the one pinned now. So it is READ out of the
+`lib/cross-libc-dlopen.so` in the build verified today. So it is READ out of the
 extracted AppDir by `experiments/41-extract.sh` and never spelled by us.
 [`../report/09-the-second-boundary.md`](../report/09-the-second-boundary.md) 9.17.
 

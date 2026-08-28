@@ -8,10 +8,11 @@
 #   an email address       one deliberate fixture, on a reserved non-routable
 #                          domain, in scripts/verify-gates.sh.
 #   a long hex identifier  git commit SHAs used as citations, and the sha256
-#                          pins on the two demo AppImage downloads.
-#                          ⛔ The pins are the point. Removing them to quiet a
-#                          check deletes the thing that makes a download
-#                          trustworthy.
+#                          of the demo AppImage build the ground-truth
+#                          inventory was measured against.
+#                          ⛔ The digest is the point. It names the binary a
+#                          measured answer is about; removing it would make
+#                          the answer uncheckable.
 #
 # ⛔ EVERY OTHER CATEGORY IS STILL FATAL, including one that does not exist
 # yet. A narrowing that silently swallows a category nobody predicted is worse
@@ -22,8 +23,8 @@
 # it by name alone would let a genuine address through under a rule written for
 # a fixture, and an address is exactly the fingerprint --public exists to find.
 # The hex category is allowed by name alone: every long hex string in this tree
-# is a citation or a pin, and the template's own header says a generic entropy
-# rule is deliberately absent because it fires on hashes.
+# is a citation or a measured digest, and the template's own header says a generic
+# entropy rule is deliberately absent because it fires on hashes.
 #
 #   sh scripts/sweep-known-benign.sh [path-to-check-no-secrets.sh]
 #

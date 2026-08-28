@@ -62,9 +62,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Both AppImages are sha256-verified by the driver, so a cache hit is
-      # exactly as trustworthy as a fresh download, because a poisoned cache fails
-      # the pin and stops the run.
+      # Both AppImages are sha256-verified by the driver against the digest
+      # the release API publishes today, so a cache hit is exactly as
+      # trustworthy as a fresh download, because a poisoned cache fails the
+      # check and is re-downloaded.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .tmp/*.AppImage

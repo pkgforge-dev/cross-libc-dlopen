@@ -244,32 +244,42 @@ while IFS= read -r t; do
 done < /tmp/cd_targets.txt
 [ "$badt" = 0 ] && say "every documented make target exists"
 
-# ------------------------------- 3b. the two orchestrators pin one thing ----
-head_ "the AppImage pins, both orchestrators"
+# ----------------------- 3b. the two orchestrators agree on the upstream -----
+head_ "the AppImage downloads, both orchestrators"
 
-# ⛔ THIS CHECK EXISTS BECAUSE THEY DIVERGED. scripts/run-appimage.sh and
-# experiments/appimage.ps1 run the same stage scripts against the same
-# downloads, and each carries its own copy of the sha256 pins. A change that
-# re-pinned the shell side left the PowerShell side refusing on the old hash,
-# and docs/reproducing.md sends a reader on a machine without a POSIX shell to
-# exactly that file. A pin in two files is one pin and two chances to be wrong.
+# ⛔ THE PINS ARE GONE, AND THAT IS THE POLICY. The demo tag is rolling, so a
+# checked-in digest is stale before it lands; the suite reads the digest the
+# release API publishes at run time instead (scripts/suite-lib.sh
+# upstream_digest). A leftover 64-hex digest in either orchestrator is a
+# defect: it cannot be current, it misleads a reader into thinking the binary
+# is pinned, and it has no effect on anything, because the verification reads
+# the API.
+#
+# ⚠ What must still agree between the two files is the UPSTREAM they verify
+# against: the repository, the tag and the three asset names. A change that
+# points the shell suite at a different release than the PowerShell one is the
+# same class of divergence the pin check used to catch.
 #
 # ⚠ The PowerShell orchestrator is x86_64 only, so it is compared against the
 # x86_64 branch of the shell one and nothing is inferred about aarch64.
-sh_pins=$(sed -n '/x86_64)/,/aarch64)/p' scripts/run-appimage.sh |
-          grep -oE '[0-9a-f]{64}' | sort | tr '\n' ' ')
-ps_pins=$(grep -oE '[0-9a-f]{64}' experiments/appimage.ps1 | sort | tr '\n' ' ')
-if [ -z "$sh_pins" ] || [ -z "$ps_pins" ]; then
-	bad "could not read a sha256 pin out of one of the orchestrators."
-	say "       shell: [$sh_pins]"
-	say "       pwsh : [$ps_pins]"
-elif [ "$sh_pins" != "$ps_pins" ]; then
-	bad "the two orchestrators pin different bytes."
-	say "       scripts/run-appimage.sh   x86_64: $sh_pins"
-	say "       experiments/appimage.ps1        : $ps_pins"
+sh_repo=$(sed -n 's/^UPSTREAM_REPO=//p' scripts/run-appimage.sh)
+sh_tag=$(sed -n 's/^TAG=//p' scripts/run-appimage.sh)
+ps_repo=$(grep -oE 'pkgforge-dev/Anylinux-AppImages' experiments/appimage.ps1 | head -1)
+ps_tag=$(grep -oE 'releases/download/[a-z0-9_-]+/' experiments/appimage.ps1 | sed 's#releases/download/##; s#/$##' | head -1)
+
+leftover=$(grep -hoE '[0-9a-f]{64}' scripts/run-appimage.sh experiments/appimage.ps1 | head -1)
+if [ -n "$leftover" ]; then
+	bad "a checked-in digest survives in an orchestrator: $leftover"
+	say "       the demo tag is rolling, so no checked-in digest is current."
+	say "       The suite verifies against the release API instead. Remove it."
+elif [ "$sh_repo" != "$ps_repo" ] || [ "$sh_tag" != "$ps_tag" ] ||
+     [ -z "$sh_repo" ] || [ -z "$sh_tag" ] || [ -z "$ps_repo" ] || [ -z "$ps_tag" ]; then
+	bad "the two orchestrators verify different upstreams."
+	say "       scripts/run-appimage.sh   repo=$sh_repo tag=$sh_tag"
+	say "       experiments/appimage.ps1        : repo=$ps_repo tag=$ps_tag"
 	say "       Both drive the same stages. docs/report/09-the-second-boundary.md 9.15 has the policy."
 else
-	say "both orchestrators pin the same assets"
+	say "both orchestrators verify the same upstream ($sh_repo @ $sh_tag)"
 fi
 
 # ------------------------------------------------ 4. no dash as punctuation -

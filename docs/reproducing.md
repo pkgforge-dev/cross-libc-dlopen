@@ -131,7 +131,7 @@ runs it with no `CROSS_LIBC_DLOPEN_*` and no `VK_DRIVER_FILES` at all, which is
 the only form of the claim that matches what was asked.
 
 ⚠ **That slot's name is upstream's, and upstream has changed it.** It was
-`lib/foreign-dlopen.so` and the AppImage pinned today ships
+`lib/foreign-dlopen.so` and the AppImage verified today ships
 `lib/cross-libc-dlopen.so` instead, so `experiments/41-extract.sh` reads the
 name out of the extracted AppDir and writes it to `AppDir/.cld-slot`. The
 commands below read that file rather than spelling either name, and so should

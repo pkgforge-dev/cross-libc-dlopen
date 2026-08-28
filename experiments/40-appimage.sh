@@ -19,7 +19,7 @@ LP="$APPDIR/lib"
 # ⛔ THE DISPATCHER SLOT IS DERIVED, NOT SPELLED. 41-extract.sh finds it in the
 # extracted AppDir and writes the name here, because upstream renamed it:
 # lib/foreign-dlopen.so up to the build hashed 712766f8, lib/cross-libc-dlopen.so
-# in the one pinned now. Hardcoding either spelling makes the A/B a no-op
+# in the build verified today. Hardcoding either spelling makes the A/B a no-op
 # against the other, and a no-op A/B reports both arms agreeing. 9.17.
 if [ ! -f "$APPDIR/.cld-slot" ]; then
     echo "  FATAL: $APPDIR/.cld-slot is missing, so the dispatcher slot is unknown."
@@ -82,9 +82,9 @@ fi
 #
 # The guard above catches a missing baseline. This catches a dirty one, which
 # is the more common and much quieter of the two.
-# ⚠ .preload.BASELINE, not .preload.shipped. The pinned AppImage ships this
-# project's own forwarding shims in its .preload, so restoring the shipped list
-# would restore them and every absence case would measure their presence.
+# ⚠ .preload.BASELINE, not .preload.shipped. The AppImage verified today ships
+# this project's own forwarding shims in its .preload, so restoring the shipped
+# list would restore them and every absence case would measure their presence.
 # 41-extract.sh derives the baseline and prints what it took out. 9.17.
 reset_appdir() {
     cp "$APPDIR/.preload.baseline" "$APPDIR/.preload"
@@ -864,10 +864,10 @@ echo "  host GL stack: $GLHOST$([ $GLHOST = classic ] && echo ' (no libGLX_<vend
 # BASELINE 41-extract.sh derived, so a case whose whole point is the shim's
 # ABSENCE cannot silently run with it present.
 #
-# ⛔ Not from .preload.shipped. The pinned AppImage names gl-fwd.so, egl-fwd.so
-# and gles-fwd.so in its own .preload, so restoring the shipped list would put
-# upstream's copy of the very shim under test back into every arm, including
-# the ones that assert it is not there. Those arms would then append a
+# ⛔ Not from .preload.shipped. The AppImage verified today names gl-fwd.so,
+# egl-fwd.so and gles-fwd.so in its own .preload, so restoring the shipped list
+# would put upstream's copy of the very shim under test back into every arm,
+# including the ones that assert it is not there. Those arms would then append a
 # duplicate line and pass. 41-extract.sh prints what the baseline drops. 9.17.
 use_gl_shims() {               # use_gl_shims [gl] [egl]
     cp "$APPDIR/.preload.baseline" "$APPDIR/.preload"

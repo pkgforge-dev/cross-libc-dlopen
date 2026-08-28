@@ -6,8 +6,10 @@
 # layer rather than in a stage, so a port that only translated the sequencing
 # would drop them and quietly change what the suite measures:
 #
-#   1. sha256 of every downloaded AppImage, verified, refusing to continue on
-#      a mismatch. The suite's whole premise is that it drove a KNOWN binary.
+#   1. sha256 of every downloaded AppImage, verified against the digest the
+#      release API publishes, refusing to continue on a mismatch. The suite's
+#      whole premise is that it drove a KNOWN binary. There is no checked-in
+#      pin: the demo tag is rolling, so the release API is the only authority.
 #   2. a stage script containing CR is REJECTED, not run. A CR turns a shell
 #      script into a $'...\r' "not found" error that names the wrong thing and
 #      reads like anything but line endings.
@@ -92,11 +94,11 @@ sha256_of() {
 	fi
 }
 
-# ⭐ WHAT GITHUB SAYS THE ASSET IS, which is a different question from what we
-# pinned and from what arrived. The release API publishes a sha256 per asset,
-# so it can be read without downloading anything. Printing nothing on any
-# failure is deliberate: this only ever ADDS a sentence to a refusal, and a
-# suite that cannot reach the network must still be able to refuse.
+# ⭐ WHAT GITHUB SAYS THE ASSET IS, which is the only authority there is for a
+# rolling tag. The release API publishes a sha256 per asset, so it can be read
+# without downloading anything. Printing nothing on any failure is deliberate:
+# this only ever ADDS a sentence to a refusal, and a suite that cannot reach
+# the network must still be able to refuse.
 #
 # ⚠ awk over `tr ',' '\n'`, not jq and not python3. The suite runs on a hosted
 # runner, in Git Bash on Windows and inside four container images, and jq is
@@ -119,66 +121,64 @@ upstream_digest() {                    # upstream_digest <owner/repo> <tag> <ass
 		}'
 }
 
-# ⛔ THREE THINGS CAN DISAGREE AND THE OLD MESSAGE SAID ONE SENTENCE FOR ALL OF
-# THEM: our pin, the bytes that arrived, and what the upstream release
-# publishes today. Which pair differs decides what a reader should do, and they
-# are not close to each other.
+# ⛔ THE SUITE CARRIES NO PIN, AND THAT IS THE POLICY. The upstream publishes
+# one release and its tag is `demo`; the assets are replaced without notice,
+# so a checked-in digest is stale before it lands and every run would need a
+# re-pin to survive. The only ground truth is what the release API publishes
+# today: upstream_digest reads it, and this function requires the bytes to
+# match it.
 #
-# ⚠ Measured, and it is why this exists. Run 32948154287 refused with "sha256
-# is 8f6e390a..., expected 712766f8...". That reads as one event. It was not:
-# the asset had already been replaced before the run started, and every asset
-# on that release was replaced AGAIN at 08:32:37Z, 56 seconds after the run
-# ended. The upstream tag is `demo` and it is mutable, so this recurs by
-# design. docs/report/09-the-second-boundary.md 9.15.
-fetch_verified() {                     # fetch_verified <url> <dest> <sha256> <label> [repo tag asset]
-	_url=$1; _dst=$2; _want=$3; _label=$4
-	_repo=${5:-}; _tag=${6:-}; _asset=${7:-}
-	if [ ! -f "$_dst" ]; then
-		say "downloading $_label"
-		mkdir -p "$(dirname "$_dst")"
-		if command -v curl >/dev/null 2>&1; then
-			curl -fsSL -o "$_dst.part" "$_url" || die "download failed: $_url"
-		elif command -v wget >/dev/null 2>&1; then
-			wget -q -O "$_dst.part" "$_url" || die "download failed: $_url"
-		else
-			die "no curl or wget to fetch $_url"
-		fi
-		mv "$_dst.part" "$_dst"
-	fi
-	_got=$(sha256_of "$_dst")
-	if [ "$_got" = "$_want" ]; then
-		say "$_label sha256 ok"
+# ⚠ The API is read BEFORE a cached copy is trusted, so a cache hit from an
+# earlier run is re-verified and re-downloaded when the tag has moved.
+# Measured, and it is why this exists: run 32948154287 refused with "sha256 is
+# 8f6e390a..., expected 712766f8..." after the asset had been replaced, and
+# every asset on that release was replaced AGAIN 56 seconds after the run
+# ended. docs/report/09-the-second-boundary.md 9.15.
+fetch_verified() {                     # fetch_verified <url> <dest> <label> <repo> <tag> <asset>
+	_url=$1; _dst=$2; _label=$3; _repo=$4; _tag=$5; _asset=$6
+
+	_pub=$(upstream_digest "$_repo" "$_tag" "$_asset")
+	[ -n "$_pub" ] || die "$_label: could not read the digest the release publishes for $_asset.
+      Refusing: every result below would be about a binary nobody can verify."
+
+	# A cached copy is only usable when it still matches what the release
+	# publishes today. The tag is mutable, so an older copy is stale by default.
+	if [ -f "$_dst" ] && [ "$(sha256_of "$_dst")" = "$_pub" ]; then
+		say "$_label sha256 ok (matches the release today)"
 		return 0
 	fi
 
-	_pub=''
-	[ -n "$_repo" ] && _pub=$(upstream_digest "$_repo" "$_tag" "$_asset")
-
-	if [ -z "$_pub" ]; then
-		_why="Upstream was not reachable, so which of the two changed is not
-      established here. Re-run with the network, or check by hand."
-	elif [ "$_pub" = "$_got" ]; then
-		_why="UPSTREAM RE-UPLOADED IT. What arrived is exactly what the release
-      publishes today, so the pin is older than the asset and nothing is wrong
-      with the download. ⛔ Re-pinning is a deliberate, reviewed act and not a
-      way to make this green: read docs/report/09-the-second-boundary.md 9.15 before you do it."
-	elif [ "$_pub" = "$_want" ]; then
-		_why="⛔ THE DOWNLOAD IS WRONG, NOT THE PIN. The release still publishes
-      the pinned digest, so these bytes were truncated, cached wrong, or
-      substituted in transit. Delete $_dst and retry. If it repeats, stop and
-      do not re-pin."
+	say "downloading $_label"
+	mkdir -p "$(dirname "$_dst")"
+	if command -v curl >/dev/null 2>&1; then
+		curl -fsSL -o "$_dst.part" "$_url" || die "download failed: $_url"
+	elif command -v wget >/dev/null 2>&1; then
+		wget -q -O "$_dst.part" "$_url" || die "download failed: $_url"
 	else
-		_why="⛔ NEITHER MATCHES. Upstream publishes $_pub, which is a third
-      value, so the asset changed AND what arrived is not the new asset
-      either. A read torn by a re-upload in progress looks exactly like this,
-      and so does interception. Retry once; if the retry lands on $_pub the
-      first read was torn."
+		die "no curl or wget to fetch $_url"
+	fi
+	mv "$_dst.part" "$_dst"
+
+	_got=$(sha256_of "$_dst")
+	if [ "$_got" = "$_pub" ]; then
+		say "$_label sha256 ok (matches the release today)"
+		return 0
 	fi
 
-	die "$_label sha256 is $_got, expected $_want.
-      $_why
-      Refusing to continue: every result below would be about a binary nobody
-      pinned."
+	# A re-upload in progress reads exactly like a torn download: the digest
+	# was read, then the asset was replaced, then the old bytes arrived. Ask
+	# the release again before refusing, so that case is not blamed on the
+	# network.
+	_pub2=$(upstream_digest "$_repo" "$_tag" "$_asset")
+	if [ "$_got" = "$_pub2" ]; then
+		say "$_label sha256 ok (matches the release today)"
+		return 0
+	fi
+
+	die "$_label sha256 is $_got, the release publishes $_pub2.
+      The asset changed during the run, or the download is wrong. Delete
+      $_dst and re-run once; if it persists, the release is changing under
+      the suite and that is a finding."
 }
 
 # ------------------------------------------------------- 5. the architecture --

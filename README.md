@@ -84,6 +84,8 @@ them, including:
 
 - Ubuntu 12.04 through 22.04
 - Alpine Linux
+- Arch Linux
+- Artix Linux
 - NixOS
 - Slackware
 
@@ -94,6 +96,25 @@ yourself.
 
 ⚠ What is **not** measured is [`docs/limits.md`](docs/limits.md), and it is a
 list rather than a silence.
+
+---
+
+## Known limitations
+
+The preload bridges the libc and the dispatcher. It cannot give a host a GPU
+feature the host's own driver does not provide, and these are the places where
+that shows up.
+
+| what needs it | the catch |
+|---|---|
+| **a GTK4 application** | GTK4 resolves GL through epoxy, which aborts with `No provider of glBufferStorage found` unless the host Mesa provides desktop OpenGL 4.4, `GL_ARB_buffer_storage` or `GL_EXT_buffer_storage`. Mesa 10.1 on Ubuntu 14.04 has none of them, so a GTK4 app fails there even with this loaded. A shim forwards an entry point; it cannot implement one the host lacks. Measured by hand, recorded in [`docs/limits.md`](docs/limits.md) |
+| **OpenGL 4.6** | Mesa only reached OpenGL 4.6 in release 20.0 (February 2020), on radeonsi. A system whose Mesa predates that stops at OpenGL 4.5, so an application that demands 4.6 will not get it. In Ubuntu terms that means 20.04 and later are fine; 18.04 and earlier are not. The Mesa release notes for [20.0.0](https://docs.mesa3d.org/relnotes/20.0.0.html) state it: OpenGL 4.5 in 19.x, 4.6 from 20.0 |
+| **Vulkan 1.3 or newer** | Mesa shipped Vulkan 1.1 and 1.2 for years and only reached 1.3 in release 22.0 (March 2022), on RADV and ANV. An application that requires Vulkan 1.3 (or the newer 1.4) will not find it on a distribution whose Mesa predates that, no matter how the libc gap is bridged. The [22.0.0 release notes](https://docs.mesa3d.org/relnotes/22.0.0.html) say so |
+
+⭐ **The pattern behind all three:** the host's Mesa is the ceiling. This
+project lets a bundled application *reach* that ceiling across a libc boundary;
+it does not raise the ceiling. What a driver cannot do stays undone, and
+[`docs/limits.md`](docs/limits.md) is the full, measured list.
 
 ---
 
