@@ -57,20 +57,19 @@ $Work = Join-Path $Repo '.tmp'
 # change that re-pinned the shell suite and left this file refusing on the old
 # hash, and docs/reproducing.md points a reader here. docs/report/09-the-second-boundary.md 9.15 has
 # the pin policy; do not edit one side alone.
-$Sha  = 'd77a01ebacb739392ca8c39f879dc5bc626283b0c01bd9dc12eecbea92dd34c1'
-$Url  = 'https://github.com/Samueru-sama/Anylinux-AppImages/releases/download/demo/vkcube+glxgears-host-drivers-demo-x86_64.AppImage'
+$Sha  = '82a11a92d8c201739925e6aa25e5a845ca8bb754aedd5b8eecc27eee583994ea'
+$Url  = 'https://github.com/pkgforge-dev/Anylinux-AppImages/releases/download/demo/vkcube+glxgears-host-drivers-demo-x86_64.AppImage'
 # The OTHER shape of AppImage: self-contained, its own Mesa, its own vendor
 # libraries, a real GTK4 application, and the only AppDir here that bundles
 # libGLESv2.so.2, which is what the GLES forwarding table is read out of.
-# ⚠ From pkgforge-dev, the upstream. The demo above is the fork's, because the
-# host-drivers build exists only there. REPORT 9.15.
-$Gtk4Sha = '413243c9ecbaaafe40636afd06e0c3d558b8cc928ed20b9ec55a6e0f09b5d8b4'
+# From pkgforge-dev, the upstream. REPORT 9.15.
+$Gtk4Sha = 'df365771bc3ccd0b5c5c189e614a43346ff7dafcec2e4d449132adac9200410c'
 $Gtk4Url = 'https://github.com/pkgforge-dev/Anylinux-AppImages/releases/download/demo/gtk4-demo-x86_64.AppImage'
 # The same application in the host-drivers shape: glvnd dispatchers and no
 # Mesa. On a classic host gles-fwd has to resolve GLES through the host EGL.
-# From the fork, where every "host-drivers" asset lives (REPORT 9.15).
-$Gtk4HdSha = 'b8ab47805c8fe9c7378a9d0b5b11e19c796a09c3f2a7b6c993968530bd5c10cd'
-$Gtk4HdUrl = 'https://github.com/Samueru-sama/Anylinux-AppImages/releases/download/demo/gtk4-demo-host-drivers-x86_64.AppImage'
+# From the upstream. REPORT 9.15.
+$Gtk4HdSha = '2bbd6caa79335ff0810740229e3af662a61fff697b32cb1298a92b6306b29ed4'
+$Gtk4HdUrl = 'https://github.com/pkgforge-dev/Anylinux-AppImages/releases/download/demo/gtk4-demo-host-drivers-x86_64.AppImage'
 
 function Resolve-Engine {
     if ($Engine) {

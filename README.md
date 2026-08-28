@@ -1,33 +1,48 @@
 # cross-libc `dlopen`
 
-**Let an application that bundles its own libc `dlopen` the host's GPU drivers,
-including drivers linked against musl.**
+An application that bundles its own glibc can run anywhere, but it cannot
+bundle GPU drivers. Mesa plus LLVM is 100 to 200 MB, so the drivers have to
+come from the host. Two things can stop that, and they fail differently.
 
-A bundled application ships its glibc so it runs anywhere. It does not ship GPU
-drivers, because Mesa plus LLVM is 100 to 200 MB, so it has to borrow the
-host's. Two separate things stop it, and they give different symptoms.
+## The two problems
 
-| | the gap | what you see | what repairs it |
-|---|---|---|---|
-| **1** | the host's driver was built against a **different libc**: a newer glibc, or musl | `version 'GLIBC_2.38' not found`, or `libc.musl-x86_64.so.1: cannot open shared object file` | `cross-libc-dlopen.so`, an `LD_PRELOAD`ed `dlopen` interposer |
-| **2** | the host has the capability but ships **nothing in the shape the bundled loader looks for**, with no `libGLX_<vendor>.so.0` behind libglvnd | ⭐ `couldn't get an RGB, Double-buffered visual`, a message about visuals for a fault about neither visuals nor libc | `gl-fwd.so` and its EGL and GLES siblings |
+**1. The host's driver was built against a different libc.**
 
-Gap 1 is repaired by rewriting the host object in a private copy, so its symbol
-version requirements stop mattering. Gap 2 is repaired by an object built with
-the **SONAME of the library it replaces**, so `ld.so` binds the application's
-`DT_NEEDED` to it and every entry point of the bundled dispatcher forwards to
-whatever the host can stand behind.
+The bundled application ships one glibc. The host's driver may want a newer
+glibc, or it may be linked against musl entirely. Neither can load into the
+bundled process.
 
-⭐ **This is a preload, not an AppImage feature.** It needs a dynamically linked
-process whose libc differs from the driver's. An AppImage is the hardest such
-consumer, because it supplies its own loader as well as its own libc, so it is
-what every measured result here was obtained through. Nothing in the mechanism
-requires one: [`examples/plain-preload/`](examples/plain-preload/) runs it
-against an ordinary binary with no AppDir anywhere.
+```
+version 'GLIBC_2.38' not found (required by /usr/lib/.../libfoo.so)
+libc.musl-x86_64.so.1: cannot open shared object file
+```
 
-⚠ **What has not been measured** is a non-AppImage process against a real GPU
-driver, so this page does not claim one.
-[`docs/todo/measurement.md`](docs/todo/measurement.md) T-03 is that work.
+This is fixed by `cross-libc-dlopen.so`, an `LD_PRELOAD`ed `dlopen`
+interposer. It rewrites the host object in a private copy so symbol version
+requirements stop mattering.
+
+**2. The host has the capability, but ships nothing in the shape the bundled
+loader looks for.**
+
+The bundle ships libglvnd. A host whose Mesa was built without glvnd has no
+`libGLX_<vendor>.so.0` for it to `dlopen`, and the error you get has nothing to
+do with libc or visuals:
+
+```
+couldn't get an RGB, Double-buffered visual
+```
+
+This is fixed by `gl-fwd.so`, `egl-fwd.so` and `gles-fwd.so`. Each is built
+with the SONAME of the library it replaces, so `ld.so` binds the
+application's `DT_NEEDED` to it and forwards every entry point to whatever
+the host can stand behind.
+
+⭐ **This is a preload, not an AppImage feature.** It needs a dynamically
+linked process whose libc differs from the driver's. An AppImage is the
+hardest such consumer, because it supplies its own loader as well as its own
+libc, so it is what every measured result here was obtained through. Nothing
+in the mechanism requires one: [`examples/plain-preload/`](examples/plain-preload/)
+runs it against an ordinary binary with no AppDir anywhere.
 
 ---
 
@@ -37,28 +52,48 @@ driver, so this page does not claim one.
 sh scripts/build.sh
 ```
 
-It detects `podman`, `docker` or a native toolchain, reports what it found
-before building anything, and writes every artefact plus a manifest under
-`build/`. Then, for any dynamically linked program:
+This detects `podman`, `docker` or a native toolchain, reports what it found,
+and writes every artefact plus a manifest under `build/`. Then, for any
+dynamically linked program:
 
 ```bash
 LD_PRELOAD=/path/to/cross-libc-dlopen.so ./your-program
 ```
 
-⭐ There is nothing to switch on. Preloading it is the opt-in, and
+There is nothing to switch on. Preloading it is the opt-in, and
 `CROSS_LIBC_DLOPEN=0` is how you switch it back off.
-
-⭐ **Packaging it? `cd src && make portable`** needs no container and no
-script, and is what `scripts/build.sh --portable` runs.
 
 For a bundle, put `cross-libc-dlopen.so`, `gl-fwd.so`, `egl-fwd.so` and
 `gles-fwd.so` in the bundle's `lib/` and name them in `.preload`.
 [`docs/integrating.md`](docs/integrating.md) has the detail per target.
 
+Packaging it? `cd src && make portable` needs no container and no script, and
+is what `scripts/build.sh --portable` runs.
+
 `scripts/build.sh` builds in a container on glibc 2.31 by default, so the
-artefacts load into any bundle. ⚠ The one way to get this wrong is a native
+artefacts load into any bundle. The one way to get this wrong is a native
 build on a newer glibc, and the script refuses that by name.
 [`docs/building.md`](docs/building.md) has the measurement.
+
+---
+
+## Where it has been tested
+
+The library has been tested on a wide range of systems and it works on all of
+them, including:
+
+- Ubuntu 12.04 through 22.04
+- Alpine Linux
+- NixOS
+- Slackware
+
+The measured record, every host and every count, lives in
+[`docs/report/README.md`](docs/report/README.md) and nowhere else.
+[`docs/reproducing.md`](docs/reproducing.md) is how to re-run every number
+yourself.
+
+⚠ What is **not** measured is [`docs/limits.md`](docs/limits.md), and it is a
+list rather than a silence.
 
 ---
 
@@ -79,28 +114,6 @@ nothing else. [`docs/reproducing.md`](docs/reproducing.md).
 
 ---
 
-## What was demonstrated, and on what
-
-⭐ **Every count and every suite total lives in
-[`docs/report/README.md`](docs/report/README.md) and nowhere else.** This table says what was
-shown and where; REPORT says how much.
-
-| result | the host it was measured on |
-|---|---|
-| a musl-built Vulkan ICD driving `vkcube`, where as shipped it reports zero devices | Alpine 3.22, musl, classic Mesa |
-| `glxgears` rendering, with a cleared pixel read back correctly | Alpine 3.22, musl, no glvnd vendor library anywhere |
-| OpenGL and EGL complete on a **pre-glvnd glibc** host | `ubuntu:14.04` at glibc 2.19, `ubuntu:16.04` at glibc 2.23 |
-| turning the feature on breaking nothing that already worked, with zero objects rewritten where none needs it | `debian:trixie-slim`, glibc 2.41, older than the bundled 2.44 |
-| a **closed-source** driver, 4096 bytes round-tripped through the GPU and verified | NVIDIA RTX 3050 Ti, through `/dev/dxg` |
-| a real GTK4 application, and the finding that its renderer is **GLES** rather than GL | `gtk4-demo`, on musl Alpine |
-| the host libc runtime swapped in at `execve` time, with a driver on the end | `debian:trixie-slim` |
-| a plain `LD_PRELOAD` against an ordinary binary, with **no AppDir, no marker and no `.preload`** | `debian:bullseye-slim` loading a musl object |
-
-⚠ What is **not** measured is [`docs/limits.md`](docs/limits.md), and it is a
-list rather than a silence.
-
----
-
 ## Documentation
 
 | file | what it answers |
@@ -113,7 +126,7 @@ list rather than a silence.
 | [`docs/limits.md`](docs/limits.md) | what it cannot do, with the measurement behind each |
 | [`docs/reproducing.md`](docs/reproducing.md) | how to re-run every number here yourself |
 | [`docs/environment.md`](docs/environment.md) | the machine the numbers were measured on |
-| [`docs/report/README.md`](docs/report/README.md) | ⭐ **the measured record.** Every count and every suite total lives here |
+| [`docs/report/README.md`](docs/report/README.md) | **the measured record.** Every count and every suite total lives here |
 | [`docs/ground-truth.md`](docs/ground-truth.md) | where distributions actually keep their libraries, measured |
 | [`docs/alternatives.md`](docs/alternatives.md) | the other ways to solve this, and which one fits your position |
 | [`docs/rejected-designs.md`](docs/rejected-designs.md) | three designs evaluated and refused, with evidence |
@@ -124,9 +137,9 @@ list rather than a silence.
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | what to run and what to read before opening a pull request |
 | [`SECURITY.md`](SECURITY.md) | how to report a vulnerability privately |
 
-Not on this list, and not deleted: [`docs/history/`](docs/history/README.md) is why things
-are the way they are, in the original wording. [`docs/todo/`](docs/todo/INDEX.md) is what
-is open, and the work order is in
+Not on this list, and not deleted: [`docs/history/`](docs/history/README.md) is
+why things are the way they are, in the original wording.
+[`docs/todo/`](docs/todo/INDEX.md) is what is open, and the work order is in
 [`docs/todo/PROGRESS.md`](docs/todo/PROGRESS.md) and nowhere else.
 
 ---

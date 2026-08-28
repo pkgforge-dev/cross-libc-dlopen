@@ -937,28 +937,29 @@ now. What is established is that this release's assets change more than once a
 day.
 
 **Which repository.** `pkgforge-dev/Anylinux-AppImages` is the upstream:
-`fork: false`, 234 stars. `Samueru-sama/Anylinux-AppImages` reports
-`fork: true` with `parent: pkgforge-dev/Anylinux-AppImages`. The suite was
-taking both assets from the fork.
+`fork: false`, 234 stars.
 
-⚠ **One of the two cannot move, and the reason is what is being measured.**
+⚠ **Correcting the dependency.** This section previously recorded that the
+`host-drivers` assets existed only on `Samueru-sama/Anylinux-AppImages`, a fork,
+and that the demo AppImage could not move to the upstream. That premise no
+longer holds. The upstream now publishes the same three assets the suite pins:
+`gtk4-demo`, `gtk4-demo-host-drivers` and `vkcube+glxgears-host-drivers-demo`,
+for both architectures. Measured from the release API on 2026-08-27: all three
+are published by `pkgforge-dev/Anylinux-AppImages` under the `demo` tag, and
+`scripts/run-appimage.sh` and `experiments/appimage.ps1` take every asset from
+it. Nothing in the suite depends on a fork.
 
-| asset | upstream | fork |
-|---|---|---|
-| `gtk4-demo-<arch>.AppImage` | published | published |
-| `vkcube+glxgears-host-drivers-demo-<arch>.AppImage` | **not published** | published |
-
-A code search for `host-drivers` across the upstream returns 0 results. The
-upstream's `vkcube+glxgears-demo-<arch>.AppImage` is the build that BUNDLES its
-drivers, and the host-drivers build is the one that does not, which is the
-entire case this suite exists to measure. So `gtk4-demo` now comes from the
-upstream and the demo AppImage stays on the fork, deliberately.
+| asset | upstream |
+|---|---|
+| `gtk4-demo-<arch>.AppImage` | published |
+| `gtk4-demo-host-drivers-<arch>.AppImage` | published |
+| `vkcube+glxgears-host-drivers-demo-<arch>.AppImage` | published |
 
 **The policy, and why it is the one that was available.**
 
 | option | verdict |
 |---|---|
-| pin to an immutable release | ⛔ not available. Measured: BOTH repositories publish exactly one release each, and both are tagged `demo` |
+| pin to an immutable release | ⛔ not available. Measured: the upstream publishes exactly one release and it is tagged `demo` |
 | mirror the asset into this repository | ⛔ refused by `scripts/check-drift.sh` section 2c, which rejects any tracked `*.AppImage` by shape |
 | mirror to a release of our own | needs a published release, and nothing has been published yet |
 | ⭐ re-pin as a maintained act, recorded and reviewed | adopted |

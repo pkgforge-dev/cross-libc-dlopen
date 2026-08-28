@@ -114,16 +114,15 @@ number. `docs/report/09-the-second-boundary.md` 9.18.
 
 Both AppImages are pinned by sha256 against a **mutable** `demo` tag, and the
 assets were replaced twice inside two minutes. ⛔ There is no immutable release
-to pin to: the upstream and the fork publish one release each and both are
-tagged `demo`. `docs/report/09-the-second-boundary.md` 9.15 has the policy and the reasoning.
+to pin to: the upstream publishes exactly one release and it is tagged `demo`.
+`docs/report/09-the-second-boundary.md` 9.15 has the policy and the reasoning.
 
 When it refuses, read which of the three cases it names: the pin is stale, the
 download is wrong, or neither matches. They call for different things.
 
-⚠ `gtk4-demo` comes from `pkgforge-dev/Anylinux-AppImages`, the upstream. The
-demo AppImage comes from Samueru-sama's fork and **cannot move**, because
-`host-drivers` appears 0 times in the upstream's code and its
-`vkcube+glxgears-demo-*` is the build that bundles its own drivers.
+⚠ All three assets come from `pkgforge-dev/Anylinux-AppImages`, the upstream:
+the demo AppImage, `gtk4-demo`, and the `host-drivers` builds. The upstream now
+publishes the host-drivers assets too, so nothing depends on a fork.
 
 ### 4. T-12 is answered for one half and unanswerable for the other
 

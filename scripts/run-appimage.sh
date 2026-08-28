@@ -46,45 +46,31 @@ esac
 # One sha256 PER ARCHITECTURE, each computed from the asset itself. Copying a
 # number out of a document is how a pin stops being a pin.
 #
-# ⛔ TWO REPOSITORIES, AND THE SECOND ONE IS NOT AN OVERSIGHT.
-# pkgforge-dev/Anylinux-AppImages is the upstream. Samueru-sama's is a fork of
-# it. gtk4-demo is taken from the upstream, where it belongs.
-#
-# ⚠ The demo AppImage cannot be. `vkcube+glxgears-host-drivers-demo-*` is
-# published ONLY by the fork: the string "host-drivers" appears zero times in
-# the upstream's code, and the upstream's demo release does not carry that
-# asset. Its `vkcube+glxgears-demo-*` is the build that BUNDLES its drivers,
-# which is the opposite of the case this whole suite exists to measure. So the
-# fork is a real dependency for exactly one file, for a reason, and moving it
-# would change what is being tested rather than where it comes from.
-#
-# ⛔ NEITHER TAG IS IMMUTABLE. Both repositories publish exactly one release
-# and its tag is `demo`, so there is no version to pin to instead. Re-pinning
-# is therefore a maintained act rather than a failure, and docs/report/09-the-second-boundary.md 9.15
-# is the policy. The refusal in suite-lib.sh says which of the pin, the bytes
-# and the published asset disagreed, so a re-pin is a decision and not a shrug.
+# ⛔ THE TAG IS MUTABLE. `pkgforge-dev/Anylinux-AppImages` publishes exactly one
+# release and its tag is `demo`, so there is no version to pin to instead.
+# Re-pinning is therefore a maintained act rather than a failure, and
+# docs/report/09-the-second-boundary.md 9.15 is the policy. The refusal in
+# suite-lib.sh says which of the pin, the bytes and the published asset
+# disagreed, so a re-pin is a decision and not a shrug.
 ARCH=$(asset_suffix)
 UPSTREAM_REPO=pkgforge-dev/Anylinux-AppImages
-FORK_REPO=Samueru-sama/Anylinux-AppImages
 TAG=demo
 DEMO_ASSET="vkcube+glxgears-host-drivers-demo-$ARCH.AppImage"
 GTK4_ASSET="gtk4-demo-$ARCH.AppImage"
 GTK4HD_ASSET="gtk4-demo-host-drivers-$ARCH.AppImage"
 case "$ARCH" in
 	x86_64)
-		DEMO_SHA=d77a01ebacb739392ca8c39f879dc5bc626283b0c01bd9dc12eecbea92dd34c1
-		GTK4_SHA=413243c9ecbaaafe40636afd06e0c3d558b8cc928ed20b9ec55a6e0f09b5d8b4
-		GTK4HD_SHA=b8ab47805c8fe9c7378a9d0b5b11e19c796a09c3f2a7b6c993968530bd5c10cd ;;
+		DEMO_SHA=82a11a92d8c201739925e6aa25e5a845ca8bb754aedd5b8eecc27eee583994ea
+		GTK4_SHA=df365771bc3ccd0b5c5c189e614a43346ff7dafcec2e4d449132adac9200410c
+		GTK4HD_SHA=2bbd6caa79335ff0810740229e3af662a61fff697b32cb1298a92b6306b29ed4 ;;
 	aarch64)
-		DEMO_SHA=9aeb38f7f2834c0cfc85117b032b51b08108f074304711edaa54a5c04e3caedb
-		GTK4_SHA=e03ef26456fc0f3cd5c056e8bbaeab1cfcb0ba208e6f7c9ac88770775b1e3689
-		GTK4HD_SHA=a5f17eca51e1c3b516191ac44a765308ddd9cba2ae5c3b9f4fadee2cfc114d9a ;;
+		DEMO_SHA=8695a8882c54ee94d7c07e1eaecc04a57b40feab05d3edace982fb24cddf37e9
+		GTK4_SHA=c1919057ad4dc08d0e8e0b6e1d1055b46b156478b96f16f4ec7b3e5132eddc5e
+		GTK4HD_SHA=8d9dc1958f417a9722e8a73dec811db17fd8e877e77dcdb6b8a521ba3d956326 ;;
 esac
-DEMO_URL="https://github.com/$FORK_REPO/releases/download/$TAG/$DEMO_ASSET"
+DEMO_URL="https://github.com/$UPSTREAM_REPO/releases/download/$TAG/$DEMO_ASSET"
 GTK4_URL="https://github.com/$UPSTREAM_REPO/releases/download/$TAG/$GTK4_ASSET"
-# The host-drivers gtk4 demo lives on the fork, where every "host-drivers"
-# asset does; upstream's gtk4-demo is the self-contained build.
-GTK4HD_URL="https://github.com/$FORK_REPO/releases/download/$TAG/$GTK4HD_ASSET"
+GTK4HD_URL="https://github.com/$UPSTREAM_REPO/releases/download/$TAG/$GTK4HD_ASSET"
 
 engine=$(resolve_engine)
 say "engine: $engine"
@@ -105,7 +91,7 @@ in_container() {                       # in_container <image> <script> [flags...
 		"$_img" sh "/scripts/$_scr"
 }
 
-fetch_verified "$DEMO_URL" "$WORK/demo.AppImage" "$DEMO_SHA" "demo.AppImage ($ARCH)" "$FORK_REPO" "$TAG" "$DEMO_ASSET"
+fetch_verified "$DEMO_URL" "$WORK/demo.AppImage" "$DEMO_SHA" "demo.AppImage ($ARCH)" "$UPSTREAM_REPO" "$TAG" "$DEMO_ASSET"
 
 # Extraction runs the AppImage's own ELF runtime and the payload is DwarFS, so
 # it happens inside a container. --privileged: hosted runners allow it, a
@@ -161,7 +147,7 @@ esac
 # libGLESv2.so.2 to forward to and must resolve GLES through the host EGL's
 # eglGetProcAddress; this is the case report/10 said was measured-but-not-repaired.
 case "$ONLY" in all|gtk4hd)
-	fetch_verified "$GTK4HD_URL" "$WORK/gtk4-demo-host-drivers.AppImage" "$GTK4HD_SHA" "gtk4-demo-host-drivers.AppImage ($ARCH)" "$FORK_REPO" "$TAG" "$GTK4HD_ASSET"
+	fetch_verified "$GTK4HD_URL" "$WORK/gtk4-demo-host-drivers.AppImage" "$GTK4HD_SHA" "gtk4-demo-host-drivers.AppImage ($ARCH)" "$UPSTREAM_REPO" "$TAG" "$GTK4HD_ASSET"
 	if [ ! -d "$WORK/gtk4hd/AppDir" ]; then
 		in_container debian:trixie-slim 49-extract-gtk4-host-drivers.sh --privileged ||
 			die "gtk4 host-drivers extraction failed"
