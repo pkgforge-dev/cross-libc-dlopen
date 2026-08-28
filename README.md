@@ -50,6 +50,15 @@ GLES each get their own shim, because each dispatcher discovers its
 implementation through a different mechanism and fixing one does not fix the
 others.
 
+⭐ **None of this is a problem for Vulkan.** Vulkan has one loader, the Vulkan
+loader standard, and every distribution with Vulkan ships it, so the loader/ICD
+boundary is the same everywhere and the only gap a bundled app can hit there is
+the libc one (gap 1). The loader is also ahead of glvnd on one practical point:
+it already reads `XDG_DATA_DIRS` to find ICD manifests, so a non-FHS host that
+publishes its driver paths there just works. glvnd's EGL and GLES discovery has
+no such standard, which is why `egl-fwd.so` has to derive
+`__EGL_VENDOR_LIBRARY_DIRS` from `XDG_DATA_DIRS` itself.
+
 ⭐ **This is a preload, not an AppImage feature.** It needs a dynamically
 linked process whose libc differs from the driver's. An AppImage is the
 hardest such consumer, because it supplies its own loader as well as its own
