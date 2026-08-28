@@ -21,12 +21,22 @@ This is fixed by `cross-libc-dlopen.so`, an `LD_PRELOAD`ed `dlopen`
 interposer. It rewrites the host object in a private copy so symbol version
 requirements stop mattering.
 
-**2. The host has the capability, but ships nothing in the shape the bundled
-loader looks for.**
+**2. The host has the capability, but OpenGL is fragmented and the host does
+not ship the pieces in the shape the bundled loader looks for.**
 
-The bundle ships libglvnd. A host whose Mesa was built without glvnd has no
-`libGLX_<vendor>.so.0` for it to `dlopen`, and the error you get has nothing to
-do with libc or visuals:
+OpenGL on Linux is not one library, it is a family of dispatchers with their
+own ways of finding their implementation, and distributions do not agree on
+which ones exist:
+
+- glvnd, the GL **dispatcher**, is only one convention. A host whose Mesa was
+  built without glvnd, which is every musl distro and every pre-glvnd glibc
+  distro, has no `libGLX_<vendor>.so.0` for the bundled dispatcher to `dlopen`.
+  Alpine still builds without glvnd today.
+- a host may also lack pieces of the family entirely. Some have `libEGL.so.1`
+  but no `libGLESv2.so.2`, and GTK4 renders through GLES, not desktop GL.
+
+So the bundled app can ask for a library the host simply does not provide, and
+the error you get has nothing to do with libc or visuals:
 
 ```
 couldn't get an RGB, Double-buffered visual
@@ -35,7 +45,10 @@ couldn't get an RGB, Double-buffered visual
 This is fixed by `gl-fwd.so`, `egl-fwd.so` and `gles-fwd.so`. Each is built
 with the SONAME of the library it replaces, so `ld.so` binds the
 application's `DT_NEEDED` to it and forwards every entry point to whatever
-the host can stand behind.
+the host can stand behind. Together they are the glue: desktop GL, EGL and
+GLES each get their own shim, because each dispatcher discovers its
+implementation through a different mechanism and fixing one does not fix the
+others.
 
 ⭐ **This is a preload, not an AppImage feature.** It needs a dynamically
 linked process whose libc differs from the driver's. An AppImage is the
