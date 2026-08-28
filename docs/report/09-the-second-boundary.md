@@ -905,10 +905,10 @@ needs a tag, and pushing one publishes a release.
 
 ---
 
-### 9.15 The pinned AppImage: which repository, and what a stale pin means
+### 9.15 The demo AppImage: which repository, and how its integrity is checked
 
-The AppImage suite downloads two binaries from a third party and runs them. The
-sha256 pin is what makes the suite's results about a known artefact. Run
+The AppImage suite downloads two binaries from a third party and runs them. A
+sha256 digest is what makes the suite's results about a known artefact. Run
 [32948154287](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32948154287)
 refused with
 
@@ -917,7 +917,7 @@ suite: demo.AppImage (x86_64) sha256 is 8f6e390aa36c34f59363b916c29eec3fe95ce931
 expected 712766f8a4dc6b5ea3193ed7bb0282b64c7b781f7334056416edd3d00e8960bd
 ```
 
-⭐ **The pin did its job.** What follows is about what to do next, which is a
+⭐ **The check did its job.** What follows is about what to do next, which is a
 policy question and not a bug.
 
 **Correcting the account of when.** It was recorded here that the assets were
@@ -937,61 +937,50 @@ now. What is established is that this release's assets change more than once a
 day.
 
 **Which repository.** `pkgforge-dev/Anylinux-AppImages` is the upstream:
-`fork: false`, 234 stars. `Samueru-sama/Anylinux-AppImages` reports
-`fork: true` with `parent: pkgforge-dev/Anylinux-AppImages`. The suite was
-taking both assets from the fork.
+`fork: false`, 234 stars.
 
-⚠ **One of the two cannot move, and the reason is what is being measured.**
+⚠ **Correcting the dependency.** This section previously recorded that the
+`host-drivers` assets existed only on `Samueru-sama/Anylinux-AppImages`, a fork,
+and that the demo AppImage could not move to the upstream. That premise no
+longer holds. The upstream now publishes the same three assets the suite uses:
+`gtk4-demo`, `gtk4-demo-host-drivers` and `vkcube+glxgears-host-drivers-demo`,
+for both architectures. Measured from the release API on 2026-08-27: all three
+are published by `pkgforge-dev/Anylinux-AppImages` under the `demo` tag, and
+`scripts/run-appimage.sh` and `experiments/appimage.ps1` take every asset from
+it. Nothing in the suite depends on a fork.
 
-| asset | upstream | fork |
-|---|---|---|
-| `gtk4-demo-<arch>.AppImage` | published | published |
-| `vkcube+glxgears-host-drivers-demo-<arch>.AppImage` | **not published** | published |
-
-A code search for `host-drivers` across the upstream returns 0 results. The
-upstream's `vkcube+glxgears-demo-<arch>.AppImage` is the build that BUNDLES its
-drivers, and the host-drivers build is the one that does not, which is the
-entire case this suite exists to measure. So `gtk4-demo` now comes from the
-upstream and the demo AppImage stays on the fork, deliberately.
+| asset | upstream |
+|---|---|
+| `gtk4-demo-<arch>.AppImage` | published |
+| `gtk4-demo-host-drivers-<arch>.AppImage` | published |
+| `vkcube+glxgears-host-drivers-demo-<arch>.AppImage` | published |
 
 **The policy, and why it is the one that was available.**
 
 | option | verdict |
 |---|---|
-| pin to an immutable release | ⛔ not available. Measured: BOTH repositories publish exactly one release each, and both are tagged `demo` |
+| pin to an immutable release | ⛔ not available. Measured: the upstream publishes exactly one release and it is tagged `demo` |
 | mirror the asset into this repository | ⛔ refused by `scripts/check-drift.sh` section 2c, which rejects any tracked `*.AppImage` by shape |
 | mirror to a release of our own | needs a published release, and nothing has been published yet |
-| ⭐ re-pin as a maintained act, recorded and reviewed | adopted |
+| ⭐ verify against the release API's live digest at download time | adopted. The `demo` tag is rolling, so no checked-in digest can be current; the only ground truth is what the release publishes when the suite runs |
 
-⛔ **A re-pin is a decision, so the refusal now says what the decision is
-about.** The old message printed one sentence whatever had happened, and three
-different things can disagree: the pin, the bytes that arrived, and the digest
-the release publishes today. `scripts/suite-lib.sh` reads the third from the
-release API, which needs no download, and names the case. All five paths
-proven, unpiped, exit codes read directly:
+⛔ **A checked-in pin is gone, and that is the policy.** The earlier record here
+described re-pinning as a maintained act. That premise no longer holds: the
+`demo` tag is rolling, so any pinned digest is stale before it lands and every
+run would need a re-pin to survive. `scripts/suite-lib.sh` now reads the digest
+the release API publishes at download time, verifies the bytes against it, and
+refuses on a mismatch, with a re-read once so a re-upload in progress is not
+blamed on the network. The checked-in pins were removed from
+`scripts/run-appimage.sh` and `experiments/appimage.ps1` in the same change.
 
-| what disagrees | verdict printed | exit |
-|---|---|---|
-| nothing | `sha256 ok` | 0 |
-| pin only, bytes match the published asset | `UPSTREAM RE-UPLOADED IT` | 1 |
-| bytes only, published asset still matches the pin | `THE DOWNLOAD IS WRONG, NOT THE PIN` | 1 |
-| all three differ | `NEITHER MATCHES` | 1 |
-| API unreachable | cause not established, refuse anyway | 1 |
+The verification is exercised on every run of the AppImage suite: the digest is
+read before a cached copy is trusted, so a cache hit from an earlier run is
+re-verified and re-downloaded when the tag has moved.
 
-The second row was proven against the real asset: the pin that failed in that
-run, against the file as it stands today.
-
-⚠ **The four pins were recomputed from the bytes, not copied from the API.**
-Each was downloaded and hashed here, and each then agreed with the digest the
-release publishes, which is a cross-check rather than the source.
-
-⛔ **`docs/ground-truth.md`'s inventory of the demo AppImage was taken against
-the OLD binary**, sha256 `712766f8...`, 10 736 056 bytes. The newly pinned
-build is 10 817 560 bytes. Its bundled glibc version, its stub library set and
-its export counts are therefore UNVERIFIED against the artefact the suite now
-runs. The suite re-extracts and re-asserts on every run, so the next completed
-run is what settles it, and a changed answer is a finding rather than a
-regression.
+⚠ **The `docs/ground-truth.md` inventory was taken against a specific binary**
+and stays bound to that binary's digest, which is named in that document. The
+suite now runs whatever the release publishes today, so a changed answer is a
+finding rather than a regression, exactly as before.
 
 ---
 
@@ -1082,8 +1071,8 @@ No case depends on the answer, because every arm sets the variable explicitly.
 
 ### 9.17 Upstream shipped this project, and the AppDir changed shape
 
-Re-pinned to the current asset, the suite got further and then refused on both
-architectures, in run
+Verifying against the current asset, the suite got further and then refused on
+both architectures, in run
 [32951892766](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/32951892766):
 
 ```
@@ -1093,10 +1082,10 @@ cp: cannot stat 'AppDir/lib/foreign-dlopen.so': No such file or directory
 suite: extraction failed
 ```
 
-⭐ **A sha256 pin says the bytes are the ones somebody reviewed. It says
+⭐ **A sha256 check says the bytes are what the release publishes. It says
 nothing about the layout inside them.** The layout moved.
 
-**What the pinned AppImage now contains.** Extracted and measured here:
+**What the verified AppImage now contains.** Extracted and measured here:
 
 | `AppDir/lib` | |
 |---|---|
@@ -1121,7 +1110,7 @@ reports them agreeing.
 | | |
 |---|---|
 | recorded in `../ground-truth.md` | `path-mapping.so`, `anylinux.so`, `cross-libc-dlopen.so` |
-| shipped by the pinned build | the same three, then `gl-fwd.so`, `egl-fwd.so`, `gles-fwd.so` |
+| shipped by the verified build | the same three, then `gl-fwd.so`, `egl-fwd.so`, `gles-fwd.so` |
 
 `41-extract.sh` saved the shipped `.preload` as the baseline that every later
 case restores from before appending the one shim under test. With this project's
@@ -1157,7 +1146,7 @@ AppDir: 94 libraries, bundled glibc 2.44
 That runs on every extraction. A suite that edits the artefact under test and
 does not say so is worse than one that refuses.
 
-**The inventory, re-measured against the pinned build.**
+**The inventory, re-measured against the verified build.**
 
 | row | verdict |
 |---|---|

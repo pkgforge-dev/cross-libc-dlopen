@@ -1,10 +1,12 @@
 #!/bin/sh
 # Which characters may appear in a file this repository authors?
 #
-# ASCII, plus the five markers docs/conventions/prose.md defines and nothing
-# else. A glyph outside that set is a character a reader cannot type, cannot
+# ASCII, plus the five markers docs/conventions/prose.md defines, plus any
+# emoji. A glyph outside that set is a character a reader cannot type, cannot
 # grep for, and may not see rendered the way the author saw it. Once one is
 # load-bearing in a rule or a table, the rule is unreadable to somebody.
+# Emoji are the exception: they are not load-bearing and a reader can see
+# them, so they are permitted.
 #
 #   sh scripts/check-charset.sh
 #
@@ -46,6 +48,7 @@ for f in $(files); do
 		while (/([^\x00-\x7F])/g) {
 			my $c = $1;
 			next if $c =~ /[\x{26D4}\x{2B50}\x{26A0}\x{2705}\x{274C}]/;
+			next if $c =~ /[\x{1F300}-\x{1FAFF}\x{2190}-\x{21FF}\x{2300}-\x{23FF}\x{2500}-\x{27BF}\x{2B00}-\x{2BFF}\x{FE0F}]/;
 			printf "%d:U+%04X %s\n", $., ord($c), $c;
 		}')
 
@@ -57,7 +60,7 @@ for f in $(files); do
 done
 
 if [ "$fail" = 0 ]; then
-	printf '  every tracked file is ASCII plus the five markers (%s scanned)\n' "$seen"
+	printf '  every tracked file is ASCII plus the five markers and any emoji (%s scanned)\n' "$seen"
 	exit 0
 fi
 

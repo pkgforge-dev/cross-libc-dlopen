@@ -110,20 +110,22 @@ hazards on x86-64 and 3 on aarch64, the third being the mutex. E50 reads the
 condition out of `abi-host`'s size table instead of carrying a per-architecture
 number. `docs/report/09-the-second-boundary.md` 9.18.
 
-### 3. The pin is a maintained act now. Expect it to go stale again
+### 3. The demo tag is rolling. The suite verifies against the release API
 
-Both AppImages are pinned by sha256 against a **mutable** `demo` tag, and the
-assets were replaced twice inside two minutes. ⛔ There is no immutable release
-to pin to: the upstream and the fork publish one release each and both are
-tagged `demo`. `docs/report/09-the-second-boundary.md` 9.15 has the policy and the reasoning.
+The upstream publishes one release and its tag is `demo`, and the assets were
+replaced twice inside two minutes. ⛔ There is no immutable release to pin to.
+The suite therefore carries no checked-in digest: it reads the digest the
+release API publishes at download time and verifies the bytes against it,
+refusing on a mismatch. `docs/report/09-the-second-boundary.md` 9.15 has the
+policy and the reasoning.
 
-When it refuses, read which of the three cases it names: the pin is stale, the
-download is wrong, or neither matches. They call for different things.
+When the download does not verify, the two candidates are a torn read from a
+re-upload in progress and a genuinely wrong download. The suite re-reads the
+release once before refusing, so the first is not blamed on the network.
 
-⚠ `gtk4-demo` comes from `pkgforge-dev/Anylinux-AppImages`, the upstream. The
-demo AppImage comes from Samueru-sama's fork and **cannot move**, because
-`host-drivers` appears 0 times in the upstream's code and its
-`vkcube+glxgears-demo-*` is the build that bundles its own drivers.
+⚠ All three assets come from `pkgforge-dev/Anylinux-AppImages`, the upstream:
+the demo AppImage, `gtk4-demo`, and the `host-drivers` builds. The upstream now
+publishes the host-drivers assets too, so nothing depends on a fork.
 
 ### 4. T-12 is answered for one half and unanswerable for the other
 
@@ -207,7 +209,7 @@ third time, reporting a zero total with the reason in a discarded stderr.
 `INDEX.md` listed two entries as open that declare themselves DONE.
 
 **Three new checks, each planted and seen to refuse.** The dash ratchet in
-`verify-gates.sh`; the two orchestrators pinning the same bytes; every
+`verify-gates.sh`; the two orchestrators agreeing on the same upstream; every
 `INDEX.md` row against its entry's declared status.
 
 **The AppImage suite completes**, having never done so before. Getting there

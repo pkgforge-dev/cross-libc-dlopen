@@ -2,11 +2,11 @@
 # Extract the demo AppImage. Done in a container because the payload is DwarFS
 # and --appimage-extract runs the AppImage's own ELF runtime.
 #
-# ⛔ IT ALSO PINS THE APPDIR'S SHAPE, and that is not tidiness. The sha256 pin
-# says the bytes are the ones somebody reviewed. It says nothing about the
-# LAYOUT inside them, and 40-appimage.sh's whole A/B is one cp into one path.
-# Upstream rebuilt this AppImage and the layout moved under it, twice over.
-# docs/report/09-the-second-boundary.md 9.17 has both, measured.
+# ⛔ IT ALSO PINS THE APPDIR'S SHAPE, and that is not tidiness. The sha256
+# verification says the bytes are the ones the release publishes today. It says
+# nothing about the LAYOUT inside them, and 40-appimage.sh's whole A/B is one cp
+# into one path. Upstream rebuilt this AppImage and the layout moved under it,
+# twice over. docs/report/09-the-second-boundary.md 9.17 has both, measured.
 set -eu
 apt-get update -qq >/dev/null 2>&1
 apt-get install -y -qq --no-install-recommends file >/dev/null 2>&1
@@ -20,9 +20,9 @@ APPIMAGE_EXTRACT_AND_RUN=1 ./demo.AppImage --appimage-extract >/dev/null 2>&1 ||
 # ------------------------------------------------ 1. the dispatcher slot ----
 # The one file the A/B replaces. ⚠ Upstream RENAMED it: builds up to and
 # including sha256 712766f8 shipped lib/foreign-dlopen.so, and the build
-# pinned now ships lib/cross-libc-dlopen.so instead. Accept either BY NAME and
-# print which was found. Guessing is worse than refusing here, because a wrong
-# guess makes every case below measure an AppDir nobody patched.
+# verified today ships lib/cross-libc-dlopen.so instead. Accept either BY NAME
+# and print which was found. Guessing is worse than refusing here, because a
+# wrong guess makes every case below measure an AppDir nobody patched.
 SLOT=''
 for cand in cross-libc-dlopen.so foreign-dlopen.so; do
     [ -f "AppDir/lib/$cand" ] && { SLOT=$cand; break; }

@@ -80,10 +80,10 @@ person looking for one fact.
 
 ---
 
-## ASCII, and the five markers
+## ASCII, the five markers, and emoji
 
 ⛔ **Every file this repository authors is ASCII**, with exactly five
-exceptions: ⛔ ⭐ ⚠ ✅ ❌ and no others.
+exceptions: ⛔ ⭐ ⚠ ✅ ❌ and no others, **plus any emoji**.
 
 A glyph outside that set is one a reader cannot type, cannot grep for, and may
 not see rendered the way its author saw it. Once one carries meaning in a rule
@@ -100,6 +100,17 @@ or a table, the rule is unreadable to somebody. Each has an ASCII spelling:
 | a box-drawing character | `+`, `-` and `|`, inside a fenced block |
 | an arrow glyph | `->` |
 | a tick or cross other than the two below | ✅ and ❌, which are the state-table markers |
+
+⭐ **Emoji are the exception to the ASCII rule, and they are permitted as
+decoration.** Unlike the markers they carry no meaning a reader must weigh, so
+the cost of admitting them is low: they are visible to every reader and they
+cannot change a rule's reading. The allowlist covers the standard emoji ranges,
+in [`../../scripts/check-charset.sh`](../../scripts/check-charset.sh) and in
+the widened copy of the template's check that
+[`../../.github/workflows/gates.yml`](../../.github/workflows/gates.yml) runs.
+⛔ **An emoji is still decoration, not a marker.** Do not use one where a marker
+is the right tool; a rule that needs an emoji to be legible has stopped being a
+rule.
 
 ⛔ **A character being NAMED rather than used belongs in a code span**, which is
 how the table above is written at all.
@@ -135,10 +146,10 @@ reader has to weigh them, and weighing is what a marker exists to prevent.
 ⭐ **Use them sparingly enough that they are still visible.** A page where every
 paragraph carries one has no markers at all.
 
-⚠ The check enforces this, and enforcing the tick and cross needed a local
-divergence. The template's `check-docs.sh` hardcodes three markers, and it is
-in a repository this one does not write to, so
-[`../../.github/workflows/gates.yml`](../../.github/workflows/gates.yml)
+⚠ The check enforces this, and enforcing the tick and cross plus the emoji
+needed a local divergence. The template's `check-docs.sh` hardcodes three
+markers and bans every emoji outside them, and it is in a repository this one
+does not write to, so [`../../.github/workflows/gates.yml`](../../.github/workflows/gates.yml)
 widens the allowlist in the copy it fetches and asserts that the patch
 applied. An arrow glyph written instead of `->` still fails, which is what
 that check was catching here before.
