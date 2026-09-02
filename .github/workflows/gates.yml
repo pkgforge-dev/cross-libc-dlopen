@@ -180,29 +180,31 @@ jobs:
       - name: ASCII, apart from the five markers
         run: sh scripts/check-charset.sh
 
-      # ⛔ THE EMOJI ALLOWLIST IS WIDENED IN OUR COPY OF THE TEMPLATE'S CHECK,
-      # and that is a deliberate local divergence rather than a workaround.
+      # ⛔ THE CHARACTER RULE IS ENFORCED BY OUR OWN CHECK, NOT BY THE FETCHED
+      # COPY, and the fetched copy is run UNPATCHED for everything it still
+      # owns: links, fenced blocks, placeholders, banned vocabulary, orphan
+      # pages, and the control bytes in check-control-bytes.sh.
       #
-      # docs/conventions/prose.md defines the markers this repository uses and
-      # it now defines five: the three stops, plus the tick and the cross for
-      # a state table. It also permits emoji. The template's check-docs.sh
-      # hardcodes three markers and bans every emoji outside them, with no
-      # allowlist file and no variable, and it lives in another repository
-      # that docs/conventions/git.md section 4 forbids writing to. So the
-      # FETCHED COPY is patched, one line, before it runs. Every other rule in
-      # it is untouched, including the link and prose checks.
+      # It was not always so. The template's check-docs.sh used to carry the
+      # character half of the prose rule with three markers hardcoded and
+      # every emoji banned, and because that script lives in another
+      # repository that docs/conventions/git.md section 4 forbids writing to,
+      # the fetched copy was patched one line to widen the allowlist before it
+      # ran. Upstream has since moved the character rule OUT of check-docs.sh
+      # entirely, into a check-markers.sh this repository does not fetch:
+      # that one hardcodes the same five markers prose.md defines and no
+      # emoji, its allowed set is built from printf'd bytes rather than the
+      # alternation the patch targeted, and there is no longer a line to
+      # re-aim at. The authority for the character rule here is therefore
+      # scripts/check-charset.sh, run by its own step above: ASCII, the five
+      # markers, and emoji wholesale, the penguin in the README title
+      # included. It is the check that still refuses an arrow glyph written
+      # instead of `->`.
       #
-      # ⚠ THE PATCH IS ASSERTED, NOT ASSUMED, and the assertion looks for the
-      # BACKSLASH. Written without one the substitution still succeeds and
-      # produces `x{2705}`, which PCRE reads as the letter x repeated 2705
-      # times: it matches nothing, the check silently goes back to refusing
-      # two markers this repository uses, and the failure reads as a prose
-      # defect rather than a stale patch. That is not hypothetical, it is what
-      # the first two attempts at this line did.
-      #
-      # ⚠ Emoji are allowed wholesale: the same ranges are added to the
-      # marker allowlist and to scripts/check-charset.sh. The penguin in the
-      # README title is the reason the ranges had to be added at all.
+      # ⚠ If the fetched checks ever grow a character rule again, the patch
+      # comes back, and the assertion that it applied comes back with it. A
+      # silent divergence between what the documents say and what the gate
+      # runs is how a guard stops meaning anything.
       - name: template checks
         run: |
           T=https://raw.githubusercontent.com/Azathothas/TEMPLATE/main
@@ -210,15 +212,6 @@ jobs:
           for c in check-docs check-control-bytes; do
             curl -fsSL -o "/tmp/$c.sh" "$T/scripts/common/$c.sh"
           done
-
-          sed -i 's#x{26A0}#x{26A0}|\\x{2705}|\\x{274C}|\\x{1F300}-\\x{1FAFF}|\\x{2190}-\\x{21FF}|\\x{2300}-\\x{23FF}|\\x{2500}-\\x{27BF}|\\x{2B00}-\\x{2BFF}|\\x{FE0F}#' /tmp/check-docs.sh
-          if ! grep -q '\\x{1F300}' /tmp/check-docs.sh; then
-            echo "the emoji allowlist patch did not apply to check-docs.sh."
-            echo "The template changed the line it targets. Re-read"
-            echo "scripts/common/check-docs.sh upstream and re-aim it."
-            echo "Do NOT drop the markers or the emoji ranges to go green."
-            exit 1
-          fi
 
           for c in check-docs check-control-bytes; do
             sh "/tmp/$c.sh" || fail=1

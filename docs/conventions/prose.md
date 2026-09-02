@@ -146,13 +146,19 @@ reader has to weigh them, and weighing is what a marker exists to prevent.
 ⭐ **Use them sparingly enough that they are still visible.** A page where every
 paragraph carries one has no markers at all.
 
-⚠ The check enforces this, and enforcing the tick and cross plus the emoji
-needed a local divergence. The template's `check-docs.sh` hardcodes three
-markers and bans every emoji outside them, and it is in a repository this one
-does not write to, so [`../../.github/workflows/gates.yml`](../../.github/workflows/gates.yml)
-widens the allowlist in the copy it fetches and asserts that the patch
-applied. An arrow glyph written instead of `->` still fails, which is what
-that check was catching here before.
+⚠ The check enforces this, and the enforcement is
+[`../../scripts/check-charset.sh`](../../scripts/check-charset.sh), run by its
+own step in [`../../.github/workflows/gates.yml`](../../.github/workflows/gates.yml):
+ASCII, the five markers, and emoji. It is a divergence from the template that
+supplied the other checks, which allows three markers and no emoji. That
+template's `check-docs.sh` used to carry the character rule itself, and the
+workflow patched the copy it fetched to widen the allowlist; upstream has
+since moved the character rule out of that script entirely, into a
+`check-markers.sh` this repository does not fetch, so the fetched checks run
+unpatched and the character rule is answered for here. ⚠ The allowlist is
+wider than the rule needs: the symbol ranges around the markers, arrows among
+them, travel with the emoji, so an arrow is admitted where the table above
+says `->`. What the check refuses is every character outside those ranges.
 
 ---
 
