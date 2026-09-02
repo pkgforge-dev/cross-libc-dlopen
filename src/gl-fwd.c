@@ -1099,7 +1099,7 @@ static void glfwd_report(void) {
 	 * property of the application, and a bar here would be a bar on somebody
 	 * else's program. */
 	glfwd_log("%s: %d of %d entry points were CALLED (%d forwarded, %d absent) "
-	          "out of %d this host could resolve\n",
+	          "out of %d this process could resolve\n",
 	          GLFWD_SONAME, glfwd_called_fwd + glfwd_called_absent,
 	          (int)GLFWD_COUNT, glfwd_called_fwd, glfwd_called_absent,
 	          glfwd_resolved_count);

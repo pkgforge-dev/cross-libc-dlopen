@@ -362,7 +362,7 @@ Totals with this section in: **40/40 on the musl host** with five named skips,
 and ubuntu:16.04 with nineteen named skips, **7/7** on the gtk4 stage, and
 **53/53** in the container suite on x86-64, and **50/50** on aarch64 with the
 three skips named in section 8, at the measurement this section records; the
-totals for the tree as it ships are **62/62** and **59/59** in section 8.
+totals for the tree as it ships are **63/63** and **60/60** in section 8.
 
 ### 9.8 What the shim does not do, stated as a number
 
@@ -1488,7 +1488,9 @@ refusal and still passes, and the refusal was fired once more by hand against
 the five-name miniature with the repair in place.
 
 E75c measures the mechanism in the container suite, E75d is its no-preload
-control and E75e pins the log line. The pre-repair run of the suite showed
+control, E75e pins the log line, and E75f runs the same fallthrough in EAGER
+mode, where the pass executes in the constructor before main(). The
+pre-repair run of the suite showed
 E75c and E75e MISMATCH against a tree whose every other case held, and the
 repaired tree holds all of them.
 

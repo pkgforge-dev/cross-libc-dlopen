@@ -1,7 +1,7 @@
 ## 10. Measured versus assumed
 
 **Measured:** every table and quoted output above, plus `sh scripts/run-evidence.sh`
-(62/62 on x86-64, 59/59 on aarch64), `sh scripts/run-appimage.sh` (45/45 glvnd glibc, 40/40 musl with five
+(63/63 on x86-64, 60/60 on aarch64), `sh scripts/run-appimage.sh` (45/45 glvnd glibc, 40/40 musl with five
 named skips, 26/26 on each pre-glvnd glibc host, 7/7 on the gtk4 stage), `tools/gap.py --fetch`, the eight-distro inventory, the AppImage inventory,
 the corpus test, the real mpv and `iHD` VA-API run in section 9.19, and the five-distro `ld.so.cache` survey in
 `../ground-truth.md`.

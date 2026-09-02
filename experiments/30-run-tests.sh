@@ -920,7 +920,7 @@ run E75b FAIL "no target; all 5 entry points return zero" fwd_noenv ./tramp2
 #       returned zero from all of them, and an application's glGetString came
 #       back NULL against a GLX context that was real. Measured on contour
 #       over an Alpine host without libGLESv2.so.2, and recorded in
-#       docs/report/09-the-second-boundary.md 9.19.
+#       docs/report/09-the-second-boundary.md 9.20.
 cat > libnext.c <<'CEOF'
 #include <stdarg.h>
 /* The same four names libtgt.so exports, each returning one more, so a pass
@@ -993,6 +993,14 @@ run E75d OK "OK: next-provider ints=205" ./nextprov
 #       has no provider anywhere, so its slot keeps the absent stub.
 run E75e OK "no target; 4 of 5 entry points fall through to the next provider in scope" \
     fwd_noenv ./nextprov
+# E75f: the same fallthrough in EAGER mode. The constructor runs the pass
+#       before main(), which is where dlsym(RTLD_NEXT) has to work too: the
+#       whole scope is relocated and mapped by then, and if the eager copy of
+#       the table skipped the fallthrough the probe would get 205 from
+#       nowhere. Measured, not by construction: without this case the eager
+#       half of the repair is an inference.
+run E75f OK "OK: next-provider ints=205" \
+    env LD_PRELOAD="$PWD/tgt-fwd.so" CROSS_LIBC_DLOPEN_GL_EAGER=1 ./nextprov
 # Left REMOVED, not restored: section P runs after this one and its aarch64
 # shim would otherwise find the x86-64 libtgt.so through this very conf file.
 rm -rf /opt/cross-libc-unguessable-42
