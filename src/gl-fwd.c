@@ -754,6 +754,14 @@ static void *glfwd_open_target(const char **how) {
 static void *glfwd_target;                 /* the object every slot forwards to */
 static const char *glfwd_how = "nothing";
 static int glfwd_resolved_count = -1;      /* -1 until the one dlsym pass runs */
+/* Set when the target turned out to be this shim. The refusal keeps the whole
+ * table absent exactly as before, and the no-target fallthrough in
+ * glfwd_fill_addr must not second-guess it: the lookup answered with the shim
+ * itself, which is a misconfiguration rather than an absent host, and E68
+ * measures the refusal. RTLD_NEXT from a no-target shim cannot reach back here
+ * (it starts after the caller in the lookup order), which is why only the
+ * refusal needs the flag and the absent target does not. */
+static int glfwd_refused_self;
 
 /* 0 untried, 1 a thread is inside the load, 2 done. Plain ints with explicit
  * atomics rather than a mutex: pthread_mutex_lock lives in libpthread on the
@@ -771,12 +779,9 @@ static void glfwd_load_target(void) {
 	const char *how = "nothing";
 	void *target = glfwd_open_target(&how);
 	if (!target) {
-		/* Every slot still resolves to glfwd_absent, so GL calls return zero
-		 * and the application prints its own documented failure instead of
-		 * crashing through a NULL. Say so: "no vendor" and "no host library"
-		 * produce the same message from the application. */
-		glfwd_log("%s: no target; all %d entry points return zero\n",
-		          GLFWD_SONAME, (int)GLFWD_COUNT);
+		/* Which slots return zero and which are served from behind this shim
+		 * is decided by glfwd_fill_addr, because "all of them return zero" is
+		 * a claim about that pass's result rather than about the lookup. */
 		dlerror();
 		return;
 	}
@@ -798,6 +803,7 @@ static void glfwd_load_target(void) {
 	void *probe = dlsym(target, glfwd_names[0]);
 	if (probe && dladdr((void *)(uintptr_t)glfwd_absent, &self) && dladdr(probe, &tgt) &&
 	    self.dli_fbase == tgt.dli_fbase) {
+		glfwd_refused_self = 1;
 		glfwd_log("%s: the target resolves back to this shim (%s); refusing to "
 		          "forward to ourselves, all %d entry points return zero\n",
 		          GLFWD_SONAME, tgt.dli_fname ? tgt.dli_fname : "?",
@@ -829,12 +835,6 @@ static void glfwd_fill_addr(void) {
 		          "point returns zero\n", GLFWD_SONAME);
 		return;
 	}
-	if (!glfwd_target) {
-		/* No target: nothing is resolvable, and saying so as 0 keeps the exit
-		 * report from printing the -1 that means "never asked". */
-		glfwd_resolved_count = 0;
-		return;
-	}
 
 	/* Read the pending message BEFORE the pass, not after.
 	 *
@@ -850,6 +850,50 @@ static void glfwd_fill_addr(void) {
 		          "the application had not read -- \"%s\". dlsym's message "
 		          "cannot be put back; this is the one moment in the process "
 		          "where that can happen\n", stolen);
+
+	if (!glfwd_target && !glfwd_refused_self) {
+		/* A shim with no target of its own does not have to return zero from
+		 * every slot. Whatever sits AFTER this object in the process's lookup
+		 * order is what the application would have bound to had this shim not
+		 * been preloaded, and dlsym(RTLD_NEXT, name) asks exactly that, so a
+		 * name the process can still serve is served from there and a miss
+		 * keeps the absent stub. The preload wins interposition, which is why
+		 * the distinction matters: returning zero from every slot would shadow
+		 * the providers behind this one with stubs. Measured as issue #28,
+		 * contour on a host without libGLESv2.so.2: gles-fwd.so sat ahead of
+		 * gl-fwd.so in the preload order, every GL 1.x name the two share
+		 * landed on a zero-returning stub, and the application's glGetString
+		 * came back NULL against a GLX context that was real. E75c measures
+		 * the fallthrough, E75b the case where nothing sits behind. */
+		int got = 0;
+		for (int i = 0; i < (int)GLFWD_COUNT; i++) {
+			void *p = dlsym(RTLD_NEXT, glfwd_names[i]);
+			if (p) {
+				glfwd_addr[i] = p;
+				got++;
+			}
+		}
+		/* Our own misses, cleared so the application's next dlerror() is
+		 * clean: every miss above was ours, and none of them is the
+		 * application's business. */
+		dlerror();
+		glfwd_resolved_count = got;
+		if (got == 0)
+			glfwd_log("%s: no target; all %d entry points return zero\n",
+			          GLFWD_SONAME, (int)GLFWD_COUNT);
+		else
+			glfwd_log("%s: no target; %d of %d entry points fall through to "
+			          "the next provider in scope\n",
+			          GLFWD_SONAME, got, (int)GLFWD_COUNT);
+		return;
+	}
+	if (!glfwd_target) {
+		/* Refused to forward to ourselves: the table stays absent whatever
+		 * the scope behind this shim holds, which is the behaviour E68
+		 * measures. */
+		glfwd_resolved_count = 0;
+		return;
+	}
 
 	/* Read as a pointer, called as a function: forbidden by C, required by
 	 * POSIX, and the cast through a union is how you say so without inviting
@@ -998,6 +1042,10 @@ void *glfwd_resolve_one(int index) {
 			glfwd_log("ABSENT entry point called: %s -- this host's %s has no "
 			          "implementation; returning zero\n",
 			          glfwd_names[index], GLFWD_SONAME);
+		else if (!glfwd_refused_self)
+			glfwd_log("ABSENT entry point called: %s -- no target on this "
+			          "host and no next provider for it; returning zero\n",
+			          glfwd_names[index]);
 	}
 	return p;
 }

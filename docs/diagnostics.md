@@ -29,10 +29,18 @@ When something fails, report **which rung caught it**.
      was the bundle's own vendor library, the host's, or neither.
    - `N of M entry points resolved`: how much of the dispatcher this host can
      stand behind.
-   - `no target; all M entry points return zero`: it found NOTHING, and every
-     GL call in the process is returning zero. This replaces what used to
-     appear as `0 of M`; that line is now only printed when a target loaded and
-     provided none of the names, which says something different.
+   - `no target; all M entry points return zero`: it found NOTHING, and
+     nothing behind the shim serves the names either: every GL call in the
+     process is returning zero. This replaces what used to appear as `0 of M`;
+     that line is now only printed when a target loaded and provided none of
+     the names, which says something different.
+   - `no target; N of M entry points fall through to the next provider in
+     scope`: it found nothing of its own, and N names are served by whatever
+     sits behind the shim in the lookup order, another shim or a library the
+     application linked. The rest return zero, and each of those announces
+     itself through the `ABSENT` line below. This is the shape a shim for a
+     SONAME the host does not ship takes when the application carries its own
+     provider for the shared names.
    - `ABSENT entry point called: <name>`: the application called something
      this host does not implement. One line per name, at its first call.
 

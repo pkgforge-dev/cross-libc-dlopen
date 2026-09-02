@@ -52,7 +52,9 @@ application's `DT_NEEDED` to it and forwards every entry point to whatever
 the host can stand behind. Together they are the glue: desktop GL, EGL and
 GLES each get their own shim, because each dispatcher discovers its
 implementation through a different mechanism and fixing one does not fix the
-others.
+others. A shim whose library the host cannot stand behind does not take the
+process down with it: a name the process can still serve from behind the shim
+is served from there, and only a name nothing serves returns zero.
 
 ⭐ **None of this is a problem for Vulkan.** Vulkan has one loader, the Vulkan
 loader standard, and every distribution with Vulkan ships it, so the loader/ICD
