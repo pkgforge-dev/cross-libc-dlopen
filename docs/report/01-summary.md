@@ -11,7 +11,7 @@
 | Completion criterion | Status |
 |---|---|
 | Both goals demonstrated by a test that fails before and passes after | **Yes.** Goal 1: E5, E12. Goal 2: E22/E23 for the mechanism, E30/E32 and E37a/E37 for the end-to-end |
-| The evidence harness still reports all predictions held | **Yes, 53/53** on x86-64 and **50/50** on aarch64, up from 22/22. The AppImage suite adds 45 on a glvnd glibc host, 40 on musl, 26 on each of two pre-glvnd glibc hosts and 7 on a real-application stage, with every unrunnable case SKIPPED by the capability it lacks |
+| The evidence harness still reports all predictions held | **Yes, 63/63** on x86-64 and **60/60** on aarch64, up from 22/22. The AppImage suite adds 45 on a glvnd glibc host, 40 on musl, 26 on each of two pre-glvnd glibc hosts and 7 on a real-application stage, with every unrunnable case SKIPPED by the capability it lacks |
 | No host file modified, verified by checksum | **Yes.** T4.3, identical sha256 before and after |
 | Bundled libraries still win, verified via `dladdr` | **Yes.** T4.2, all resolved under `$APPDIR` |
 | A forward-compatibility story that does not depend on foresight | **Yes.** Host-runtime selection for the unenumerable gap, a generated shim for the enumerable one, and a build-time audit (E26) for the version traps |

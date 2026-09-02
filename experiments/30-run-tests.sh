@@ -910,6 +910,97 @@ run E75 OK "target /opt/cross-libc-unguessable-42/libtgt.so" fwd_noenv ./tramp2
 #       guessed the directory, which is the habit being removed.
 noconf
 run E75b FAIL "no target; all 5 entry points return zero" fwd_noenv ./tramp2
+
+# E75c: a shim with no target must not shadow the providers behind it. The
+#       preload wins the lookup, so with tgt-fwd.so preloaded the binary's
+#       t_ints binds to the shim whatever else the process carries, and
+#       libnext.so is a provider the binary links, which is the position the
+#       application's own libraries hold in the real shape of this: gles-fwd
+#       and gl-fwd both export the GL 1.x names, the shim without a target
+#       returned zero from all of them, and an application's glGetString came
+#       back NULL against a GLX context that was real. Measured on contour
+#       over an Alpine host without libGLESv2.so.2, and recorded in
+#       docs/report/09-the-second-boundary.md 9.20.
+cat > libnext.c <<'CEOF'
+#include <stdarg.h>
+/* The same four names libtgt.so exports, each returning one more, so a pass
+   here cannot come from libtgt.so: it is not reachable in this state anyway,
+   but a magic that differs is what says the call went where it claims. */
+__attribute__((visibility("default")))
+long t_ints(long a, long b, long c, long d, long e, long f, long g, long h) {
+    return a + b*2 + c*3 + d*4 + e*5 + f*6 + g*7 + h*8 + 1;
+}
+__attribute__((visibility("default")))
+double t_floats(double a, double b, double c, double d,
+                double e, double f, double g, double h, double i) {
+    return a + b*2 + c*3 + d*4 + e*5 + f*6 + g*7 + h*8 + i*9 + 1;
+}
+__attribute__((visibility("default")))
+long t_varargs(const char *fmt, ...) {
+    va_list ap; long sum = 1; va_start(ap, fmt);
+    for (const char *p = fmt; *p; p++)
+        sum += (*p == 'd') ? (long)va_arg(ap, double) : va_arg(ap, long);
+    va_end(ap); return sum;
+}
+struct big { long v[6]; };
+__attribute__((visibility("default")))
+struct big t_struct(struct big in) {
+    for (int i = 0; i < 6; i++) in.v[i] = in.v[i] * 2 + 1;
+    return in;
+}
+CEOF
+cat > nextprov.c <<'CEOF'
+/* Links libnext.so and calls t_ints, which the shim also exports. With the
+   shim preloaded the binding lands on the shim, preload beats DT_NEEDED, so
+   the only way this prints 205 is the shim handing the call to what sits
+   behind it. t_absent exists only in the shim and is asked for by dlsym, so
+   the same binary runs with and without the preload. */
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <stdio.h>
+extern long t_ints(long, long, long, long, long, long, long, long);
+int main(void) {
+    setvbuf(stdout, NULL, _IONBF, 0);
+    long i = t_ints(1,2,3,4,5,6,7,8);
+    const char *absent_state = "not loaded";
+    long a = 0;
+    long (*t_absent)(long, long) =
+        (long (*)(long, long))dlsym(RTLD_DEFAULT, "t_absent");
+    if (t_absent) {
+        absent_state = "shim provided";
+        a = t_absent(7, 9);
+    }
+    int ok = (i == 205) && (!t_absent || a == 0);
+    printf("%s: next-provider ints=%ld absent=%s returned=%ld\n",
+           ok ? "OK" : "FAILED", i, absent_state, a);
+    return ok ? 0 : 1;
+}
+CEOF
+gcc -shared -fPIC -O2 libnext.c -o libnext.so
+gcc -O2 $CET nextprov.c -o nextprov -ldl -L"$PWD" -lnext -Wl,-rpath,"$PWD"
+
+# The preload is ON and the shim has no target: the same state as E75b.
+run E75c OK "OK: next-provider ints=205" \
+    env LD_PRELOAD="$PWD/tgt-fwd.so" ./nextprov
+# E75d: the control, no preload at all. libnext.so serves the name natively,
+#       which is the answer the fallthrough has to reproduce. Without this
+#       control E75c could not tell a fix from a second fallback that was
+#       already happening.
+run E75d OK "OK: next-provider ints=205" ./nextprov
+# E75e: and the line the debug log carries, so the spelling a reader greps for
+#       is pinned the way E75b pins the other no-target outcome. Four of the
+#       five names sit behind the shim in libnext.so, and the fifth, t_absent,
+#       has no provider anywhere, so its slot keeps the absent stub.
+run E75e OK "no target; 4 of 5 entry points fall through to the next provider in scope" \
+    fwd_noenv ./nextprov
+# E75f: the same fallthrough in EAGER mode. The constructor runs the pass
+#       before main(), which is where dlsym(RTLD_NEXT) has to work too: the
+#       whole scope is relocated and mapped by then, and if the eager copy of
+#       the table skipped the fallthrough the probe would get 205 from
+#       nowhere. Measured, not by construction: without this case the eager
+#       half of the repair is an inference.
+run E75f OK "OK: next-provider ints=205" \
+    env LD_PRELOAD="$PWD/tgt-fwd.so" CROSS_LIBC_DLOPEN_GL_EAGER=1 ./nextprov
 # Left REMOVED, not restored: section P runs after this one and its aarch64
 # shim would otherwise find the x86-64 libtgt.so through this very conf file.
 rm -rf /opt/cross-libc-unguessable-42

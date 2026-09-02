@@ -361,7 +361,8 @@ Totals with this section in: **40/40 on the musl host** with five named skips,
 **45/45 on the glvnd glibc host** with none, **26/26** on each of ubuntu:14.04
 and ubuntu:16.04 with nineteen named skips, **7/7** on the gtk4 stage, and
 **53/53** in the container suite on x86-64, and **50/50** on aarch64 with the
-three skips named in section 8.
+three skips named in section 8, at the measurement this section records; the
+totals for the tree as it ships are **63/63** and **60/60** in section 8.
 
 ### 9.8 What the shim does not do, stated as a number
 
@@ -1430,6 +1431,68 @@ The host had `/usr/lib/libigdgmm.so.12`, which resolved to
 `libigdgmm.so.12.10.0`. The complete hardware decode shows that this diagnostic
 did not describe the final load result in this run. Why the dependency walk
 missed it remains UNVERIFIED.
+
+### 9.20 A shim with no target shadowed the working GL stack, and contour rendered black
+
+Reported as issue #28 against `Contour-0.7.0.8982-1-anylinux-x86_64.AppImage`
+on an Alpine musl host. The host had `mesa-gl`, so `/usr/lib/libGL.so.1`
+existed, and it had neither `mesa-egl` nor `mesa-gles`, so neither
+`/usr/lib/libEGL.so.1` nor `/usr/lib/libGLESv2.so.2` existed. The AppImage
+bundles the glvnd dispatchers and no `libGLESv2.so.2`.
+
+Contour drove desktop GL over GLX. `gl-fwd.so` found its target and the
+context was real, but `gles-fwd.so` found nothing to forward to, and the
+preload sits ahead of `gl-fwd.so` in `.preload`, so every name the two tables
+share resolved to the shim's zero-returning stub instead of to `gl-fwd.so`'s
+forwarding entry point. `LD_DEBUG=bindings` settled which object won:
+
+```
+binding file .../libQt6Gui.so.6 ... to .../cross-libc-dlopen/gles-fwd.so: normal symbol `glGetString'
+```
+
+`glGetString(GL_VERSION)` therefore returned NULL against a current context,
+and contour printed its own failure six times over the run and rendered a
+black window:
+
+```
+ [gl-fwd.so] >> target /usr/lib/libGL.so.1 -- host library (no vendor library for the bundled one)
+ [gles-fwd.so] >> libGLESv2.so.2: no target; all 358 entry points return zero
+Warning: Unrecognized OpenGL version ((null):0, (null))
+Warning: Unrecognized OpenGL version ((null):0, (null))
+```
+
+Four more of the same warning followed. The repair is in `glfwd_fill_addr`: a
+shim with no target asks
+`dlsym(RTLD_NEXT, name)` once per name, so a name the process can still serve
+from behind the shim is served from there, and a miss keeps the absent stub.
+With the repair in the built shim, the same application on the same host logs
+the new line and renders, with no version warning at all:
+
+```
+ [gl-fwd.so] >> target /usr/lib/libGL.so.1 -- host library (no vendor library for the bundled one)
+ [gles-fwd.so] >> libGLESv2.so.2: no target; 358 of 358 entry points fall through to the next provider in scope
+```
+
+Two controls. On a glvnd glibc host where `/usr/lib64/libGLESv2.so.2` exists,
+`gles-fwd.so` still finds its own target and the old line is unchanged, so the
+repair touches only the no-target path:
+
+```
+ [gles-fwd.so] >> target /usr/lib64/libGLESv2.so.2 -- host library (no vendor library for the bundled one)
+ [gles-fwd.so] >> libGLESv2.so.2: 358 of 358 entry points resolved from the host library (no vendor library for the bundled one) (358 exported, 0 via eglGetProcAddress, 0 absent)
+```
+
+And the forward-to-self refusal keeps the whole table absent exactly as
+before, because a misconfigured lookup is not an absent host: E68 fires the
+refusal and still passes, and the refusal was fired once more by hand against
+the five-name miniature with the repair in place.
+
+E75c measures the mechanism in the container suite, E75d is its no-preload
+control, E75e pins the log line, and E75f runs the same fallthrough in EAGER
+mode, where the pass executes in the constructor before main(). The
+pre-repair run of the suite showed
+E75c and E75e MISMATCH against a tree whose every other case held, and the
+repaired tree holds all of them.
 
 ---
 
