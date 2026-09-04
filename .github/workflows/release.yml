@@ -1,8 +1,16 @@
 # The release. T-18.
 #
-# ⛔ NOTHING PUBLISHES ON A RED SUITE. The evidence table runs first, on both
-# architectures, on real silicon for aarch64, and the build does not start
-# until it is green.
+# ⛔ NOTHING PUBLISHES ON A RED SUITE. The evidence table runs first, on the
+# two architectures that have runners, on real silicon for aarch64, and the
+# build does not start until it is green.
+#
+# ⚠ The evidence table covers x86_64 and aarch64 and NOTHING ELSE: the four
+# cross-compiled architectures have no runner and no demo AppImages, so their
+# artefacts are released on the strength of the cross build plus
+# scripts/verify-artifacts.sh, with the trampolines run under qemu-user and
+# nothing else. That is recorded, not assumed, in
+# docs/report/10-measured-versus-assumed.md 10 and docs/limits.md. A red
+# evidence table still blocks them: it blocks the whole release.
 #
 # ⛔ NOTHING PUBLISHES FROM A BRANCH THAT HAS NOT BEEN THROUGH A PULL REQUEST.
 # A tag can be pushed at any commit, so that rule is checked rather than
@@ -27,7 +35,7 @@ name: release
 # first release is a release workflow nobody has tested, and workflow_dispatch
 # cannot reach a workflow that is not yet on the default branch, so a pull
 # request is the only place this can be proven before it matters.
-# ⚠ `paths` keeps it off every unrelated pull request: it is a two-architecture
+# ⚠ `paths` keeps it off every unrelated pull request: it is a six-architecture
 # build and it is not a fast gate.
 on:
   push:
@@ -78,9 +86,11 @@ jobs:
   build:
     name: build and package ${{ matrix.arch }}
     needs: gate
-    # ⛔ BOTH architectures build on ubuntu-latest, and that is deliberate.
-    # scripts/build.sh CROSS-compiles aarch64 inside the x86-64 floor image.
-    # `podman run --platform linux/arm64` would pull a tag for another
+    # ⛔ EVERY architecture builds on ubuntu-latest, and that is deliberate.
+    # scripts/build.sh CROSS-compiles aarch64 and the four newer targets
+    # inside an x86-64 floor image (trixie for loongarch64, whose gcc-14 cross
+    # compiler is the first to exist).
+    # `podman run --platform linux/<arch>` would pull a tag for another
     # platform, REPLACE the cached image for that tag, and leave the next
     # x86-64 job with "Exec format error". docs/building.md says what it cost.
     runs-on: ubuntu-latest
@@ -93,7 +103,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64, aarch64]
+        arch: [x86_64, aarch64, riscv64, ppc64, ppc64le, loongarch64]
         variant: [default, portable]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -177,15 +187,27 @@ jobs:
           path: staged
 
       # download-artifact writes one directory per uploaded artifact, so the
-      # two architectures arrive as staged/release-x86_64/... and
-      # staged/release-aarch64/.... Flatten them into the layout the two
-      # scripts expect, and fail if either is missing rather than publishing
-      # half a release.
+      # six architectures arrive as staged/release-x86_64/... through
+      # staged/release-loongarch64/.... Flatten them into the layout the two
+      # scripts expect, and fail if ANY is missing rather than publishing
+      # half a release. The first loop is the other direction: a matrix row
+      # added above without widening this list would ship silently as a
+      # release without that architecture, which is exactly the defect this
+      # step exists to refuse.
       - name: collect every architecture and variant
         run: |
           set -eu
+          arches="x86_64 aarch64 riscv64 ppc64 ppc64le loongarch64"
+          for d in staged/release-*; do
+            [ -d "$d" ] || { echo "no build artifacts were downloaded"; exit 1; }
+            a=${d#staged/release-}; a=${a%-*}
+            case " $arches " in
+              *" $a "*) ;;
+              *) echo "$a produced artifacts but is not in the collect list"; exit 1 ;;
+            esac
+          done
           mkdir -p dist build
-          for a in x86_64 aarch64; do
+          for a in $arches; do
             for v in default portable; do
               src=staged/release-$a-$v
               [ -d "$src/dist" ] || { echo "no dist/ for $a/$v"; exit 1; }
@@ -210,7 +232,7 @@ jobs:
           # ⚠ Only the DEFAULT variant ships loose files to check this way.
           # The portable set ships as archives, and package-release.sh already
           # checked every object in it against its manifest before archiving.
-          for a in x86_64 aarch64; do
+          for a in x86_64 aarch64 riscv64 ppc64 ppc64le loongarch64; do
             man=build/$a/build-manifest.json
             for f in $(jq -r '.artifacts | keys[]' "$man"); do
               want=$(jq -r --arg f "$f" '.artifacts[$f].sha256' "$man")
