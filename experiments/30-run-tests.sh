@@ -3,7 +3,34 @@
 # bundles an older glibc". Every experiment states its PREDICTION; the harness reports
 # MATCH / MISMATCH against it. A MISMATCH is a finding, not a failure of the harness.
 set -u
-apt-get update -qq >/dev/null 2>&1
+# ⚠ THE BOOTSTRAP IS NOT THE TEST, AND ITS FAILURE IS NOT A MISMATCH. All of
+# this used to be `>/dev/null 2>&1`, so a container whose apt could not fetch
+# the toolchain ran the whole table with gcc missing and reported 56
+# MISMATCHes naming the cases instead of the cause. That happened: on the
+# 2026-09-04 v0.2.3 tag run, the aarch64 runner's view of the bullseye
+# repositories stopped working mid-day (trixie and alpine kept working on the
+# same runner), and the discarded apt output was the only witness, so the log
+# showed the effect and not the cause. The apt logs are kept now, and a
+# missing tool fails the stage naming itself.
+#
+# https and retries: the fetch goes over https because plain http to
+# deb.debian.org is the path an egress-filtered or CDN-partitioned runner
+# loses first, and the retries ride out a mirror edge that is mid-update.
+# bullseye left LTS on 2026-08-31, so churn in its repositories is expected
+# rather than exceptional while the suite migrates to archive.debian.org.
+sed -i 's|http://deb.debian.org|https://deb.debian.org|g' \
+	/etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+apt-get update -qq -o Acquire::Retries=3 >/work/.apt-update.log 2>&1
+apt-get install -y -qq -o Acquire::Retries=3 gcc binutils python3 \
+	>/work/.apt-install.log 2>&1 || true
+for _tool in gcc python3 readelf; do
+    command -v "$_tool" >/dev/null 2>&1 || {
+        echo "STAGE 3 CANNOT RUN: $_tool did not install; the apt output follows" >&2
+	sed 's/^/  update| /' /work/.apt-update.log >&2
+	sed 's/^/  install| /' /work/.apt-install.log >&2
+	exit 2
+    }
+done
 # The aarch64 cross toolchain and qemu-user are for section P, which RUNS the
 # aarch64 trampolines rather than only assembling them. They are installed
 # best-effort: if the host has no network for them the section SKIPS by name
@@ -12,10 +39,10 @@ apt-get update -qq >/dev/null 2>&1
 # ⚠ Not on an aarch64 host, where section P builds with the native gcc and
 # runs on the CPU. Installing an emulator for the architecture you are
 # standing on is how E76 came to run under qemu on real aarch64 silicon.
-apt-get install -y -qq gcc binutils python3 >/dev/null 2>&1
 if [ "$(uname -m)" != aarch64 ]; then
-    apt-get install -y -qq --no-install-recommends \
-        gcc-aarch64-linux-gnu libc6-dev-arm64-cross qemu-user-static >/dev/null 2>&1
+    apt-get install -y -qq --no-install-recommends -o Acquire::Retries=3 \
+        gcc-aarch64-linux-gnu libc6-dev-arm64-cross qemu-user-static \
+	>/work/.apt-cross.log 2>&1 || true
 fi
 cd /work
 

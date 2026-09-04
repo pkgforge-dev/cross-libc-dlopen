@@ -4,8 +4,24 @@
 #   libthr.so  : needs a RE-HOMED symbol (pthread_create@GLIBC_2.34, moved into libc at 2.34)
 #   newglibc/  : the newer runtime, for the "load a second libc" experiment
 set -eu
-apt-get update -qq >/dev/null 2>&1
-apt-get install -y -qq gcc binutils patchelf >/dev/null 2>&1
+# ⚠ Same bootstrap rule as stage 3: the apt output is kept, and a toolchain
+# that did not install fails the stage naming itself, because a silent
+# failure here hands stage 3 no libraries and the evidence table then reports
+# mismatches that name the cases instead of the cause. https and retries for
+# the same reasons stage 3 gives.
+sed -i 's|http://deb.debian.org|https://deb.debian.org|g' \
+	/etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+apt-get update -qq -o Acquire::Retries=3 >/work/.apt2-update.log 2>&1 || true
+apt-get install -y -qq -o Acquire::Retries=3 gcc binutils patchelf \
+	>/work/.apt2-install.log 2>&1 || true
+for _tool in gcc readelf; do
+    command -v "$_tool" >/dev/null 2>&1 || {
+        echo "STAGE 2 CANNOT RUN: $_tool did not install; the apt output follows" >&2
+	sed 's/^/  update| /' /work/.apt2-update.log >&2
+	sed 's/^/  install| /' /work/.apt2-install.log >&2
+	exit 2
+    }
+done
 cd /work
 
 # ⚠ Three things in this stage carry the architecture: the loader name, the
