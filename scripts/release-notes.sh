@@ -41,28 +41,65 @@ for d in "$BUILDS"/*; do
 done
 [ -n "$dirs" ] || { echo "release-notes: no build-manifest.json under $BUILDS" >&2; exit 2; }
 
-# The floor is a property of the build environment and every build here uses
-# the same one. If two manifests disagree, that is a finding and not something
-# to paper over with the first value.
-floor=""
+# The floor is a property of the build environment. Every build here uses the
+# same one, except loongarch64, whose floor is 2.36 because that is the first
+# glibc release that runs loongarch64 at all (docs/building.md). The header
+# below must not assert a single value across two floors, and the two variants
+# of one architecture must still agree: they are the same build in the same
+# environment, and a disagreement there is a finding rather than a value to
+# print past.
+floorlist=""
 for d in $dirs; do
-	f=$(jq -r '.floor_glibc' "$BUILDS/$d/build-manifest.json")
-	if [ -z "$floor" ]; then floor=$f
-	elif [ "$floor" != "$f" ]; then
-		echo "release-notes: manifests disagree about the floor: $floor and $f" >&2
-		exit 2
-	fi
+	m=$BUILDS/$d/build-manifest.json
+	floorlist="$floorlist $(jq -r '.arch' "$m"):$(jq -r '.floor_glibc' "$m")"
 done
+
+# ⛔ One architecture, one floor. If the default and portable manifests of the
+# same architecture disagree, refuse rather than printing a body that cannot
+# be true.
+for a in $(printf '%s\n' "$floorlist" | tr ' ' '\n' | sed '/^$/d;s/:.*//' | sort -u); do
+	n=$(printf '%s\n' "$floorlist" | tr ' ' '\n' |
+	    grep "^$a:" | sed 's/.*://' | sort -u | grep -c .)
+	[ "$n" -le 1 ] || {
+		echo "release-notes: $a has $n floors in its manifests" >&2
+		exit 2
+	}
+done
+
+nfloors=$(printf '%s\n' "$floorlist" | tr ' ' '\n' | sed '/^$/d;s/.*://' | sort -u | grep -c .)
+if [ "$nfloors" -le 1 ]; then
+	floor=$(printf '%s\n' "$floorlist" | tr ' ' '\n' | sed '/^$/d;s/.*://' | sort -u)
+fi
 
 printf '## cross-libc `dlopen` %s\n\n' "$TAG"
 printf 'Load the host'"'"'s GPU drivers into a process that carries its own libc.\n'
 printf 'See the [README](https://github.com/pkgforge-dev/cross-libc-dlopen#readme)\n'
 printf 'for what the two gaps are and which one your symptom is.\n\n'
 
-printf '**Built on glibc %s**, which is the floor every artefact here is held\n' "$floor"
-printf 'to. An object needing a symbol version above it would fail to load inside\n'
-printf 'a bundle whose glibc is older, so the build refuses to produce one and\n'
-printf 'the packaging step refuses to publish one.\n\n'
+if [ "$nfloors" -le 1 ]; then
+	printf '**Built on glibc %s**, which is the floor every artefact here is held\n' "$floor"
+	printf 'to. An object needing a symbol version above it would fail to load inside\n'
+	printf 'a bundle whose glibc is older, so the build refuses to produce one and\n'
+	printf 'the packaging step refuses to publish one.\n\n'
+else
+	# ⛔ The floors come out of the manifests, not out of this text: loongarch64
+	# is built on 2.36 because that is the first glibc that runs it at all, and
+	# the rest on 2.31. Spelled here, a floor change would silently leave the
+	# body claiming a number the builds no longer used.
+	printf '**Built on the glibc floor for each architecture.** '
+	first_floor=1
+	for f in $(printf '%s\n' "$floorlist" | tr ' ' '\n' | sed '/^$/d;s/.*://' | sort -uV); do
+		arches=$(printf '%s\n' "$floorlist" | tr ' ' '\n' |
+			grep ":$f$" | sed 's/:.*//' | sort -u | tr '\n' ' ' | sed 's/ $//')
+		if [ "$first_floor" = 1 ]; then first_floor=0
+		else printf '; '
+		fi
+		printf '%s are held to glibc %s' "$arches" "$f"
+	done
+	printf '. An object needing a symbol version above its floor would fail to\n'
+	printf 'load inside a bundle whose glibc is older, so the build refuses to\n'
+	printf 'produce one and the packaging step refuses to publish one.\n\n'
+fi
 
 # ------------------------------------------------------------- the changelog --
 printf '### Changes\n\n'

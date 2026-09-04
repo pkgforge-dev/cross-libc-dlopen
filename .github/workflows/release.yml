@@ -78,11 +78,13 @@ jobs:
   build:
     name: build and package ${{ matrix.arch }}
     needs: gate
-    # ⛔ BOTH architectures build on ubuntu-latest, and that is deliberate.
-    # scripts/build.sh CROSS-compiles aarch64 inside the x86-64 floor image.
-    # `podman run --platform linux/arm64` would pull a tag for another
-    # platform, REPLACE the cached image for that tag, and leave the next
-    # x86-64 job with "Exec format error". docs/building.md says what it cost.
+    # ⛔ ALL SIX architectures build on ubuntu-latest, and that is deliberate.
+    # scripts/build.sh CROSS-compiles every non-x86-64 target inside the x86-64
+    # floor image. `podman run --platform linux/arm64` would pull a tag for
+    # another platform, REPLACE the cached image for that tag, and leave the
+    # next x86-64 job with "Exec format error". docs/building.md says what it
+    # cost. The matrix below is the same six the gates build, so a release can
+    # never silently lag what the default branch already proved.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # ⭐ Two variants, so nobody has to build one by hand. `default` reads
@@ -93,7 +95,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64, aarch64]
+        arch: [x86_64, aarch64, riscv64, ppc64, ppc64le, loongarch64]
         variant: [default, portable]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -177,15 +179,14 @@ jobs:
           path: staged
 
       # download-artifact writes one directory per uploaded artifact, so the
-      # two architectures arrive as staged/release-x86_64/... and
-      # staged/release-aarch64/.... Flatten them into the layout the two
-      # scripts expect, and fail if either is missing rather than publishing
-      # half a release.
+      # six architectures arrive as staged/release-<arch>/... Flatten them into
+      # the layout the two scripts expect, and fail if any is missing rather
+      # than publishing half a release.
       - name: collect every architecture and variant
         run: |
           set -eu
           mkdir -p dist build
-          for a in x86_64 aarch64; do
+          for a in x86_64 aarch64 riscv64 ppc64 ppc64le loongarch64; do
             for v in default portable; do
               src=staged/release-$a-$v
               [ -d "$src/dist" ] || { echo "no dist/ for $a/$v"; exit 1; }
@@ -210,7 +211,7 @@ jobs:
           # ⚠ Only the DEFAULT variant ships loose files to check this way.
           # The portable set ships as archives, and package-release.sh already
           # checked every object in it against its manifest before archiving.
-          for a in x86_64 aarch64; do
+          for a in x86_64 aarch64 riscv64 ppc64 ppc64le loongarch64; do
             man=build/$a/build-manifest.json
             for f in $(jq -r '.artifacts | keys[]' "$man"); do
               want=$(jq -r --arg f "$f" '.artifacts[$f].sha256' "$man")
