@@ -29,6 +29,7 @@ Open items with a route to closing them are in
 |---|---|
 | **DRM-native `radv` and `radeonsi` drivers** | the primary measuring machine has no `/dev/dri`. Intel `anv` is measured on an external Alpine host in [`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) section 9.19; no measured host here provides the AMD drivers |
 | **aarch64 on real silicon** | the trampolines assemble and run under `qemu-user` (E76, E76b), which emulates instructions, not a memory model. CI's `ubuntu-24.04-arm` runner is the one place CI is stronger than the machine this was built on |
+| **riscv64, ppc64, ppc64le and loongarch64 beyond the build** | the trampolines and the resolver run under `qemu-user` against the Debian cross sysroots, and every artefact builds and passes `scripts/verify-artifacts.sh` on each. No silicon, no runner, and no host Mesa has been behind the shims on any of the four. The evidence suite cannot run for them either: upstream publishes no demo AppImage for these architectures. [`report/10-measured-versus-assumed.md`](report/10-measured-versus-assumed.md) |
 | **NVIDIA's closed-source stack in CI** | nothing stands in for it. The local result, 4096 bytes round-tripped through an RTX 3050 Ti and verified (E41), is in [`report/07-closed-source-driver-and-abi.md`](report/07-closed-source-driver-and-abi.md) section 7.1 |
 
 ---

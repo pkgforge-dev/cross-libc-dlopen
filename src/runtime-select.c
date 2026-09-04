@@ -77,6 +77,22 @@
 #elif defined(__i386__)
 #  define RS_LDSO   "ld-linux.so.2"
 #  define RS_TRIPLET "i386-linux-gnu"
+#elif defined(__riscv) && __riscv_xlen == 64
+#  define RS_LDSO   "ld-linux-riscv64-lp64d.so.1"
+#  define RS_TRIPLET "riscv64-linux-gnu"
+#elif defined(__loongarch64)
+#  define RS_LDSO   "ld-linux-loongarch-lp64d.so.1"
+#  define RS_TRIPLET "loongarch64-linux-gnu"
+#elif defined(__powerpc64__)
+#  ifdef __LITTLE_ENDIAN__
+/* ELFv2's loader is ld64.so.2; ELFv1's stays ld64.so.1. Both measured
+ * out of the Debian cross sysroots, because the pair is easy to confuse. */
+#    define RS_LDSO   "ld64.so.2"
+#    define RS_TRIPLET "powerpc64le-linux-gnu"
+#  else
+#    define RS_LDSO   "ld64.so.1"
+#    define RS_TRIPLET "powerpc64-linux-gnu"
+#  endif
 #else
 #  define RS_LDSO   "ld-linux.so.2"
 #  define RS_TRIPLET "unknown"
@@ -517,15 +533,36 @@ static const char *rs_first_unsatisfied(const char *path, const struct rs_symset
 
 /* ------------------------------------------------------- version compare */
 /* Parse "GLIBC_2.41" into a comparable number. Non-GLIBC names sort lowest so
- * GLIBC_PRIVATE and GLIBC_ABI_DT_RELR never masquerade as a release. */
+ * GLIBC_PRIVATE and GLIBC_ABI_DT_RELR never masquerade as a release.
+ * Hand-rolled, not sscanf: with _GNU_SOURCE and gcc 13 or newer, glibc's
+ * headers redirect sscanf to __isoc23_sscanf, which first exists in glibc
+ * 2.38, and the artefact then requires that version whatever the floor is.
+ * Measured on gcc 14, no compiler flag prevents the redirect; this parser
+ * keeps the requirement at the architecture baseline. */
 static long rs_relnum(const char *v) {
-	unsigned a, b, c = 0;
 	if (!v || strncmp(v, "GLIBC_", 6) != 0)
 		return -1;
-	int n = sscanf(v + 6, "%u.%u.%u", &a, &b, &c);
+	const char *p = v + 6;
+	unsigned parts[3] = {0, 0, 0};
+	int n = 0;
+	while (n < 3) {
+		unsigned val = 0;
+		int digits = 0;
+		while (*p >= '0' && *p <= '9') {
+			val = val * 10u + (unsigned)(*p - '0');
+			p++;
+			digits++;
+		}
+		if (digits == 0)
+			break;
+		parts[n++] = val;
+		if (*p != '.')
+			break;
+		p++;
+	}
 	if (n < 2)
 		return -1;
-	return (long)a * 1000000L + (long)b * 1000L + (long)c;
+	return (long)parts[0] * 1000000L + (long)parts[1] * 1000L + (long)parts[2];
 }
 
 static long rs_max_release(const struct rs_vers *s, char *out, size_t outsz) {

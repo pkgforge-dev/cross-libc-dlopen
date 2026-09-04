@@ -23,7 +23,6 @@ set -eu
 DIR=${1:?usage: verify-artifacts.sh <artefact-dir> [repo-root]}
 REPO=${2:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}
 SRC=${CLD_SRC:-$REPO/src}
-NM=${CLD_NM:-nm}
 OBJDUMP=${CLD_OBJDUMP:-objdump}
 ARCH=${CLD_ARCH:-$(uname -m)}
 FLOOR=${CLD_FLOOR_GLIBC:-unknown}
@@ -76,7 +75,11 @@ for pair in 'gl-fwd.so gl-fwd-gl.h' 'egl-fwd.so gl-fwd-egl.h' 'gles-fwd.so gl-fw
 	if [ ! -f "$t" ]; then say "$so: no $tbl to check against, SONAME/count unverified"; continue; fi
 	want_son=$(table_soname "$t"); got_son=$(soname_of "$p")
 	want_n=$(table_count "$t")
-	got_n=$($NM -D --defined-only "$p" 2>/dev/null | grep -cE ' (T|i) (gl|egl)' || true)
+	# readelf rather than nm: an nm built without PowerPC support reads an
+	# ELFv1 .opd function as data (D), and the count then refuses a correct
+	# ppc64 build. Measured: host nm counts 0 where cross nm counts 3470;
+	# readelf's FUNC/GLOBAL/DEFAULT form counts 3470 on both endiannesses.
+	got_n=$(readelf --dyn-syms -W "$p" 2>/dev/null | grep -cE ' +FUNC +GLOBAL +DEFAULT +[0-9]+ +(gl|egl)' || true)
 	[ "$got_son" = "$want_son" ] || bad "$so SONAME is '$got_son', must be '$want_son'"
 	[ "$got_n" = "$want_n" ]     || bad "$so exports $got_n entry points, the table declares $want_n"
 	[ "$got_son" = "$want_son" ] && [ "$got_n" = "$want_n" ] &&
@@ -159,7 +162,7 @@ man=$DIR/build-manifest.json
 		[ $first = 1 ] || printf ',\n'; first=0
 		mx=$(max_glibc "$DIR/$f"); [ -n "$mx" ] || mx=none
 		son=$(soname_of "$DIR/$f"); [ -n "$son" ] || son=""
-		n=$($NM -D --defined-only "$DIR/$f" 2>/dev/null | grep -cE ' (T|i) (gl|egl)' || true)
+		n=$(readelf --dyn-syms -W "$DIR/$f" 2>/dev/null | grep -cE ' +FUNC +GLOBAL +DEFAULT +[0-9]+ +(gl|egl)' || true)
 		printf '    "%s": { "sha256": "%s", "max_glibc": "%s", "soname": "%s", "entry_points": %s }' \
 			"$f" "$(sha "$DIR/$f")" "$mx" "$son" "${n:-0}"
 	done

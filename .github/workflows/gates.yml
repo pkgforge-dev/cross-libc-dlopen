@@ -268,6 +268,27 @@ jobs:
           - arch: aarch64
             engine: native
             runner: ubuntu-24.04-arm
+          # The four remaining architectures, cross-compiled the same way.
+          # riscv64, ppc64 and ppc64le build on the bullseye floor image;
+          # loongarch64 needs a gcc-14 cross compiler, so scripts/build.sh
+          # selects the trixie floor image for it by itself and its floor is
+          # glibc 2.36, the first release that runs loongarch64 at all.
+          # ⚠ No native runner and no evidence suite exist for these four:
+          # the build plus scripts/verify-artifacts.sh is their whole gate
+          # here. The trampolines have run under qemu-user and on nothing
+          # else; docs/report/10-measured-versus-assumed.md 10.
+          - arch: riscv64
+            engine: docker
+            runner: ubuntu-latest
+          - arch: ppc64
+            engine: docker
+            runner: ubuntu-latest
+          - arch: ppc64le
+            engine: docker
+            runner: ubuntu-latest
+          - arch: loongarch64
+            engine: docker
+            runner: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

@@ -5,7 +5,7 @@
 #
 #   $1                  the repository root (read-only is fine)
 #   CLD_OUT             where the artefacts and the manifest go
-#   CLD_ARCH            x86_64 | aarch64
+#   CLD_ARCH            x86_64 | aarch64 | riscv64 | ppc64 | ppc64le | loongarch64
 #   CLD_FLOOR_GLIBC     the floor being asserted, for the manifest
 #   CLD_INSTALL_DEPS    1 to apt-get what is missing (containers only)
 set -eu
@@ -18,9 +18,19 @@ FLOOR=${CLD_FLOOR_GLIBC:-unknown}
 die() { printf 'build-in-env: %s\n' "$*" >&2; exit 1; }
 
 # ------------------------------------------------------------ prerequisites --
+# The cross packages exist on the floor images this script runs in, with one
+# exception measured against the Debian archive indices: loongarch64 has no
+# gcc-10 cross compiler, so that arch only builds on trixie or newer, which
+# scripts/build.sh selects for itself.
 if [ "${CLD_INSTALL_DEPS:-0}" = 1 ]; then
 	pkgs='gcc libc6-dev make python3 binutils'
-	[ "$ARCH" = aarch64 ] && pkgs="$pkgs gcc-aarch64-linux-gnu libc6-dev-arm64-cross"
+	case "$ARCH" in
+		aarch64)     pkgs="$pkgs gcc-aarch64-linux-gnu libc6-dev-arm64-cross" ;;
+		riscv64)     pkgs="$pkgs gcc-riscv64-linux-gnu libc6-dev-riscv64-cross" ;;
+		ppc64)       pkgs="$pkgs gcc-powerpc64-linux-gnu libc6-dev-ppc64-cross" ;;
+		ppc64le)     pkgs="$pkgs gcc-powerpc64le-linux-gnu libc6-dev-ppc64el-cross" ;;
+		loongarch64) pkgs="$pkgs gcc-loongarch64-linux-gnu libc6-dev-loong64-cross" ;;
+	esac
 	# libc6-dev-arm64-cross is not optional: the cross compiler alone has no
 	# headers and the build dies on dirent.h, which reads like a source bug.
 	# ⛔ NEITHER OF THESE DISCARDS ITS OUTPUT ANY MORE, and that is T-13's
@@ -49,14 +59,41 @@ if [ "${CLD_INSTALL_DEPS:-0}" = 1 ]; then
 fi
 
 case "$ARCH" in
-	x86_64)  CC=${CC:-gcc};                    NM=nm;                    OBJDUMP=objdump ;;
+	x86_64)  CC=${CC:-gcc}; OBJDUMP=objdump ;;
 	aarch64)
 		if [ "$(uname -m)" = aarch64 ]; then
-			CC=${CC:-gcc}; NM=nm; OBJDUMP=objdump
+			CC=${CC:-gcc}; OBJDUMP=objdump
 		else
 			CC=aarch64-linux-gnu-gcc
-			NM=aarch64-linux-gnu-nm
 			OBJDUMP=aarch64-linux-gnu-objdump
+		fi ;;
+	riscv64)
+		if [ "$(uname -m)" = riscv64 ]; then
+			CC=${CC:-gcc}; OBJDUMP=objdump
+		else
+			CC=riscv64-linux-gnu-gcc
+			OBJDUMP=riscv64-linux-gnu-objdump
+		fi ;;
+	ppc64)
+		if [ "$(uname -m)" = ppc64 ]; then
+			CC=${CC:-gcc}; OBJDUMP=objdump
+		else
+			CC=powerpc64-linux-gnu-gcc
+			OBJDUMP=powerpc64-linux-gnu-objdump
+		fi ;;
+	ppc64le)
+		if [ "$(uname -m)" = ppc64le ]; then
+			CC=${CC:-gcc}; OBJDUMP=objdump
+		else
+			CC=powerpc64le-linux-gnu-gcc
+			OBJDUMP=powerpc64le-linux-gnu-objdump
+		fi ;;
+	loongarch64)
+		if [ "$(uname -m)" = loongarch64 ]; then
+			CC=${CC:-gcc}; OBJDUMP=objdump
+		else
+			CC=loongarch64-linux-gnu-gcc
+			OBJDUMP=loongarch64-linux-gnu-objdump
 		fi ;;
 	*) die "unsupported arch '$ARCH'" ;;
 esac
@@ -98,7 +135,7 @@ done
 # that make it either work or fail silently: the SONAME ld.so will bind to,
 # the number of entry points the table promised, and the highest GLIBC_ symbol
 # version it ended up needing. The third is the floor rule, measured.
-CLD_NM="$NM" CLD_OBJDUMP="$OBJDUMP" \
+CLD_OBJDUMP="$OBJDUMP" \
 CLD_ARCH="$ARCH" CLD_FLOOR_GLIBC="$FLOOR" CLD_SRC="$WORK/src" CLD_CC="$CC" \
 CLD_VARIANT="${CLD_VARIANT:-default}" \
 	sh "$REPO/scripts/verify-artifacts.sh" "$OUT" "$REPO"

@@ -153,8 +153,9 @@ it. Most callers therefore never need `portable` for that reason at all.
 
 ```bash
 sh scripts/build.sh --check                 # detect and report, build nothing
-sh scripts/build.sh --arch aarch64          # cross-build
-sh scripts/build.sh --arch both             # both, sequentially
+sh scripts/build.sh --arch aarch64          # cross-build (riscv64, ppc64,
+                                            # ppc64le and loongarch64 too)
+sh scripts/build.sh --arch both             # x86_64 and aarch64, sequentially
 sh scripts/build.sh --engine docker
 sh scripts/build.sh --portable              # -DCLD_STRICT_ENV, and no CET flag
 sh scripts/build.sh --floor-image debian:bookworm-slim --floor-glibc 2.36
@@ -166,27 +167,57 @@ one.
 
 ---
 
-## aarch64
+## The cross-compiled architectures
 
-A first-class target, not a check. It is cross-compiled inside the x86-64 floor
-image, which needs `gcc-aarch64-linux-gnu` **and** `libc6-dev-arm64-cross`.
-The compiler alone has no headers and the build dies on `dirent.h`, which
-reads like a source bug.
+aarch64, riscv64, ppc64, ppc64le and loongarch64 are first-class targets, not
+checks. Each is cross-compiled inside an x86-64 floor image, which needs the
+target's `gcc-<triplet>` **and** its `libc6-dev-<arch>-cross` package. The
+compiler alone has no headers and the build dies on `dirent.h`, which reads
+like a source bug.
 
-⛔ **Do not reach for `podman run --platform linux/arm64` to get there.** Pulling
+Which floor image a target builds in is a property of the target:
+
+| target | floor image | cross compiler | notes |
+|---|---|---|---|
+| aarch64, riscv64, ppc64, ppc64le | `debian:bullseye-slim`, floor glibc 2.31 | gcc-10 | measured against the Debian archive indices: all four cross packages exist on bullseye |
+| loongarch64 | `debian:trixie-slim`, floor glibc 2.36 | gcc-14 | the port postdates gcc-10, so bullseye has no cross compiler for it. The floor is 2.36 because that is the first glibc release that runs loongarch64 at all, so no older bundle exists to break |
+
+`scripts/build.sh` selects the trixie image for loongarch64 by itself; a
+`--floor-image` you pass wins over that.
+
+⛔ **Do not reach for `podman run --platform linux/<arch>` to get there.** Pulling
 a tag for another platform **replaces the cached image for that tag**, and the
 next x86-64 job using that image dies with `Exec format error`. That cost a run.
 
-Two Makefile targets exercise the aarch64 trampolines directly:
+Two Makefile targets exercise the hand-written trampolines directly, for every
+architecture in the list above:
 
 ```bash
 make -C src gl-fwd-asm-check    # do they assemble
 make -C src gl-fwd-qemu-check   # do they RUN, under qemu-user
 ```
 
-⚠ qemu emulates the instructions, not a memory model. Real ARM silicon is what
-closes that, and CI's `ubuntu-24.04-arm` runner is where it happens. It is
-the one place CI is stronger than the machine this project was measured on.
+The qemu check is stronger than a smoke run: it passes one argument of every
+register class through a trampoline (integer, long, double, pointer), calls
+each entry point twice so the patched slot is taken as well as the resolver,
+checks a double return value, and calls a name the target does not define so
+the absent stub is exercised. On ppc64 it runs the ELFv1 descriptor hop
+through the host's real `ld64.so.1`, and on ppc64le the ELFv2 global-entry
+TOC rebuild.
+
+⚠ qemu emulates the instructions, not a memory model. Real silicon is what
+closes that, and CI's `ubuntu-24.04-arm` runner is where it happens for
+aarch64. It is the one place CI is stronger than the machine this project was
+measured on. ⚠ The other four architectures have no such runner: their
+trampolines have run under qemu-user and nowhere else, which
+[`report/10-measured-versus-assumed.md`](report/10-measured-versus-assumed.md)
+records. ⚠ loongarch64 additionally needs a qemu new enough for the sysroot's
+glibc: measured, qemu 7.2 faults on trixie's glibc 2.41 where 10.0 runs it.
+
+⚠ A ppc64 (big-endian, ELFv1) link on bullseye's binutils prints
+`unexpected reloc type 38 in .opd section` and exits 0. The output is correct:
+the `.opd` entries come out as `R_PPC64_RELATIVE` dynamic relocations and the
+object runs. Measured by running it, not by trusting the exit code.
 
 ---
 

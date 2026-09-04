@@ -119,6 +119,16 @@
 #  define GLFWD_TRIPLET "aarch64-linux-gnu"
 #elif defined(__i386__)
 #  define GLFWD_TRIPLET "i386-linux-gnu"
+#elif defined(__riscv) && __riscv_xlen == 64
+#  define GLFWD_TRIPLET "riscv64-linux-gnu"
+#elif defined(__loongarch64)
+#  define GLFWD_TRIPLET "loongarch64-linux-gnu"
+#elif defined(__powerpc64__)
+#  ifdef __LITTLE_ENDIAN__
+#    define GLFWD_TRIPLET "powerpc64le-linux-gnu"
+#  else
+#    define GLFWD_TRIPLET "powerpc64-linux-gnu"
+#  endif
 #else
 #  define GLFWD_TRIPLET "unknown"
 #endif
@@ -339,6 +349,406 @@ __asm__(".text\n"
 	        "	ldr  x16, [x16, #:lo12:glfwd_tab+8*" #i "]\n"                 \
 	        "	br   x16\n"                                                   \
 	        ".size " #n ", .-" #n "\n");
+#elif defined(__riscv) && __riscv_xlen == 64
+/* Assembled here, and RUN under qemu-user against a riscv64 sysroot. See
+ * `make gl-fwd-qemu-check` and ../docs/report/10-measured-versus-assumed.md 10.
+ * Not run on riscv64 silicon. */
+__asm__(".text\n"
+        ".globl  glfwd_absent\n"
+        ".hidden glfwd_absent\n"
+        ".type   glfwd_absent,@function\n"
+        "glfwd_absent:\n"
+        "	li   a0, 0\n"
+        "	fmv.d.x fa0, zero\n"
+        "	ret\n"
+        ".size glfwd_absent, .-glfwd_absent\n");
+/* a0-a7 are the argument registers, fa0-fa7 the floating-point ones, and ra
+ * the return address a `call` would destroy. t0-t2 are caller-saved and carry
+ * no argument, so they are not saved. The stack stays 16-byte aligned. */
+__asm__(".text\n"
+        ".globl  glfwd_resolve_asm\n"
+        ".hidden glfwd_resolve_asm\n"
+        ".type   glfwd_resolve_asm,@function\n"
+        "glfwd_resolve_asm:\n"
+        "	addi sp, sp, -144\n"
+        "	sd   ra, 136(sp)\n"
+        "	fsd   fa0, 0(sp)\n"
+        "	fsd   fa1, 8(sp)\n"
+        "	fsd   fa2, 16(sp)\n"
+        "	fsd   fa3, 24(sp)\n"
+        "	fsd   fa4, 32(sp)\n"
+        "	fsd   fa5, 40(sp)\n"
+        "	fsd   fa6, 48(sp)\n"
+        "	fsd   fa7, 56(sp)\n"
+        "	sd   a0, 64(sp)\n"
+        "	sd   a1, 72(sp)\n"
+        "	sd   a2, 80(sp)\n"
+        "	sd   a3, 88(sp)\n"
+        "	sd   a4, 96(sp)\n"
+        "	sd   a5, 104(sp)\n"
+        "	sd   a6, 112(sp)\n"
+        "	sd   a7, 120(sp)\n"
+        "	mv   a0, t1\n"
+        "	call glfwd_resolve_one\n"
+        "	mv   t0, a0\n"
+        "	fld   fa0, 0(sp)\n"
+        "	fld   fa1, 8(sp)\n"
+        "	fld   fa2, 16(sp)\n"
+        "	fld   fa3, 24(sp)\n"
+        "	fld   fa4, 32(sp)\n"
+        "	fld   fa5, 40(sp)\n"
+        "	fld   fa6, 48(sp)\n"
+        "	fld   fa7, 56(sp)\n"
+        "	ld   a0, 64(sp)\n"
+        "	ld   a1, 72(sp)\n"
+        "	ld   a2, 80(sp)\n"
+        "	ld   a3, 88(sp)\n"
+        "	ld   a4, 96(sp)\n"
+        "	ld   a5, 104(sp)\n"
+        "	ld   a6, 112(sp)\n"
+        "	ld   a7, 120(sp)\n"
+        "	ld   ra, 136(sp)\n"
+        "	addi sp, sp, 144\n"
+        "	jr   t0\n"
+        ".size glfwd_resolve_asm, .-glfwd_resolve_asm\n");
+/* t1 carries the index, t0 the branch target. Both are caller-saved scratch
+ * the ABI lets any call destroy, which is what makes them free to use across
+ * a call boundary. norelax stops the linker rewriting the auipc+ld pair in a
+ * way that drops the 8*i addend. */
+#define GLFWD_TRAMPOLINE(i, n)                                                     \
+	__asm__(".text\n"                                                         \
+	        ".globl " #n "\n"                                                 \
+	        ".type " #n ",@function\n"                                        \
+	        ".p2align 4\n"                                                    \
+	        #n ":\n"                                                          \
+	        "	li   t1, " #i "\n"                                            \
+	        "	.option push\n"                                               \
+	        "	.option norelax\n"                                             \
+	        "1:	auipc t0, %pcrel_hi(glfwd_tab + 8*" #i ")\n"                \
+	        "	ld    t0, %pcrel_lo(1b)(t0)\n"                                 \
+	        "	.option pop\n"                                                 \
+	        "	jr    t0\n"                                                    \
+	        ".size " #n ", .-" #n "\n");
+#elif defined(__loongarch64)
+/* Assembled here, and RUN under qemu-user against a loongarch64 sysroot. See
+ * `make gl-fwd-qemu-check` and ../docs/report/10-measured-versus-assumed.md 10.
+ * Not run on loongarch64 silicon. */
+__asm__(".text\n"
+        ".globl  glfwd_absent\n"
+        ".hidden glfwd_absent\n"
+        ".type   glfwd_absent,@function\n"
+        "glfwd_absent:\n"
+        "	move        $a0, $zero\n"
+        "	movgr2fr.d  $f0, $zero\n"
+        "	jirl        $zero, $ra, 0\n"
+        ".size glfwd_absent, .-glfwd_absent\n");
+/* a0-a7 are the argument registers, f0-f7 the floating-point ones, and r1 the
+ * return address a `bl` would destroy. t0-t8 are caller-saved and carry no
+ * argument, so they are not saved. The stack stays 16-byte aligned. */
+__asm__(".text\n"
+        ".globl  glfwd_resolve_asm\n"
+        ".hidden glfwd_resolve_asm\n"
+        ".type   glfwd_resolve_asm,@function\n"
+        "glfwd_resolve_asm:\n"
+        "	addi.d  $sp, $sp, -144\n"
+        "	st.d    $ra, $sp, 128\n"
+        "	fst.d   $f0, $sp, 0\n"
+        "	fst.d   $f1, $sp, 8\n"
+        "	fst.d   $f2, $sp, 16\n"
+        "	fst.d   $f3, $sp, 24\n"
+        "	fst.d   $f4, $sp, 32\n"
+        "	fst.d   $f5, $sp, 40\n"
+        "	fst.d   $f6, $sp, 48\n"
+        "	fst.d   $f7, $sp, 56\n"
+        "	st.d    $a0, $sp, 64\n"
+        "	st.d    $a1, $sp, 72\n"
+        "	st.d    $a2, $sp, 80\n"
+        "	st.d    $a3, $sp, 88\n"
+        "	st.d    $a4, $sp, 96\n"
+        "	st.d    $a5, $sp, 104\n"
+        "	st.d    $a6, $sp, 112\n"
+        "	st.d    $a7, $sp, 120\n"
+        "	move    $a0, $t1\n"
+        "	bl      glfwd_resolve_one\n"
+        "	move    $t0, $a0\n"
+        "	fld.d   $f0, $sp, 0\n"
+        "	fld.d   $f1, $sp, 8\n"
+        "	fld.d   $f2, $sp, 16\n"
+        "	fld.d   $f3, $sp, 24\n"
+        "	fld.d   $f4, $sp, 32\n"
+        "	fld.d   $f5, $sp, 40\n"
+        "	fld.d   $f6, $sp, 48\n"
+        "	fld.d   $f7, $sp, 56\n"
+        "	ld.d    $a0, $sp, 64\n"
+        "	ld.d    $a1, $sp, 72\n"
+        "	ld.d    $a2, $sp, 80\n"
+        "	ld.d    $a3, $sp, 88\n"
+        "	ld.d    $a4, $sp, 96\n"
+        "	ld.d    $a5, $sp, 104\n"
+        "	ld.d    $a6, $sp, 112\n"
+        "	ld.d    $a7, $sp, 120\n"
+        "	ld.d    $ra, $sp, 128\n"
+        "	addi.d  $sp, $sp, 144\n"
+        "	jirl    $zero, $t0, 0\n"
+        ".size glfwd_resolve_asm, .-glfwd_resolve_asm\n");
+/* t1 carries the index, t0 the table address, and t2 the scaled byte offset.
+ * All three are caller-saved scratch the ABI lets any call destroy. la.local
+ * is the assembler's own PC-relative pair, used without an addend because
+ * this gas rejects arithmetic inside the %pc_* operators; t2 applies the
+ * offset after the address is formed, so no relocation bound limits the
+ * table size. */
+#define GLFWD_TRAMPOLINE(i, n)                                                     \
+	__asm__(".text\n"                                                         \
+	        ".globl " #n "\n"                                                 \
+	        ".type " #n ",@function\n"                                        \
+	        ".p2align 4\n"                                                    \
+	        #n ":\n"                                                          \
+	        "	li.w      $t1, " #i "\n"                                      \
+	        "	la.local  $t0, glfwd_tab\n"                                    \
+	        "	slli.d    $t2, $t1, 3\n"                                       \
+	        "	add.d     $t0, $t0, $t2\n"                                     \
+	        "	ld.d      $t0, $t0, 0\n"                                       \
+	        "	jirl      $zero, $t0, 0\n"                                    \
+	        ".size " #n ", .-" #n "\n");
+#elif defined(__powerpc64__) && _CALL_ELF == 2
+/* ELFv2, the little-endian ppc64le ABI and also -mabi=elfv2 big-endian.
+ * Assembled here, and RUN under qemu-user against a ppc64le sysroot. See
+ * `make gl-fwd-qemu-check` and ../docs/report/10-measured-versus-assumed.md 10.
+ * Not run on ppc64 silicon.
+ *
+ * The part of this ABI the other four do not have: no PC-relative addressing
+ * below POWER10, so every data reference goes through the TOC in r2, and a
+ * function entered from ANOTHER module is entered at its global entry point,
+ * where it must rebuild r2 from r12 holding its own address. That applies to
+ * these trampolines, to the resolve target, and to r12 in the resolver.
+ *
+ * Zeroing the float return register without VSX instructions: classic
+ * PowerPC has no GPR-to-FPR move, so a zero goes through the stack. VSX
+ * would be one instruction but is POWER7 and later, and a BE ppc64 build
+ * that must also run on POWER5 cannot execute it. */
+__asm__(".abiversion 2\n"
+        ".text\n"
+        ".globl  glfwd_absent\n"
+        ".hidden glfwd_absent\n"
+        ".type   glfwd_absent,@function\n"
+        "glfwd_absent:\n"
+        "	stdu 1, -16(1)\n"
+        "	li   0, 0\n"
+        "	std  0, 0(1)\n"
+        "	lfd  1, 0(1)\n"
+        "	li   3, 0\n"
+        "	addi 1, 1, 16\n"
+        "	blr\n"
+        ".size glfwd_absent, .-glfwd_absent\n");
+/* r3-r10 are the argument registers, f1-f13 the floating-point ones (the
+ * ABI allows float arguments past f8 in the excess slots, and saving all
+ * thirteen costs less than proving an entry point cannot use them), and r11
+ * carries the static chain, as %r10 does on x86-64. The parameter save area
+ * at 0(sp) belongs to the caller of glfwd_resolve_one, which takes one
+ * argument in a register and never writes it. The stack stays 16-byte
+ * aligned through the C call. */
+__asm__(".text\n"
+        ".globl  glfwd_resolve_asm\n"
+        ".hidden glfwd_resolve_asm\n"
+        ".type   glfwd_resolve_asm,@function\n"
+        "glfwd_resolve_asm:\n"
+        "	stdu 1, -192(1)\n"
+        "	std  3, 0(1)\n"
+        "	mr   3, 0\n"
+        "	mflr 0\n"
+        "	std  0, 184(1)\n"
+        "	std  4, 8(1)\n"
+        "	std  5, 16(1)\n"
+        "	std  6, 24(1)\n"
+        "	std  7, 32(1)\n"
+        "	std  8, 40(1)\n"
+        "	std  9, 48(1)\n"
+        "	std  10, 56(1)\n"
+        "	stfd 1, 64(1)\n"
+        "	stfd 2, 72(1)\n"
+        "	stfd 3, 80(1)\n"
+        "	stfd 4, 88(1)\n"
+        "	stfd 5, 96(1)\n"
+        "	stfd 6, 104(1)\n"
+        "	stfd 7, 112(1)\n"
+        "	stfd 8, 120(1)\n"
+        "	stfd 9, 128(1)\n"
+        "	stfd 10, 136(1)\n"
+        "	stfd 11, 144(1)\n"
+        "	stfd 12, 152(1)\n"
+        "	stfd 13, 160(1)\n"
+        "	std  11, 168(1)\n"
+        "	bl  glfwd_resolve_one\n"
+        "	mr   12, 3\n"
+        "	mtctr 3\n"
+        "	ld   11, 168(1)\n"
+        "	lfd  1, 64(1)\n"
+        "	lfd  2, 72(1)\n"
+        "	lfd  3, 80(1)\n"
+        "	lfd  4, 88(1)\n"
+        "	lfd  5, 96(1)\n"
+        "	lfd  6, 104(1)\n"
+        "	lfd  7, 112(1)\n"
+        "	lfd  8, 120(1)\n"
+        "	lfd  9, 128(1)\n"
+        "	lfd  10, 136(1)\n"
+        "	lfd  11, 144(1)\n"
+        "	lfd  12, 152(1)\n"
+        "	lfd  13, 160(1)\n"
+        "	ld   3, 0(1)\n"
+        "	ld   4, 8(1)\n"
+        "	ld   5, 16(1)\n"
+        "	ld   6, 24(1)\n"
+        "	ld   7, 32(1)\n"
+        "	ld   8, 40(1)\n"
+        "	ld   9, 48(1)\n"
+        "	ld   10, 56(1)\n"
+        "	ld   0, 184(1)\n"
+        "	mtlr 0\n"
+        "	addi 1, 1, 192\n"
+        "	bctr\n"
+        ".size glfwd_resolve_asm, .-glfwd_resolve_asm\n");
+/* The trampoline gets the table through r2 (its own TOC, valid at the local
+ * entry because either the global entry computed it or the caller shares it),
+ * the index rides in r0, and the loaded slot lands in r12: the target's own
+ * global entry needs its own address in r12 to rebuild ITS r2, so the slot
+ * value doubles as that address. The 8*i displacement is a 16-bit immediate,
+ * the same bound the aarch64 #:lo12: form carries: 4095 slots. */
+#define GLFWD_TRAMPOLINE(i, n)                                                     \
+	__asm__(".text\n"                                                         \
+	        ".globl " #n "\n"                                                 \
+	        ".type " #n ",@function\n"                                        \
+	        ".p2align 4\n"                                                    \
+	        #n ":\n"                                                          \
+	        "	addis 2, 12, .TOC.-" #n "@ha\n"                              \
+	        "	addi  2, 2, .TOC.-" #n "@l\n"                                \
+	        "	li    0, " #i "\n"                                            \
+	        "	ld    12, glfwd_tab@got(2)\n"                                \
+	        "	ld    12, 8*" #i "(12)\n"                                    \
+	        "	mtctr 12\n"                                                   \
+	        "	bctr\n"                                                        \
+	        ".size " #n ", .-" #n "\n");
+#elif defined(__powerpc64__)
+/* ELFv1, the big-endian ppc64 ABI. Function pointers are three-word
+ * DESCRIPTORS in .opd (entry, TOC, environment pointer), dlsym returns
+ * descriptors, and a call through one sets r2 and r11 from the descriptor
+ * before reaching the code. So every exported symbol here gets a .opd entry,
+ * and every table slot holds a descriptor address, ours or the target's.
+ * Assembled here, and RUN under qemu-user against a ppc64 sysroot. See
+ * `make gl-fwd-qemu-check` and ../docs/report/10-measured-versus-assumed.md 10.
+ * Not run on ppc64 silicon. */
+__asm__(".section .opd,\"aw\"\n"
+        ".align 3\n"
+        ".globl glfwd_absent\n"
+        ".hidden glfwd_absent\n"
+        "glfwd_absent:\n"
+        "	.quad .Lglfwd_absent_body, .TOC., 0\n"
+        ".previous\n"
+        ".text\n"
+        ".type  .Lglfwd_absent_body,@function\n"
+        ".Lglfwd_absent_body:\n"
+        "	stdu 1, -16(1)\n"
+        "	li   0, 0\n"
+        "	std  0, 0(1)\n"
+        "	lfd  1, 0(1)\n"
+        "	li   3, 0\n"
+        "	addi 1, 1, 16\n"
+        "	blr\n"
+        ".size .Lglfwd_absent_body, .-.Lglfwd_absent_body\n");
+__asm__(".section .opd,\"aw\"\n"
+        ".align 3\n"
+        ".globl glfwd_resolve_asm\n"
+        ".hidden glfwd_resolve_asm\n"
+        "glfwd_resolve_asm:\n"
+        "	.quad .Lglfwd_resolve_asm_body, .TOC., 0\n"
+        ".previous\n"
+        ".text\n"
+        ".type  .Lglfwd_resolve_asm_body,@function\n"
+        ".Lglfwd_resolve_asm_body:\n"
+        "	stdu 1, -192(1)\n"
+        "	std  3, 0(1)\n"
+        "	mr   3, 0\n"
+        "	mflr 0\n"
+        "	std  0, 184(1)\n"
+        "	std  4, 8(1)\n"
+        "	std  5, 16(1)\n"
+        "	std  6, 24(1)\n"
+        "	std  7, 32(1)\n"
+        "	std  8, 40(1)\n"
+        "	std  9, 48(1)\n"
+        "	std  10, 56(1)\n"
+        "	stfd 1, 64(1)\n"
+        "	stfd 2, 72(1)\n"
+        "	stfd 3, 80(1)\n"
+        "	stfd 4, 88(1)\n"
+        "	stfd 5, 96(1)\n"
+        "	stfd 6, 104(1)\n"
+        "	stfd 7, 112(1)\n"
+        "	stfd 8, 120(1)\n"
+        "	stfd 9, 128(1)\n"
+        "	stfd 10, 136(1)\n"
+        "	stfd 11, 144(1)\n"
+        "	stfd 12, 152(1)\n"
+        "	stfd 13, 160(1)\n"
+        "	bl   glfwd_resolve_one\n"
+        "	ld   2, 8(3)\n"
+        "	ld   11, 16(3)\n"
+        "	ld   0, 0(3)\n"
+        "	mtctr 0\n"
+        "	lfd  1, 64(1)\n"
+        "	lfd  2, 72(1)\n"
+        "	lfd  3, 80(1)\n"
+        "	lfd  4, 88(1)\n"
+        "	lfd  5, 96(1)\n"
+        "	lfd  6, 104(1)\n"
+        "	lfd  7, 112(1)\n"
+        "	lfd  8, 120(1)\n"
+        "	lfd  9, 128(1)\n"
+        "	lfd  10, 136(1)\n"
+        "	lfd  11, 144(1)\n"
+        "	lfd  12, 152(1)\n"
+        "	lfd  13, 160(1)\n"
+        "	ld   3, 0(1)\n"
+        "	ld   4, 8(1)\n"
+        "	ld   5, 16(1)\n"
+        "	ld   6, 24(1)\n"
+        "	ld   7, 32(1)\n"
+        "	ld   8, 40(1)\n"
+        "	ld   9, 48(1)\n"
+        "	ld   10, 56(1)\n"
+        "	ld   0, 184(1)\n"
+        "	mtlr 0\n"
+        "	addi 1, 1, 192\n"
+        "	bctr\n"
+        ".size .Lglfwd_resolve_asm_body, .-.Lglfwd_resolve_asm_body\n");
+/* The caller's descriptor hop has already set 2 to OUR TOC and 11 to our
+ * (zero) environment pointer, so unlike ELFv2 there is no global entry to
+ * rebuild anything: the body starts on the table at once. The slot holds a
+ * DESCRIPTOR address, and the three loads walk it into the registers a call
+ * through that descriptor would have set: r2, r11, then the code address.
+ * The index rides in r0, which no argument occupies. */
+#define GLFWD_TRAMPOLINE(i, n)                                                     \
+	__asm__(".text\n"                                                         \
+	        ".p2align 4\n"                                                    \
+	        ".type .L" #n "_body,@function\n"                                 \
+	        ".L" #n "_body:\n"                                                \
+	        "	li    0, " #i "\n"                                            \
+	        "	ld    12, glfwd_tab@got(2)\n"                                \
+	        "	ld    12, 8*" #i "(12)\n"                                    \
+	        "	ld    2, 8(12)\n"                                            \
+	        "	ld    11, 16(12)\n"                                          \
+	        "	ld    12, 0(12)\n"                                           \
+	        "	mtctr 12\n"                                                   \
+	        "	bctr\n"                                                        \
+	        ".size .L" #n "_body, .-.L" #n "_body\n"                          \
+	        ".section .opd,\"aw\"\n"                                          \
+	        ".align 3\n"                                                      \
+	        ".globl " #n "\n"                                                 \
+	        ".type " #n ",@function\n"                                        \
+	        #n ":\n"                                                          \
+	        "	.quad .L" #n "_body, .TOC., 0\n"                                \
+	        ".size " #n ", 24\n"                                              \
+	        ".previous\n");
 #else
 #error "gl-fwd needs a tail-jump trampoline for this architecture"
 #endif
