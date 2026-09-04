@@ -1474,6 +1474,16 @@ VISIBLE void cross_libc_dlopen_init_now(void) {
 #  define CLD_TRIPLET "aarch64-linux-gnu"
 #elif defined(__i386__)
 #  define CLD_TRIPLET "i386-linux-gnu"
+#elif defined(__riscv) && __riscv_xlen == 64
+#  define CLD_TRIPLET "riscv64-linux-gnu"
+#elif defined(__loongarch64)
+#  define CLD_TRIPLET "loongarch64-linux-gnu"
+#elif defined(__powerpc64__)
+#  ifdef __LITTLE_ENDIAN__
+#    define CLD_TRIPLET "powerpc64le-linux-gnu"
+#  else
+#    define CLD_TRIPLET "powerpc64-linux-gnu"
+#  endif
 #else
 #  define CLD_TRIPLET "unknown"
 #endif
@@ -1634,6 +1644,7 @@ static void cld_va_init(void) {
 // carries no soname so RTLD_NOLOAD cannot catch it, hence this list
 static const char *cld_never_touch[] = {
 	"ld-linux",
+	"ld64",
 	"ld-musl",
 	"libc.so.",
 	"libc.musl",

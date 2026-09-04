@@ -135,9 +135,14 @@ egl-fwd.so: gl-fwd.c gl-fwd-egl.h ld-conf.h cld-env.h
 # hand some application `undefined symbol`, and the table is 3470 lines long, so
 # the count is checked rather than eyeballed. The SONAME is checked too: without
 # it the object is inert: it loads, forwards nothing, and nothing says why.
+#
+# readelf, not nm: an nm built without PowerPC support reads an ELFv1 .opd
+# function as data (D) and the count then refuses a correct ppc64 build.
+# Measured: host nm 2.46 counts 0 for the same object cross nm counts 3470
+# for. readelf's FUNC/GLOBAL/DEFAULT form counts 3470 on both.
 gl-fwd-verify:
 	@want=$$(sed -n 's/^#define GLFWD_COUNT *//p' $(TBL)); \
-	 have=$$(nm -D --defined-only $(SO) | grep -cE ' (T|i) (gl|egl)'); \
+	 have=$$(readelf --dyn-syms -W $(SO) | grep -cE ' +FUNC +GLOBAL +DEFAULT +[0-9]+ +(gl|egl)'); \
 	 son=$$(objdump -p $(SO) | sed -n 's/^ *SONAME *//p'); \
 	 wson=$$(sed -n 's/^#define GLFWD_SONAME  *"//p' $(TBL) | tr -d '"'); \
 	 if [ "$$have" != "$$want" ]; then \
@@ -212,55 +217,104 @@ gles-syms-check:
 	       --prefix gl --soname libGLESv2.so.2 --check gl-fwd-gles2.h; \
 	 fi
 
-# Does the aarch64 half still assemble? Cheap, and it catches the syntax errors
+# The architectures src/gl-fwd.c carries hand-written trampolines for, besides
+# the host's own. Each maps to a Debian cross toolchain and a qemu-user binary;
+# a machine with none of them is not weaker, it only SKIPS these checks by name.
+GLFWD_CROSS = aarch64 riscv64 ppc64 ppc64le loongarch64
+
+# Do the cross halves still assemble? Cheap, and it catches the syntax errors
 # that would otherwise sit unnoticed until someone has the hardware. It is the
 # WEAKER of the two checks: `make gl-fwd-qemu-check` below actually runs them.
+# The apt names come from Debian; bullseye carries all of them except
+# loongarch64, which needs trixie (gcc-14) because the port postdates gcc-10.
 gl-fwd-asm-check:
-	@command -v aarch64-linux-gnu-gcc >/dev/null 2>&1 || { \
-	   echo "SKIPPED: no aarch64-linux-gnu-gcc. On Debian or Ubuntu:"; \
-	   echo "         apt-get install gcc-aarch64-linux-gnu libc6-dev-arm64-cross"; \
-	   echo "         (the compiler alone has no headers and fails on dirent.h)"; \
-	   exit 0; }
-	aarch64-linux-gnu-gcc $(SOFLAGS) -O2 -c \
-		-DGLFWD_TABLE='"gl-fwd-gl.h"' gl-fwd.c -o /tmp/gl-fwd-aarch64.o
-	@echo "ok: the aarch64 trampolines assemble (see gl-fwd-qemu-check for run)"
+	@rc=0; \
+	for a in $(GLFWD_CROSS); do \
+	   case $$a in \
+	     aarch64)     t=aarch64-linux-gnu;     pk=libc6-dev-arm64-cross ;; \
+	     riscv64)     t=riscv64-linux-gnu;     pk=libc6-dev-riscv64-cross ;; \
+	     ppc64)       t=powerpc64-linux-gnu;   pk=libc6-dev-ppc64-cross ;; \
+	     ppc64le)     t=powerpc64le-linux-gnu; pk=libc6-dev-ppc64el-cross ;; \
+	     loongarch64) t=loongarch64-linux-gnu; pk=libc6-dev-loong64-cross ;; \
+	   esac; \
+	   if command -v $$t-gcc >/dev/null 2>&1; then \
+	     if $$t-gcc $(SOFLAGS) -O2 -c -DGLFWD_TABLE='"gl-fwd-gl.h"' \
+	          gl-fwd.c -o /tmp/gl-fwd-$$a.o 2>/tmp/gl-fwd-$$a.log; then \
+	       echo "ok: the $$a trampolines assemble"; \
+	     else \
+	       echo "FAIL: the $$a trampolines do not assemble:"; \
+	       sed 's/^/  | /' /tmp/gl-fwd-$$a.log; rc=1; \
+	     fi; \
+	   else \
+	     echo "SKIPPED: no $$t-gcc for $$a. On Debian or Ubuntu:"; \
+	     echo "         apt-get install gcc-$$t $$pk"; \
+	     echo "         (the compiler alone has no headers and fails on dirent.h)"; \
+	   fi; \
+	 done; exit $$rc
 
-# And do they RUN? qemu-user executes an aarch64 binary on an x86_64 kernel in
-# userspace, and everything under test (trampoline, resolver, ld.so binding a
-# DT_NEEDED to a preloaded object with the same SONAME, dlopen) is userspace.
+# And do they RUN? qemu-user executes the target binary on this kernel in
+# userspace, and everything under test is userspace: the trampoline, the
+# register-saving resolver, ld.so binding a DT_NEEDED to a preloaded object
+# with the same SONAME, dlopen, and, on ppc64, the ELFv1 .opd descriptor hop
+# through the real ld64.so.1. The vehicle passes one argument of every
+# register class through a trampoline, calls twice so the patched slot is
+# taken too, checks a double return value, and calls a name the target does
+# not define so the absent stub is exercised; m.c verifies each value and
+# prints "all passed" only when every one held.
 #
 # The emulator is named rather than reached through binfmt_misc: a binfmt
 # handler is a kernel registration that outlives the container and changes how
-# the machine treats every aarch64 file afterwards. Naming it changes nothing
-# outside this process, and needs no privilege.
+# the machine treats every target-arch file afterwards. Naming it changes
+# nothing outside this process, and needs no privilege.
 #
-# ⚠ `podman run --platform linux/arm64` is NOT the cheap alternative it looks
-# like: pulling a tag for another platform REPLACES the cached image for that
-# tag, and the next x86_64 run of that image dies with "Exec format error".
+# loongarch64 needs a qemu new enough for the sysroot's glibc: measured,
+# qemu 7.2 faults on trixie's glibc 2.42 where 10.0 runs it; anything between
+# is unmeasured. The -static name is tried first because that is what
+# qemu-user-static ships; trixie also ships a plain qemu-loongarch64 that
+# is statically linked too.
 #
-# experiments/run.ps1 section P (E76, E76b) is this check with the register and
-# absent-path assertions attached; this target is the quick standalone form.
+# experiments/run.ps1 section P (E76, E76b) is the aarch64 row of this check
+# with the register and absent-path assertions attached; this target is the
+# form that covers every architecture a developer can cross-compile.
 gl-fwd-qemu-check:
-	@command -v qemu-aarch64-static >/dev/null 2>&1 && \
-	 command -v aarch64-linux-gnu-gcc >/dev/null 2>&1 || { \
-	   echo "SKIPPED: needs qemu-user-static and gcc-aarch64-linux-gnu"; \
-	   echo "         apt-get install qemu-user-static gcc-aarch64-linux-gnu \\"; \
-	   echo "                         libc6-dev-arm64-cross"; \
-	   exit 0; }
-	@t=$$(mktemp -d); \
-	 printf 'void t_one(void){}\n' > $$t/tgt.c; \
-	 printf '#ifndef GLFWD_SONAME\n#define GLFWD_SONAME "libtgt.so"\n#define GLFWD_COUNT 1\n#endif\nGLFWD_SYM(0, t_one)\n' > $$t/tgt-fwd.h; \
-	 printf 'extern void t_one(void);\nint main(void){t_one();return 0;}\n' > $$t/m.c; \
-	 cp gl-fwd.c ld-conf.h cld-env.h $$t/; \
-	 aarch64-linux-gnu-gcc -shared -fPIC -O2 $$t/tgt.c -o $$t/libtgt.so -Wl,-soname,libtgt.so && \
-	 (cd $$t && aarch64-linux-gnu-gcc -shared -fPIC -O2 -DGLFWD_TABLE='"tgt-fwd.h"' \
-	     -Wl,-soname,libtgt.so gl-fwd.c -o tgt-fwd.so -ldl) && \
-	 aarch64-linux-gnu-gcc -O2 $$t/m.c -o $$t/m $$t/tgt-fwd.so && \
-	 qemu-aarch64-static -L /usr/aarch64-linux-gnu \
-	     -E LD_PRELOAD=$$t/tgt-fwd.so -E CROSS_LIBC_DLOPEN_GL_HOST_DIR=$$t $$t/m && \
-	 echo "ok: the aarch64 trampolines and resolver RAN under qemu-user" || \
-	 { echo "FAIL: the aarch64 build ran and did not succeed"; rm -rf $$t; exit 1; }; \
-	 rm -rf $$t
+	@rc=0; \
+	for a in $(GLFWD_CROSS); do \
+	   case $$a in \
+	     aarch64)     t=aarch64-linux-gnu ;; \
+	     riscv64)     t=riscv64-linux-gnu ;; \
+	     ppc64)       t=powerpc64-linux-gnu ;; \
+	     ppc64le)     t=powerpc64le-linux-gnu ;; \
+	     loongarch64) t=loongarch64-linux-gnu ;; \
+	   esac; \
+	   q=''; for cand in qemu-$$a-static qemu-$$a; do \
+	     command -v $$cand >/dev/null 2>&1 && { q=$$cand; break; }; \
+	   done; \
+	   if ! command -v $$t-gcc >/dev/null 2>&1 || [ -z "$$q" ]; then \
+	     echo "SKIPPED: $$a needs $$t-gcc and a qemu-user binary for $$a"; \
+	     continue; \
+	   fi; \
+	   d=$$(mktemp -d); \
+	   printf 'long t_args(int a, long b, double c, const char *d) {\n	if (a != 7)            return 1;\n	if (b != 0x123456789L) return 2;\n	if (c != 2.718281828)  return 3;\n	if (!d || d[0] != 120 || d[1] != 121) return 4;\n	return a + b + (long)c + d[2];\n}\ndouble t_fret(int a) { return a * 1.5; }\nvoid t_one(void) {}\n' > $$d/tgt.c; \
+	   printf '#ifndef GLFWD_SONAME\n#define GLFWD_SONAME "libtgt.so"\n#define GLFWD_COUNT 5\n#endif\nGLFWD_SYM(0, t_args)\nGLFWD_SYM(1, t_fret)\nGLFWD_SYM(2, t_one)\nGLFWD_SYM(3, t_absent)\nGLFWD_SYM(4, t_absent_f)\n' > $$d/tgt-fwd.h; \
+	   printf '#include <stdio.h>\nextern long t_args(int, long, double, const char *);\nextern double t_fret(int);\nextern void t_one(void);\nextern long t_absent(int);\nextern double t_absent_f(int);\nint main(void) {\n\tconst char *s = "xyz";\n\tlong r1 = t_args(7, 0x123456789L, 2.718281828, s);\n\tlong r2 = t_args(7, 0x123456789L, 2.718281828, s);\n\tif (r1 != r2) return 1;\n\tdouble d1 = t_fret(4), d2 = t_fret(4);\n\tif (d1 != 6.0 || d2 != 6.0) return 2;\n\tt_one();\n\tif (t_absent(9) != 0) return 3;\n\tif (t_absent_f(9) != 0.0) return 4;\n\tputs("all passed");\n\treturn 0;\n}\n' > $$d/m.c; \
+	   cp gl-fwd.c ld-conf.h cld-env.h $$d/; \
+	   if $$t-gcc -shared -fPIC -O2 $$d/tgt.c -o $$d/libtgt.so -Wl,-soname,libtgt.so -lm \
+	      && (cd $$d && $$t-gcc -shared -fPIC -O2 -DGLFWD_TABLE='"tgt-fwd.h"' \
+	          -Wl,-soname,libtgt.so gl-fwd.c -o tgt-fwd.so -ldl) \
+	      && $$t-gcc -O2 $$d/m.c -o $$d/m $$d/tgt-fwd.so -lm \
+	      && $$q -L /usr/$$t -E LD_PRELOAD=$$d/tgt-fwd.so \
+	           -E CROSS_LIBC_DLOPEN_GL_HOST_DIR=$$d $$d/m | grep -q 'all passed'; then \
+	     echo "ok: the $$a trampolines and resolver RAN under qemu-user ($$q)"; \
+	   else \
+	     echo "FAIL: the $$a build ran and did not succeed"; \
+	     if [ "$$a" = loongarch64 ]; then \
+	       echo "      $$q is $$($$q --version | head -1); measured: 7.2 faults on a"; \
+	       echo "      current loong64 glibc, 10.0 runs it, between is unmeasured"; \
+	     fi; \
+	     rc=1; \
+	   fi; \
+	   rm -rf $$d; \
+	 done; exit $$rc
 
 # Does version-compat.c still cover every multi-version trap this libc has?
 # Run it against the NEWEST glibc you care about: the set only grows.

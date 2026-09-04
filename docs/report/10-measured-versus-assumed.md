@@ -59,6 +59,24 @@ E76b  ABSENT entry point called: t_absent
   What remains UNVERIFIED is aarch64 **hardware**: qemu-user emulates the
   instructions, not a real memory model, and no Mesa has been driven through
   these trampolines on an ARM machine.
+- **The riscv64, ppc64, ppc64le and loongarch64 trampolines RUN, under
+  qemu-user, and have never touched their silicon.** Same standing as the
+  aarch64 row above, with two additions the check there does not have: on
+  ppc64 (big-endian, ELFv1) the vehicle's `DT_NEEDED` binds through the
+  host's real `ld64.so.1` and its `.opd` descriptor hop, and on ppc64le
+  (ELFv2) the call enters the trampoline's global entry, which rebuilds the
+  TOC from r12. The qemu vehicle passes one argument of every register
+  class (integer, long, double, pointer) and verifies each value inside the
+  target, calls twice so both the resolver and the patched slot are taken,
+  checks a double return, and exercises the absent stub. Measured with the
+  Debian bullseye cross sysroots (glibc 2.31) for riscv64, ppc64 and ppc64le,
+  and the trixie sysroot (glibc 2.41) for loongarch64 under qemu 10.0,
+  because qemu 7.2 faults on that glibc. The full artefact set also builds
+  and passes `scripts/verify-artifacts.sh` per architecture, floor 2.31 for
+  three of them and 2.36 for loongarch64, whose oldest possible glibc is
+  2.36. What is UNVERIFIED beyond qemu: the hardware, a real host Mesa
+  behind the shims, and the evidence suite, which needs demo AppImages that
+  upstream does not publish for these four.
 - **The `_glapi_tls_Dispatch` case that motivates `gl-fwd`'s `RTLD_GLOBAL` was
   not reproduced on a shipping Mesa here.** The mechanism is measured (E54,
   E55); the report that a real DRI driver still relies on it is against Mesa
@@ -88,7 +106,7 @@ E76b  ABSENT entry point called: t_absent
   no host here has a glibc newer than the bundled 2.44, so auto correctly
   declines every time. The path where auto chooses to switch AND a driver runs
   is still UNVERIFIED, and needs a host with a newer glibc than the bundle.
-- A 32-bit or aarch64 build is UNVERIFIED.
+- A 32-bit build is UNVERIFIED.
 
 ---
 
