@@ -41,28 +41,54 @@ for d in "$BUILDS"/*; do
 done
 [ -n "$dirs" ] || { echo "release-notes: no build-manifest.json under $BUILDS" >&2; exit 2; }
 
-# The floor is a property of the build environment and every build here uses
-# the same one. If two manifests disagree, that is a finding and not something
-# to paper over with the first value.
-floor=""
+# The floor is a property of the build environment, and it is per
+# architecture: loongarch64 cannot exist below glibc 2.36, so its floor is
+# 2.36 while everything else here is built on 2.31. The manifests are grouped
+# by architecture, and the two VARIANTS of one architecture must agree: a
+# disagreement there is a finding and not something to paper over with the
+# first value. The table below is what the body states instead of the single
+# floor it used to state, which refused the moment a second floor appeared.
+arches=""
 for d in $dirs; do
-	f=$(jq -r '.floor_glibc' "$BUILDS/$d/build-manifest.json")
-	if [ -z "$floor" ]; then floor=$f
-	elif [ "$floor" != "$f" ]; then
-		echo "release-notes: manifests disagree about the floor: $floor and $f" >&2
-		exit 2
-	fi
+	m=$BUILDS/$d/build-manifest.json
+	a=$(jq -r '.arch' "$m")
+	f=$(jq -r '.floor_glibc' "$m")
+	[ "$f" != unknown ] && [ -n "$f" ] ||
+		{ echo "release-notes: $d records no glibc floor. A release states its floor or it is not made." >&2; exit 2; }
+	case " $arches " in *" $a "*) ;; *) arches="$arches $a" ;; esac
 done
+
+floor_of() {                       # floor_of <arch>: the one floor its variants agree on
+	a=$1; found=""
+	for d in $dirs; do
+		m=$BUILDS/$d/build-manifest.json
+		[ "$(jq -r '.arch' "$m")" = "$a" ] || continue
+		f=$(jq -r '.floor_glibc' "$m")
+		if [ -z "$found" ]; then found=$f
+		elif [ "$found" != "$f" ]; then
+			echo "release-notes: the $a builds disagree about the floor: $found and $f" >&2
+			exit 2
+		fi
+	done
+	printf '%s' "$found"
+}
 
 printf '## cross-libc `dlopen` %s\n\n' "$TAG"
 printf 'Load the host'"'"'s GPU drivers into a process that carries its own libc.\n'
 printf 'See the [README](https://github.com/pkgforge-dev/cross-libc-dlopen#readme)\n'
 printf 'for what the two gaps are and which one your symptom is.\n\n'
 
-printf '**Built on glibc %s**, which is the floor every artefact here is held\n' "$floor"
-printf 'to. An object needing a symbol version above it would fail to load inside\n'
-printf 'a bundle whose glibc is older, so the build refuses to produce one and\n'
-printf 'the packaging step refuses to publish one.\n\n'
+printf '**Every artefact is held to its own build'"'"'s glibc floor**, read out of\n'
+printf '`build-manifest.json` rather than stated here. An object needing a symbol\n'
+printf 'version above its floor would fail to load inside a bundle whose glibc is\n'
+printf 'older, so the build refuses to produce one and the packaging step refuses\n'
+printf 'to publish one.\n\n'
+printf '| architecture | floor glibc |\n|---|---|\n'
+for a in $arches; do
+	f=$(floor_of "$a") || exit 2
+	printf '| %s | %s |\n' "$a" "$f"
+done
+printf '\n'
 
 # ------------------------------------------------------------- the changelog --
 printf '### Changes\n\n'
