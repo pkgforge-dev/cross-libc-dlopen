@@ -181,6 +181,16 @@ fetch_verified() {                     # fetch_verified <url> <dest> <label> <re
       the suite and that is a finding."
 }
 
+# ------------------------------------------------- 4b. the floor container --
+# THE ONE SPELLING of the bullseye floor image for both suites, so the floor
+# the evidence table tests on and the floor the AppImage suite builds on
+# cannot drift apart. Dated, never floating: the tag carries libc6
+# 2.31-13+deb11u11 on every architecture (read out of the image layers),
+# which is exactly what archive.debian.org serves, and the stage scripts
+# rewrite their apt sources to that archive. scripts/build.sh keeps its own
+# default because it runs without this file; the two must be moved together.
+CLD_FLOOR_IMAGE=debian:bullseye-20241111-slim
+
 # ------------------------------------------------------- 5. the architecture --
 # Obstacles 2 and 3 of PORTING 5.0: the suite was locked to x86-64 by the
 # loader name, the musl soname and the two asset URLs. All four derive from

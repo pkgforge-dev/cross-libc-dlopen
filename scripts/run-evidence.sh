@@ -63,7 +63,7 @@ stage alpine:3.22          10-build-musl.sh     sh   || die "stage 1 failed"
 stage debian:trixie-slim   20-build-newglibc.sh sh   || die "stage 2 failed"
 
 rc=0
-stage debian:bullseye-20241111-slim 30-run-tests.sh      bash || rc=$?
+stage "$CLD_FLOOR_IMAGE" 30-run-tests.sh      bash || rc=$?
 
 say ""
 if [ "$rc" = 0 ]; then

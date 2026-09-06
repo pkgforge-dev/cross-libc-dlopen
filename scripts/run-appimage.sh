@@ -88,7 +88,7 @@ if [ ! -d "$WORK/AppDir" ]; then
 		die "extraction failed"
 fi
 
-in_container debian:bullseye-20241111-slim 42-build-floor.sh      || die "floor build failed"
+in_container "$CLD_FLOOR_IMAGE" 42-build-floor.sh      || die "floor build failed"
 in_container alpine:3.22          45-build-musl-guest.sh || die "musl guest build failed"
 
 fail=0
