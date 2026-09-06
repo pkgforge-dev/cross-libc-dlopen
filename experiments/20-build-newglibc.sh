@@ -7,10 +7,9 @@ set -eu
 # ⚠ Same bootstrap rule as stage 3: the apt output is kept, and a toolchain
 # that did not install fails the stage naming itself, because a silent
 # failure here hands stage 3 no libraries and the evidence table then reports
-# mismatches that name the cases instead of the cause. https and retries for
-# the same reasons stage 3 gives.
-sed -i 's|http://deb.debian.org|https://deb.debian.org|g' \
-	/etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+# mismatches that name the cases instead of the cause. The stock http sources
+# stay: this image ships no CA store, so https fails certificate verification
+# (measured), and apt's package signatures are the integrity guarantee anyway.
 apt-get update -qq -o Acquire::Retries=3 >/work/.apt2-update.log 2>&1 || true
 apt-get install -y -qq -o Acquire::Retries=3 gcc binutils patchelf \
 	>/work/.apt2-install.log 2>&1 || true

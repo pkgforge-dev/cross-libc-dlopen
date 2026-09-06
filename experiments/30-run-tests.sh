@@ -8,19 +8,29 @@ set -u
 # the toolchain ran the whole table with gcc missing and reported 56
 # MISMATCHes naming the cases instead of the cause. That happened: on the
 # 2026-09-04 v0.2.3 tag run, the aarch64 runner's view of the bullseye
-# repositories stopped working mid-day (trixie and alpine kept working on the
-# same runner), and the discarded apt output was the only witness, so the log
-# showed the effect and not the cause. The apt logs are kept now, and a
-# missing tool fails the stage naming itself.
+# repositories stopped working mid-day, and the discarded apt output was the
+# only witness. The logs below made the cause readable on the next failure:
+# deb.debian.org's bullseye-security POOL is being emptied while its indices
+# still advertise the emptied versions, so `apt-get install` dies with 404s
+# mid-download on some mirror edges and not others, because the edges cache
+# differently. Measured: the pool directory for glibc carries only bookworm
+# files while the bullseye-security index still lists deb11u14.
 #
-# https and retries: the fetch goes over https because plain http to
-# deb.debian.org is the path an egress-filtered or CDN-partitioned runner
-# loses first, and the retries ride out a mirror edge that is mid-update.
-# bullseye left LTS on 2026-08-31, so churn in its repositories is expected
-# rather than exceptional while the suite migrates to archive.debian.org.
-sed -i 's|http://deb.debian.org|https://deb.debian.org|g' \
-	/etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
-apt-get update -qq -o Acquire::Retries=3 >/work/.apt-update.log 2>&1
+# So this stage takes its bullseye from archive.debian.org, which is the
+# permanent home of an EOL suite and serves the whole of it (measured: the
+# index, every package this stage asks for, and an InRelease that verifies
+# against the keyring this image already carries). bullseye-security and
+# bullseye-updates are dropped: the archive has neither, and the floor this
+# stage measures is glibc 2.31 itself, not a point update of it. http, not
+# https, because this image ships no CA store and apt's package signatures
+# are the integrity guarantee. Check-Valid-Until is disabled because an
+# archived suite is never re-dated; it is a no-op today and protective the
+# day the archived Release file grows a Valid-Until.
+printf '%s\n' 'deb http://archive.debian.org/debian bullseye main' \
+	> /etc/apt/sources.list
+rm -f /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+apt-get update -qq -o Acquire::Check-Valid-Until=false -o Acquire::Retries=3 \
+	>/work/.apt-update.log 2>&1 || true
 apt-get install -y -qq -o Acquire::Retries=3 gcc binutils python3 \
 	>/work/.apt-install.log 2>&1 || true
 for _tool in gcc python3 readelf; do
