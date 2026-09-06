@@ -3,7 +3,44 @@
 # bundles an older glibc". Every experiment states its PREDICTION; the harness reports
 # MATCH / MISMATCH against it. A MISMATCH is a finding, not a failure of the harness.
 set -u
-apt-get update -qq >/dev/null 2>&1
+# ⚠ THE BOOTSTRAP IS NOT THE TEST, AND ITS FAILURE IS NOT A MISMATCH. All of
+# this used to be `>/dev/null 2>&1`, so a container whose apt could not fetch
+# the toolchain ran the whole table with gcc missing and reported 56
+# MISMATCHes naming the cases instead of the cause. That happened: on the
+# 2026-09-04 v0.2.3 tag run, the aarch64 runner's view of the bullseye
+# repositories stopped working mid-day, and the discarded apt output was the
+# only witness. The logs below made the cause readable on the next failure:
+# deb.debian.org's bullseye-security POOL is being emptied while its indices
+# still advertise the emptied versions, so `apt-get install` dies with 404s
+# mid-download on some mirror edges and not others, because the edges cache
+# differently. Measured: the pool directory for glibc carries only bookworm
+# files while the bullseye-security index still lists deb11u14.
+#
+# So this stage takes its bullseye from archive.debian.org, which is the
+# permanent home of an EOL suite and serves the whole of it (measured: the
+# index, every package this stage asks for, and an InRelease that verifies
+# against the keyring this image already carries). bullseye-security and
+# bullseye-updates are dropped: the archive has neither, and the floor this
+# stage measures is glibc 2.31 itself, not a point update of it. http, not
+# https, because this image ships no CA store and apt's package signatures
+# are the integrity guarantee. Check-Valid-Until is disabled because an
+# archived suite is never re-dated; it is a no-op today and protective the
+# day the archived Release file grows a Valid-Until.
+printf '%s\n' 'deb http://archive.debian.org/debian bullseye main' \
+	> /etc/apt/sources.list
+rm -f /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+apt-get update -qq -o Acquire::Check-Valid-Until=false -o Acquire::Retries=3 \
+	>/work/.apt-update.log 2>&1 || true
+apt-get install -y -qq -o Acquire::Retries=3 gcc binutils python3 \
+	>/work/.apt-install.log 2>&1 || true
+for _tool in gcc python3 readelf; do
+    command -v "$_tool" >/dev/null 2>&1 || {
+        echo "STAGE 3 CANNOT RUN: $_tool did not install; the apt output follows" >&2
+	sed 's/^/  update| /' /work/.apt-update.log >&2
+	sed 's/^/  install| /' /work/.apt-install.log >&2
+	exit 2
+    }
+done
 # The aarch64 cross toolchain and qemu-user are for section P, which RUNS the
 # aarch64 trampolines rather than only assembling them. They are installed
 # best-effort: if the host has no network for them the section SKIPS by name
@@ -12,10 +49,10 @@ apt-get update -qq >/dev/null 2>&1
 # ⚠ Not on an aarch64 host, where section P builds with the native gcc and
 # runs on the CPU. Installing an emulator for the architecture you are
 # standing on is how E76 came to run under qemu on real aarch64 silicon.
-apt-get install -y -qq gcc binutils python3 >/dev/null 2>&1
 if [ "$(uname -m)" != aarch64 ]; then
-    apt-get install -y -qq --no-install-recommends \
-        gcc-aarch64-linux-gnu libc6-dev-arm64-cross qemu-user-static >/dev/null 2>&1
+    apt-get install -y -qq --no-install-recommends -o Acquire::Retries=3 \
+        gcc-aarch64-linux-gnu libc6-dev-arm64-cross qemu-user-static \
+	>/work/.apt-cross.log 2>&1 || true
 fi
 cd /work
 

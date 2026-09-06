@@ -45,13 +45,30 @@ if [ "${CLD_INSTALL_DEPS:-0}" = 1 ]; then
 	# ignored, so a package list that never downloaded surfaced one line later
 	# as an install failure, which names the wrong step.
 	export DEBIAN_FRONTEND=noninteractive
-	if ! apt-get update -qq >/tmp/cld-apt-update.log 2>&1; then
+	# A bullseye floor image installs from archive.debian.org. Measured on
+	# 2026-09-06: deb.debian.org's bullseye-security pool is being emptied
+	# while its indices still list the emptied versions, so an install dies
+	# with 404s mid-download on mirror edges that no longer carry the files
+	# and works on edges that still do, which is why the same build passed and
+	# failed within minutes of itself. The archive is the permanent home of an
+	# EOL suite and carries the whole of it, signed by the keys the image
+	# already trusts. bullseye-security and bullseye-updates are dropped with
+	# it: the floor this build asserts is glibc 2.31, not a point update of
+	# it. trixie and newer keep the stock mirrors untouched.
+	archive_flags=''
+	if grep -qs '^VERSION_CODENAME=bullseye$' /etc/os-release; then
+		printf '%s\n' 'deb http://archive.debian.org/debian bullseye main' \
+			> /etc/apt/sources.list
+		rm -f /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+		archive_flags='-o Acquire::Check-Valid-Until=false'
+	fi
+	if ! apt-get update -qq $archive_flags >/tmp/cld-apt-update.log 2>&1; then
 		printf 'build-in-env: apt-get update failed. Its output:\n' >&2
 		sed 's/^/  | /' /tmp/cld-apt-update.log >&2
 		die "no package list, so the prerequisites cannot be installed"
 	fi
 	# shellcheck disable=SC2086
-	if ! apt-get install -y -qq --no-install-recommends $pkgs >/tmp/cld-apt-install.log 2>&1; then
+	if ! apt-get install -y -qq -o Acquire::Retries=3 --no-install-recommends $pkgs >/tmp/cld-apt-install.log 2>&1; then
 		printf 'build-in-env: apt-get install failed. Its output:\n' >&2
 		sed 's/^/  | /' /tmp/cld-apt-install.log >&2
 		die "could not install: $pkgs"

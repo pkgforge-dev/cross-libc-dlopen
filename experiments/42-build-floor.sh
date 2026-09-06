@@ -2,9 +2,28 @@
 # Build the preload and the probes on the OLDEST supported glibc, so they only
 # ever need symbols the AppImage's bundled runtime is guaranteed to have.
 set -eu
-apt-get update -qq >/dev/null 2>&1
-apt-get install -y -qq --no-install-recommends gcc libc6-dev make python3 binutils \
-    libgl1-mesa-dev libegl1-mesa-dev libx11-dev >/dev/null 2>&1
+# Same bootstrap rule as stages 2 and 3: bullseye comes from
+# archive.debian.org because deb.debian.org's bullseye-security pool is being
+# emptied while its indices still list the emptied versions (measured
+# 2026-09-06), and the apt output is kept so a failed toolchain fails the
+# stage naming itself instead of failing every later build with a missing
+# file. http, not https, because the slim image ships no CA store.
+printf '%s\n' 'deb http://archive.debian.org/debian bullseye main' \
+	> /etc/apt/sources.list
+rm -f /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+apt-get update -qq -o Acquire::Check-Valid-Until=false -o Acquire::Retries=3 \
+	>/w/.apt4-update.log 2>&1 || true
+apt-get install -y -qq -o Acquire::Retries=3 --no-install-recommends \
+    gcc libc6-dev make python3 binutils libgl1-mesa-dev libegl1-mesa-dev \
+    libx11-dev >/w/.apt4-install.log 2>&1 || true
+for _tool in gcc make python3 readelf; do
+    command -v "$_tool" >/dev/null 2>&1 || {
+        echo "STAGE 42 CANNOT RUN: $_tool did not install; the apt output follows" >&2
+	sed 's/^/  update| /' /w/.apt4-update.log >&2
+	sed 's/^/  install| /' /w/.apt4-install.log >&2
+	exit 2
+    }
+done
 mkdir -p /build/src && cd /build/src
 cp /repo/src/*.c /repo/src/*.h /repo/src/Makefile .
 mkdir -p /build/inventories /build/tools

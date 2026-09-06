@@ -4,7 +4,7 @@
 #   alpine:3.22           builds a faithful musl-linked probe library
 #   debian:trixie-slim    builds libraries needing NEWER glibc symbols and
 #                         stages that newer runtime
-#   debian:bullseye-slim  glibc 2.31, the "older bundled glibc" under test
+#   debian:bullseye-20241111-slim  glibc 2.31, the "older bundled glibc" under test
 #
 # Every experiment declares a prediction; the harness reports MATCH/MISMATCH.
 # Exit 0 means every prediction held. This is the ~4 minute pre-commit gate.
@@ -63,7 +63,7 @@ stage alpine:3.22          10-build-musl.sh     sh   || die "stage 1 failed"
 stage debian:trixie-slim   20-build-newglibc.sh sh   || die "stage 2 failed"
 
 rc=0
-stage debian:bullseye-slim 30-run-tests.sh      bash || rc=$?
+stage "$CLD_FLOOR_IMAGE" 30-run-tests.sh      bash || rc=$?
 
 say ""
 if [ "$rc" = 0 ]; then
