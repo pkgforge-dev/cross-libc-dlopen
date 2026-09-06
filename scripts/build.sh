@@ -32,7 +32,16 @@ ROOT=$(dirname -- "$HERE")
 
 ENGINE=auto
 ARCH=
-FLOOR_IMAGE=debian:bullseye-slim
+# ⚠ A DATED tag, never the floating one. The floor is a property of the build
+# environment, so the image is pinned to the one it was verified on: this tag
+# carries libc6 2.31-13+deb11u11 on every architecture (read out of the image
+# layers), which is exactly the version archive.debian.org serves, so the
+# cross toolchain installs with no version gymnastics. The floating
+# debian:bullseye-slim moves with point updates from the bullseye-security
+# suite, whose pool left deb.debian.org while its indices stayed (measured
+# 2026-09-06), which broke installs whose candidate versions no longer had
+# files behind them.
+FLOOR_IMAGE=debian:bullseye-20241111-slim
 FLOOR_IMAGE_GIVEN=0
 FLOOR_GLIBC=2.31
 OUT=

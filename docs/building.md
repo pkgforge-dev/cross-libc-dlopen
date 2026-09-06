@@ -43,7 +43,7 @@ have it. The artefact loads perfectly on the machine that built it and then
 fails at `dlopen` time in somebody else's application, with a message about a
 symbol version rather than about a build.
 
-The same source built on `debian:bullseye-slim` needs at most `GLIBC_2.16`.
+The same source built on `debian:bullseye-20241111-slim` needs at most `GLIBC_2.16`.
 
 ⭐ **glibc's backward compatibility is real, and it runs one way.** Both
 directions were measured, by preloading the built object onto `/bin/true`:
@@ -64,7 +64,7 @@ that breaks, which is why the default is a container and the floor is 2.31.
 
 The floor is a **property of the build environment**, which is why the default
 is a container: it is the only portable way to pin one. The shipped builds use
-`debian:bullseye-slim` (glibc 2.31), and the artefacts come out needing at most
+`debian:bullseye-20241111-slim` (glibc 2.31), and the artefacts come out needing at most
 `GLIBC_2.16`.
 
 `scripts/build.sh --engine native` exists for a maintainer already on the floor
@@ -179,11 +179,21 @@ Which floor image a target builds in is a property of the target:
 
 | target | floor image | cross compiler | notes |
 |---|---|---|---|
-| aarch64, riscv64, ppc64, ppc64le | `debian:bullseye-slim`, floor glibc 2.31 | gcc-10 | measured against the Debian archive indices: all four cross packages exist on bullseye |
+| aarch64, riscv64, ppc64, ppc64le | `debian:bullseye-20241111-slim`, floor glibc 2.31 | gcc-10 | measured against the Debian archive indices: all four cross packages exist on bullseye |
 | loongarch64 | `debian:trixie-slim`, floor glibc 2.36 | gcc-14 | the port postdates gcc-10, so bullseye has no cross compiler for it. The floor is 2.36 because that is the first glibc release that runs loongarch64 at all, so no older bundle exists to break |
 
 `scripts/build.sh` selects the trixie image for loongarch64 by itself; a
 `--floor-image` you pass wins over that.
+
+The bullseye image is a DATED tag, and its apt sources are rewritten to
+`archive.debian.org` by the build scripts. Bullseye left LTS on 2026-08-31,
+and the live mirror's bullseye-security pool was emptied while its indices
+stayed behind, so an install against the live mirror asks for versions whose
+files no longer exist (measured: the glibc pool directory carries only
+bookworm files while the bullseye-security index still lists `deb11u14`). The
+archive serves the whole of bullseye main, signed by the keys the image
+already trusts, and the dated tag carries the exact `libc6` the archive
+offers, read out of the image layers before the pin was chosen.
 
 ⛔ **Do not reach for `podman run --platform linux/<arch>` to get there.** Pulling
 a tag for another platform **replaces the cached image for that tag**, and the

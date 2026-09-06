@@ -6,7 +6,7 @@
 # users actually complain about, on real software, across four host classes and
 # a second AppImage:
 #
-#   debian:bullseye-slim  builds the artefacts on the glibc 2.31 FLOOR
+#   debian:bullseye-20241111-slim  builds the artefacts on the glibc 2.31 FLOOR
 #   alpine:3.22           musl host, the case the complaint is about
 #   debian:trixie-slim    glibc 2.41, OLDER than the bundled 2.44, so nothing
 #                         NEEDS rewriting. The regression case.
@@ -88,7 +88,7 @@ if [ ! -d "$WORK/AppDir" ]; then
 		die "extraction failed"
 fi
 
-in_container debian:bullseye-slim 42-build-floor.sh      || die "floor build failed"
+in_container debian:bullseye-20241111-slim 42-build-floor.sh      || die "floor build failed"
 in_container alpine:3.22          45-build-musl-guest.sh || die "musl guest build failed"
 
 fail=0
