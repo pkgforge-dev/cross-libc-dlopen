@@ -83,8 +83,9 @@ work order lives nowhere else.
   This machine has no ARM silicon: it is the x86-64 total minus four named
   skips (E22, E23, E58 and now E101). The PR's CI run is the measurement.
 - **`verify-gates.sh`'s one-home list claimed to be identical to
-  `gates.yml`'s and was not** (53/53 50/50 against 63/63 60/60) until this
-  branch aligned them. A comment that asserts sameness is a claim; diff it.
+  `gates.yml`'s and was not** (it still gated the previous suite totals after
+  the totals had moved on) until this branch aligned them. A comment that
+  asserts sameness is a claim; diff it.
 - **`skip E76` and `skip E76b` at the foot of `experiments/30-run-tests.sh`
   name a function that does not exist in that file.** On an x86-64 machine
   with neither qemu nor an aarch64 cross compiler those lines would fail with
