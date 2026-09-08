@@ -58,11 +58,12 @@ default to come out strictly lighter:
   `predictions matched: 63, mismatched: 1` with
   `E101 MISMATCH predicted=OK (exit 1, wanted OK)`; both arms tied.
 - PASSES after: `E101 MATCH predicted=OK  fewer endbr64 than the flag arm:
-  default 3472, asked for: 3478`, and the table reports **64/64** on x86-64.
-  The suite total moves 63 to 64 and every one-home record moved with it:
-  [`../report/`](../report/README.md) 01, 08, 09 and 10, the list in
+  default 3472, asked for: 3478`, and the table is green end to end on
+  x86-64. The suite total moves 63 to 64 and every one-home record moved with
+  it: [`../report/`](../report/README.md) 01, 08, 09 and 10, the list in
   [`gates.yml`](../../.github/workflows/gates.yml), and the same list in
-  `scripts/verify-gates.sh`.
+  `scripts/verify-gates.sh`. The aarch64 total and the four-skip list are in
+  report 08, which is that number's home.
 
 Measured locally besides the suite: `build.sh --arch x86_64` and
 `--arch x86_64 --portable` both exit 0 with the right manifest variant, the
@@ -79,8 +80,8 @@ work order lives nowhere else.
 ## ⚠ What a new session should distrust
 
 - **The aarch64 total on this branch is expected, not yet measured here.**
-  This machine has no ARM silicon: 60/60 is 64 cases minus four named skips
-  (E22, E23, E58 and now E101). The PR's CI run is the measurement.
+  This machine has no ARM silicon: it is the x86-64 total minus four named
+  skips (E22, E23, E58 and now E101). The PR's CI run is the measurement.
 - **`verify-gates.sh`'s one-home list claimed to be identical to
   `gates.yml`'s and was not** (53/53 50/50 against 63/63 60/60) until this
   branch aligned them. A comment that asserts sameness is a claim; diff it.

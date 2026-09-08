@@ -148,7 +148,7 @@ check "no tool is credited (tree)" g_attrib docs/_gate_probe.md \
 check "  the same, as a generated-with line" g_attrib docs/_gate_probe.md \
 	"Generated with [$TOOLNAME Code](https://example.invalid)"
 check "every headline number has one home" g_onehome docs/_gate_probe.md \
-	'the suite reports 53/53 predictions held'
+	'the suite reports 64/64 predictions held'
 
 # ⛔ THIS CHECK EXISTS BECAUSE THE RATCHET DID NOT REFUSE. It was written as a
 # budget with a hardcoded number and a printed suggestion that the next reader
