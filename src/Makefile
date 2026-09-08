@@ -33,21 +33,22 @@ SOFLAGS  = -shared -fPIC
 # has never parsed.
 EXTRA_CFLAGS ?=
 
-# CET is an x86 feature. On aarch64 gcc, -fcf-protection=full is not a warning
-# but a hard error, "not supported for this target", so both aarch64 builds
-# failed at the first shim before anything else could be measured.
+# CET. ⛔ The build does not ask for it, and that is a measurement rather than
+# an omission (docs/report/09-the-second-boundary.md 9.13): the flag adds six
+# endbr64 to the shims and cannot produce the IBT property note, because
+# glibc's crti.o carries no property on any floor image and the linker ANDs
+# that absence across the link. Without the note a CET-enforcing loader turns
+# indirect-branch tracking off for the whole process, so the instructions the
+# flag emits are ones no loader will honour. E101 in
+# experiments/30-run-tests.sh is the case that keeps this true.
 #
-# ⚠ Selected by what the COMPILER TARGETS, not by uname: the aarch64 artefacts
-# are CROSS-compiled, so the machine running make is x86-64 while the object
-# being produced is not. -dumpmachine is the only one of the two that knows.
+# It stays askable, for a toolchain whose crti.o does carry the property:
 #
-# ⚠ Asked, not assumed: a toolchain built without CET refuses the flag on x86
-# too, and that reaches the compiler as a hard error. Issue #13.
-CC_TARGET  := $(shell $(CC) -dumpmachine 2>/dev/null)
-CET_OK     := $(shell printf 'int main(void){return 0;}' > .cet-probe.c 2>/dev/null && \
-                $(CC) -fcf-protection=full -c .cet-probe.c -o .cet-probe.o >/dev/null 2>&1 && \
-                echo yes; rm -f .cet-probe.c .cet-probe.o)
-CET_CFLAGS := $(if $(filter x86_64% i386% i686% amd64%,$(CC_TARGET)),$(if $(CET_OK),-fcf-protection=full,),)
+#   make CET_CFLAGS=-fcf-protection=full
+#
+# ⚠ On aarch64 gcc the flag is not a warning but a hard error, "not supported
+# for this target", and a toolchain built without CET refuses it on x86 too.
+CET_CFLAGS ?=
 
 ROOT     = ..
 FLOOR   ?= $(ROOT)/inventories/appdir.json
@@ -80,10 +81,11 @@ GLES    ?= $(ROOT)/.tmp/gtk4x/AppDir/lib
 
 all: cross-libc-dlopen.so gl-fwd.so egl-fwd.so gles-fwd.so runtime-select
 
-# The packager's variant, without the build script. docs/building.md says what
-# the two flags do and why the CET one is dropped.
+# The packager's variant, without the build script: the strict environment,
+# -DCLD_STRICT_ENV. It differs from the default by that flag and nothing
+# else; docs/building.md has the argument.
 portable:
-	$(MAKE) EXTRA_CFLAGS='-DCLD_STRICT_ENV $(EXTRA_CFLAGS)' CET_CFLAGS= all
+	$(MAKE) EXTRA_CFLAGS='-DCLD_STRICT_ENV $(EXTRA_CFLAGS)' all
 
 # The preload carries the shim: it is already in the global lookup scope, so
 # its exports satisfy undefined symbols in anything dlopen'd later (E2, E5).

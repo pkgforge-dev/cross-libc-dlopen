@@ -130,16 +130,12 @@ cp "$REPO"/tools/* "$WORK/tools/" 2>/dev/null || true
 
 printf 'building for %s with %s%s\n' "$ARCH" "$($CC --version | head -1)" \
 	"${CLD_EXTRA_CFLAGS:+ [variant: $CLD_EXTRA_CFLAGS]}"
-# ⚠ CET_CFLAGS= on the command line overrides the Makefile's `:=`, which is
-# how the portable variant drops -fcf-protection=full. An empty value here is
-# not the same as leaving it out: leaving it out lets the Makefile decide.
-if [ "${CLD_NO_CET:-0}" = 1 ]; then
-	( cd "$WORK/src" && make CC="$CC" EXTRA_CFLAGS="${CLD_EXTRA_CFLAGS:-}" CET_CFLAGS= >/dev/null ) ||
-		die "make failed for $ARCH"
-else
-	( cd "$WORK/src" && make CC="$CC" EXTRA_CFLAGS="${CLD_EXTRA_CFLAGS:-}" >/dev/null ) ||
-		die "make failed for $ARCH"
-fi
+# ⛔ No CET_CFLAGS here, and that is deliberate: the Makefile's default is
+# empty because the flag does no protective work here (the comment beside its
+# assignment has the measurement). A caller who wants it passes CET_CFLAGS to
+# make directly, which a command-line value always wins.
+( cd "$WORK/src" && make CC="$CC" EXTRA_CFLAGS="${CLD_EXTRA_CFLAGS:-}" >/dev/null ) ||
+	die "make failed for $ARCH"
 
 mkdir -p "$OUT"
 for f in cross-libc-dlopen.so gl-fwd.so egl-fwd.so gles-fwd.so runtime-select; do

@@ -31,9 +31,9 @@ printf '%s\n' 'deb http://archive.debian.org/debian bullseye main' \
 rm -f /etc/apt/sources.list.d/*.sources 2>/dev/null || true
 apt-get update -qq -o Acquire::Check-Valid-Until=false -o Acquire::Retries=3 \
 	>/work/.apt-update.log 2>&1 || true
-apt-get install -y -qq -o Acquire::Retries=3 gcc binutils python3 \
+apt-get install -y -qq -o Acquire::Retries=3 gcc binutils python3 make \
 	>/work/.apt-install.log 2>&1 || true
-for _tool in gcc python3 readelf; do
+for _tool in gcc python3 readelf make; do
     command -v "$_tool" >/dev/null 2>&1 || {
         echo "STAGE 3 CANNOT RUN: $_tool did not install; the apt output follows" >&2
 	sed 's/^/  update| /' /work/.apt-update.log >&2
@@ -406,6 +406,42 @@ else
     #      E87 is APPDIR being ignored rather than the build being inert.
     run E88 OK "appdir       : $PWD/app_old" \
         env CROSS_LIBC_DLOPEN_ROOT="$PWD/app_old" ./runtime-select-strict --probe
+
+    # ---- the default build asks for no CET flag ----------------------------
+    #
+    # ⛔ -fcf-protection=full does no protective work here, measured in
+    # docs/report/09-the-second-boundary.md 9.13: it adds six endbr64 to the
+    # shims and cannot produce the IBT property note, because glibc's crti.o
+    # carries no property and the linker ANDs that absence across the link.
+    # The default recipe therefore passes no CET flag, and E101 is the case
+    # that keeps that true: the SAME sources built by the default recipe and
+    # by the same recipe with the flag asked for must NOT come out identical,
+    # because a default build that asked for the flag would tie with the flag
+    # arm and fail here. Measured on bullseye's gcc 10.2: 3472 against 3478.
+    # ⚠ x86-64 only. endbr64 does not exist on the other architectures, and
+    # on aarch64 gcc asking for the flag is a hard error rather than a
+    # warning, so there is no flag arm to compare against.
+    if [ "$(uname -m)" = x86_64 ]; then
+        rm -rf srcbuild && mkdir srcbuild
+        cp /repo/src/Makefile /repo/src/gl-fwd.c /repo/src/gl-fwd-gl.h \
+           /repo/src/ld-conf.h /repo/src/cld-env.h srcbuild/ \
+            2>"$BERR" || bfail "E101 sources"
+        make -C srcbuild gl-fwd.so >/dev/null 2>"$BERR" \
+            || bfail "gl-fwd.so (the default recipe)"
+        n_def=$(objdump -d srcbuild/gl-fwd.so | grep -c endbr64)
+        mv srcbuild/gl-fwd.so srcbuild/gl-fwd-default.so
+        make -C srcbuild gl-fwd.so CET_CFLAGS='-fcf-protection=full' \
+            >/dev/null 2>"$BERR" || bfail "gl-fwd.so (the flag arm)"
+        n_flag=$(objdump -d srcbuild/gl-fwd.so | grep -c endbr64)
+        run E101 OK "fewer endbr64 than the flag arm" \
+            env N_DEF="$n_def" N_FLAG="$n_flag" sh -c \
+            '[ "$N_DEF" -lt "$N_FLAG" ] &&
+             echo "fewer endbr64 than the flag arm: default $N_DEF, asked for: $N_FLAG"'
+    else
+        echo "  E101   SKIPPED - endbr64 is an x86 instruction, and asking"
+        echo "         this architecture's gcc for -fcf-protection=full is a"
+        echo "         hard error rather than a warning."
+    fi
 
     # ---- H. the version-binding trap, and the forwarders that close it ----
     #

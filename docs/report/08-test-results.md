@@ -24,14 +24,14 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **63/63 predictions held on x86-64** and
+`sh scripts/run-evidence.sh` reports **64/64 predictions held on x86-64** and
 **60/60 on aarch64**. The x86-64 total was measured at the change that added
-E75c through E75f; the aarch64 runner runs the same table, so its total is the
-x86-64 total minus the three skips below, and CI re-runs both on every push.
+E101; the aarch64 runner runs the same table, so its total is the
+x86-64 total minus the four skips below, and CI re-runs both on every push.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
 
-⚠ **The two totals differ by exactly the three cases aarch64 SKIPS**, each
+⚠ **The two totals differ by exactly the four cases aarch64 SKIPS**, each
 naming the capability it lacks rather than the difference being unexplained:
 
 | case | why it skips on aarch64 |
@@ -39,10 +39,11 @@ naming the capability it lacks rather than the difference being unexplained:
 | E22 | that libc exports `pthread_cond_init` at one symbol version. The trap needs an obsolete definition beside the current one |
 | E23 | skipped WITH E22 deliberately. With no trap present the stripped object already returns 0, so E23 would pass whether or not `version-compat.c` does anything |
 | E58 | section M's trampoline is hand-written x86-64 machine code. What the real aarch64 trampolines do is measured by E69 through E73 and E76/E76b, natively on the ARM runner |
+| E101 | `endbr64` is an x86 instruction, and asking aarch64 gcc for `-fcf-protection=full` is a hard error rather than a warning, so there is no flag arm to compare against |
 
 ⭐ **E23's skip is the one worth reading.** It was reporting MATCH on the ARM
 runner while asserting nothing, and skipping it with E22 is what stopped that.
-63 minus 3 is 60, and no case is missing for a reason nobody wrote down.
+64 minus 4 is 60, and no case is missing for a reason nobody wrote down.
 
 E1 through E13 measure the problem. E14 through E21 are one per fix from the first pass: the
 ELF self-test, the generated-shim compile and behaviour, and five selector
