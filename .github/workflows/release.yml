@@ -95,16 +95,15 @@ jobs:
     # x86-64 job with "Exec format error". docs/building.md says what it cost.
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # ⭐ Two variants, so nobody has to build one by hand. `default` reads
-    # APPDIR as well as CROSS_LIBC_DLOPEN_ROOT, because an AppImage runtime
-    # exports APPDIR on its own. `portable` reads only this project's name,
-    # which is what a consumer who wants one spelling asked for.
-    # src/cld-env.h has the argument; E87 and E88 measure both arms.
+    # ⭐ One variant ships. It reads CROSS_LIBC_DLOPEN_ROOT with APPDIR as the
+    # fallback, because an AppImage runtime exports APPDIR on its own; the
+    # strict build that reads only this project's name stays a build-time
+    # choice (`cd src && make portable`), which is where the choice belongs.
+    # src/cld-env.h has the argument; E87 and E88 measure the strict arm.
     strategy:
       fail-fast: false
       matrix:
         arch: [x86_64, aarch64, riscv64, ppc64, ppc64le, loongarch64]
-        variant: [default, portable]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -118,13 +117,8 @@ jobs:
       - name: build on the floor
         run: |
           set -eu
-          if [ "${{ matrix.variant }}" = portable ]; then
-            sh scripts/build.sh --engine docker --arch ${{ matrix.arch }} --portable
-            echo "BUILD_DIR=${{ matrix.arch }}-portable" >> "$GITHUB_ENV"
-          else
-            sh scripts/build.sh --engine docker --arch ${{ matrix.arch }}
-            echo "BUILD_DIR=${{ matrix.arch }}" >> "$GITHUB_ENV"
-          fi
+          sh scripts/build.sh --engine docker --arch ${{ matrix.arch }}
+          echo "BUILD_DIR=${{ matrix.arch }}" >> "$GITHUB_ENV"
 
       - name: the manifest
         run: cat "build/$BUILD_DIR/build-manifest.json"
@@ -139,7 +133,7 @@ jobs:
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: release-${{ matrix.arch }}-${{ matrix.variant }}
+          name: release-${{ matrix.arch }}
           path: |
             dist/
             build/*/build-manifest.json
@@ -194,7 +188,7 @@ jobs:
       # added above without widening this list would ship silently as a
       # release without that architecture, which is exactly the defect this
       # step exists to refuse.
-      - name: collect every architecture and variant
+      - name: collect every architecture
         run: |
           set -eu
           arches="x86_64 aarch64 riscv64 ppc64 ppc64le loongarch64"
@@ -208,12 +202,10 @@ jobs:
           done
           mkdir -p dist build
           for a in $arches; do
-            for v in default portable; do
-              src=staged/release-$a-$v
-              [ -d "$src/dist" ] || { echo "no dist/ for $a/$v"; exit 1; }
-              cp -a "$src/dist/." dist/
-              cp -a "$src/build/." build/
-            done
+            src=staged/release-$a
+            [ -d "$src/dist" ] || { echo "no dist/ for $a"; exit 1; }
+            cp -a "$src/dist/." dist/
+            cp -a "$src/build/." build/
           done
           ls -la dist
           echo "--- manifests ---"
@@ -229,9 +221,8 @@ jobs:
         run: |
           set -eu
           fail=0
-          # ⚠ Only the DEFAULT variant ships loose files to check this way.
-          # The portable set ships as archives, and package-release.sh already
-          # checked every object in it against its manifest before archiving.
+          # ⚠ The default build ships loose files, and there is one variant
+          # now; every downloaded manifest has its loose set checked here.
           for a in x86_64 aarch64 riscv64 ppc64 ppc64le loongarch64; do
             man=build/$a/build-manifest.json
             for f in $(jq -r '.artifacts | keys[]' "$man"); do

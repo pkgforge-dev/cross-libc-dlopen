@@ -362,7 +362,7 @@ Totals with this section in: **40/40 on the musl host** with five named skips,
 and ubuntu:16.04 with nineteen named skips, **7/7** on the gtk4 stage, and
 **53/53** in the container suite on x86-64, and **50/50** on aarch64 with the
 three skips named in section 8, at the measurement this section records; the
-totals for the tree as it ships are **63/63** and **60/60** in section 8.
+totals for the tree as it ships are **64/64** and **60/60** in section 8.
 
 ### 9.8 What the shim does not do, stated as a number
 

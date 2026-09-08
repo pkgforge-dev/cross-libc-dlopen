@@ -55,15 +55,19 @@ CROSS_LIBC_DLOPEN_LIBDIR=lib               # default; the directory under the ro
 not own: an AppImage runtime exports it into every process it starts, before
 anything here runs. `CROSS_LIBC_DLOPEN_ROOT` wins when both are set.
 
-⭐ **If you want one spelling and no interop, take the `portable` build.**
-Every release ships it beside the default, as
-`cross-libc-dlopen-portable-<arch>.tar` and `.zip`. Those objects read
-`CROSS_LIBC_DLOPEN_ROOT` and never look at `APPDIR`; the string is not even in
-the binary. To build it yourself:
+⭐ **If you want one spelling and no interop, build the strict variant.** The
+release ships one build, which reads `CROSS_LIBC_DLOPEN_ROOT` with `APPDIR`
+as the fallback. A build that reads `CROSS_LIBC_DLOPEN_ROOT` and never looks
+at `APPDIR` (the string is not even in the binary) is a build-time choice:
 
 ```bash
-sh scripts/build.sh --portable
+cd src && make portable
 ```
+
+or `sh scripts/build.sh --portable` for the same objects through the
+container build. Whoever assembles the bundle knows whether an AppImage
+runtime is going to export `APPDIR` into the process, which is why the choice
+lives there; E87 and E88 in `experiments/30-run-tests.sh` measure both arms.
 
 ⛔ **Every control has exactly one name.** The `ANYLINUX_*` spellings this
 project used before it was renamed are no longer read by anything in `src/`.

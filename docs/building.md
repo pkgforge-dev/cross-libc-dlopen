@@ -119,33 +119,37 @@ cd src && make portable
 ```
 
 It is `sh scripts/build.sh --portable` with the orchestration taken away, and
-it produces the same objects: built with `-DCLD_STRICT_ENV`, and without
-`-fcf-protection=full`.
+it produces the same objects as the default build except for one flag:
+`-DCLD_STRICT_ENV`. The release ships the default build only; the strict
+build stays a build-time choice, because whoever assembles the bundle knows
+whether an AppImage runtime is going to export `APPDIR` into the process and
+a library cannot. E87 and E88 in `experiments/30-run-tests.sh` measure both
+arms.
 
 ⛔ **`make portable` says nothing about which glibc you build on.** The floor
 rule above still decides whether the result loads.
 
-### What the two flags do
+### The two flags
 
 | flag | effect |
 |---|---|
-| `-DCLD_STRICT_ENV` | the objects read `CROSS_LIBC_DLOPEN_ROOT` and ignore `APPDIR`. The default reads both, because an AppImage runtime exports `APPDIR` into every process it starts, and a consumer who wants one spelling asked for this |
-| no `-fcf-protection=full` | the build stops REQUESTING CET |
+| `-DCLD_STRICT_ENV` | the objects read `CROSS_LIBC_DLOPEN_ROOT` and ignore `APPDIR`. The default reads both, because an AppImage runtime exports `APPDIR` into every process it starts, and `CROSS_LIBC_DLOPEN_ROOT` wins when both are set |
+| `-fcf-protection=full` | none by default: no build here asks for CET. It stays askable with `make CET_CFLAGS=-fcf-protection=full` |
 
-⚠ **Dropping the CET flag removes the request, not always the instructions.** A
-toolchain that enables CET by default still emits `endbr64`, and that is the
-distribution's choice rather than this project's. Measured on a gcc whose
-`-Q --help=common` reports `-fcf-protection=full`: the default and portable
-builds carry 202 each, identical. The flag is dropped because it does no
-protective work here, which
+⛔ **No build here requests CET, and that is a measurement rather than an
+omission.** The flag adds six `endbr64` to the shims and cannot produce the
+IBT property note, because glibc's `crti.o` carries no property on any floor
+image and the linker ANDs that absence across the link. Without the note a
+CET-enforcing loader turns indirect-branch tracking off for the whole
+process, so the instructions the flag emits are ones no loader will honour.
 [`report/09-the-second-boundary.md`](report/09-the-second-boundary.md) 9.13
-measures, and because a toolchain that does not support it treats being asked
-as a hard error.
+has the table, and E101 in `experiments/30-run-tests.sh` is the case that
+keeps the default honest.
 
-⚠ **The Makefile now asks the compiler rather than assuming from the
-architecture.** Targeting x86 is not the same as supporting the flag, and the
-architecture test alone let an unsupported flag reach a compiler that refuses
-it. Most callers therefore never need `portable` for that reason at all.
+⚠ **A toolchain that enables CET by default still emits `endbr64`**, and that
+is the distribution's choice rather than this project's. Measured on a gcc
+whose `-Q --help=common` reports `-fcf-protection=full`: the shims carry 202
+each with and without our flag, identical.
 
 ---
 
@@ -157,7 +161,7 @@ sh scripts/build.sh --arch aarch64          # cross-build (riscv64, ppc64,
                                             # ppc64le and loongarch64 too)
 sh scripts/build.sh --arch both             # x86_64 and aarch64, sequentially
 sh scripts/build.sh --engine docker
-sh scripts/build.sh --portable              # -DCLD_STRICT_ENV, and no CET flag
+sh scripts/build.sh --portable              # -DCLD_STRICT_ENV, strict environment
 sh scripts/build.sh --floor-image debian:bookworm-slim --floor-glibc 2.36
 ```
 
