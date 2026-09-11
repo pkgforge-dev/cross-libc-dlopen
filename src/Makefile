@@ -138,10 +138,11 @@ egl-fwd.so: gl-fwd.c gl-fwd-egl.h ld-conf.h cld-env.h
 # the count is checked rather than eyeballed. The SONAME is checked too: without
 # it the object is inert: it loads, forwards nothing, and nothing says why.
 #
-# readelf, not nm: an nm built without PowerPC support reads a PowerPC
-# function as data (D) and the count then refuses a correct PowerPC build.
-# Measured: host nm 2.46 counts 0 for the same object cross nm counts 3470
-# for. readelf's FUNC/GLOBAL/DEFAULT form counts 3470 on both.
+# readelf, not nm: an nm built without PowerPC support reads an ELFv1 .opd
+# function as data (D) and the count then refused a correct build of the
+# ppc64 target this project no longer produces. Measured then: host nm 2.46
+# counted 0 for the same object cross nm counted 3470 for. The readelf
+# FUNC/GLOBAL/DEFAULT form counts 3470 on every target and is kept.
 gl-fwd-verify:
 	@want=$$(sed -n 's/^#define GLFWD_COUNT *//p' $(TBL)); \
 	 have=$$(readelf --dyn-syms -W $(SO) | grep -cE ' +FUNC +GLOBAL +DEFAULT +[0-9]+ +(gl|egl)'); \
