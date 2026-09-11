@@ -5,7 +5,7 @@
 #
 #   $1                  the repository root (read-only is fine)
 #   CLD_OUT             where the artefacts and the manifest go
-#   CLD_ARCH            x86_64 | aarch64 | riscv64 | ppc64 | ppc64le | loongarch64
+#   CLD_ARCH            x86_64 | aarch64 | riscv64 | ppc64le | loongarch64
 #   CLD_FLOOR_GLIBC     the floor being asserted, for the manifest
 #   CLD_INSTALL_DEPS    1 to apt-get what is missing (containers only)
 set -eu
@@ -27,7 +27,6 @@ if [ "${CLD_INSTALL_DEPS:-0}" = 1 ]; then
 	case "$ARCH" in
 		aarch64)     pkgs="$pkgs gcc-aarch64-linux-gnu libc6-dev-arm64-cross" ;;
 		riscv64)     pkgs="$pkgs gcc-riscv64-linux-gnu libc6-dev-riscv64-cross" ;;
-		ppc64)       pkgs="$pkgs gcc-powerpc64-linux-gnu libc6-dev-ppc64-cross" ;;
 		ppc64le)     pkgs="$pkgs gcc-powerpc64le-linux-gnu libc6-dev-ppc64el-cross" ;;
 		loongarch64) pkgs="$pkgs gcc-loongarch64-linux-gnu libc6-dev-loong64-cross" ;;
 	esac
@@ -90,13 +89,6 @@ case "$ARCH" in
 		else
 			CC=riscv64-linux-gnu-gcc
 			OBJDUMP=riscv64-linux-gnu-objdump
-		fi ;;
-	ppc64)
-		if [ "$(uname -m)" = ppc64 ]; then
-			CC=${CC:-gcc}; OBJDUMP=objdump
-		else
-			CC=powerpc64-linux-gnu-gcc
-			OBJDUMP=powerpc64-linux-gnu-objdump
 		fi ;;
 	ppc64le)
 		if [ "$(uname -m)" = ppc64le ]; then

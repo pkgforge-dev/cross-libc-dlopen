@@ -138,8 +138,8 @@ egl-fwd.so: gl-fwd.c gl-fwd-egl.h ld-conf.h cld-env.h
 # the count is checked rather than eyeballed. The SONAME is checked too: without
 # it the object is inert: it loads, forwards nothing, and nothing says why.
 #
-# readelf, not nm: an nm built without PowerPC support reads an ELFv1 .opd
-# function as data (D) and the count then refuses a correct ppc64 build.
+# readelf, not nm: an nm built without PowerPC support reads a PowerPC
+# function as data (D) and the count then refuses a correct PowerPC build.
 # Measured: host nm 2.46 counts 0 for the same object cross nm counts 3470
 # for. readelf's FUNC/GLOBAL/DEFAULT form counts 3470 on both.
 gl-fwd-verify:
@@ -222,7 +222,7 @@ gles-syms-check:
 # The architectures src/gl-fwd.c carries hand-written trampolines for, besides
 # the host's own. Each maps to a Debian cross toolchain and a qemu-user binary;
 # a machine with none of them is not weaker, it only SKIPS these checks by name.
-GLFWD_CROSS = aarch64 riscv64 ppc64 ppc64le loongarch64
+GLFWD_CROSS = aarch64 riscv64 ppc64le loongarch64
 
 # Do the cross halves still assemble? Cheap, and it catches the syntax errors
 # that would otherwise sit unnoticed until someone has the hardware. It is the
@@ -235,7 +235,6 @@ gl-fwd-asm-check:
 	   case $$a in \
 	     aarch64)     t=aarch64-linux-gnu;     pk=libc6-dev-arm64-cross ;; \
 	     riscv64)     t=riscv64-linux-gnu;     pk=libc6-dev-riscv64-cross ;; \
-	     ppc64)       t=powerpc64-linux-gnu;   pk=libc6-dev-ppc64-cross ;; \
 	     ppc64le)     t=powerpc64le-linux-gnu; pk=libc6-dev-ppc64el-cross ;; \
 	     loongarch64) t=loongarch64-linux-gnu; pk=libc6-dev-loong64-cross ;; \
 	   esac; \
@@ -257,8 +256,8 @@ gl-fwd-asm-check:
 # And do they RUN? qemu-user executes the target binary on this kernel in
 # userspace, and everything under test is userspace: the trampoline, the
 # register-saving resolver, ld.so binding a DT_NEEDED to a preloaded object
-# with the same SONAME, dlopen, and, on ppc64, the ELFv1 .opd descriptor hop
-# through the real ld64.so.1. The vehicle passes one argument of every
+# with the same SONAME, dlopen, and the ELFv2 global-entry prologue on
+# ppc64le. The vehicle passes one argument of every
 # register class through a trampoline, calls twice so the patched slot is
 # taken too, checks a double return value, and calls a name the target does
 # not define so the absent stub is exercised; m.c verifies each value and
@@ -284,7 +283,6 @@ gl-fwd-qemu-check:
 	   case $$a in \
 	     aarch64)     t=aarch64-linux-gnu ;; \
 	     riscv64)     t=riscv64-linux-gnu ;; \
-	     ppc64)       t=powerpc64-linux-gnu ;; \
 	     ppc64le)     t=powerpc64le-linux-gnu ;; \
 	     loongarch64) t=loongarch64-linux-gnu ;; \
 	   esac; \

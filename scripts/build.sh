@@ -10,7 +10,7 @@
 #   scripts/build.sh                     container build for the host arch
 #   scripts/build.sh --arch aarch64      cross-build, container
 #   scripts/build.sh --arch riscv64      cross-build, container. The same for
-#                                        ppc64, ppc64le and loongarch64,
+#                                        ppc64le and loongarch64,
 #                                        except that loongarch64 needs the
 #                                        trixie floor image for its gcc-14
 #                                        cross compiler, which this script
@@ -83,13 +83,13 @@ host_arch=$(uname -m)
 [ -n "$ARCH" ] || ARCH=$host_arch
 
 case "$ARCH" in
-	x86_64|aarch64|riscv64|ppc64|ppc64le|loongarch64|both) ;;
-	*) die "--arch must be x86_64, aarch64, riscv64, ppc64, ppc64le, loongarch64 or both (got '$ARCH')" ;;
+	x86_64|aarch64|riscv64|ppc64le|loongarch64|both) ;;
+	*) die "--arch must be x86_64, aarch64, riscv64, ppc64le, loongarch64 or both (got '$ARCH')" ;;
 esac
 
-# The floor image is a property of the TARGET, not only of the policy. The four
+# The floor image is a property of the TARGET, not only of the policy. The three
 # newer architectures cross-compile inside the x86-64 image, and bullseye's
-# gcc-10 carries the cross compilers for riscv64, ppc64 and ppc64le but not
+# gcc-10 carries the cross compilers for riscv64 and ppc64le but not
 # for loongarch64, whose port postdates gcc-10: that one needs trixie (gcc-14),
 # measured against the Debian archive indices. Its floor glibc is 2.36, the
 # first release that runs loongarch64 at all, so no older bundle exists to

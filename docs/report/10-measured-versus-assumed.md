@@ -59,24 +59,41 @@ E76b  ABSENT entry point called: t_absent
   What remains UNVERIFIED is aarch64 **hardware**: qemu-user emulates the
   instructions, not a real memory model, and no Mesa has been driven through
   these trampolines on an ARM machine.
-- **The riscv64, ppc64, ppc64le and loongarch64 trampolines RUN, under
+- **The riscv64, ppc64le and loongarch64 trampolines RUN, under
   qemu-user, and have never touched their silicon.** Same standing as the
-  aarch64 row above, with two additions the check there does not have: on
-  ppc64 (big-endian, ELFv1) the vehicle's `DT_NEEDED` binds through the
-  host's real `ld64.so.1` and its `.opd` descriptor hop, and on ppc64le
-  (ELFv2) the call enters the trampoline's global entry, which rebuilds the
-  TOC from r12. The qemu vehicle passes one argument of every register
+  aarch64 row above, with one addition the check there does not have: on
+  ppc64le (ELFv2) the call enters the trampoline's global entry, which
+  rebuilds the TOC from r12. The qemu vehicle passes one argument of every register
   class (integer, long, double, pointer) and verifies each value inside the
   target, calls twice so both the resolver and the patched slot are taken,
   checks a double return, and exercises the absent stub. Measured with the
-  Debian bullseye cross sysroots (glibc 2.31) for riscv64, ppc64 and ppc64le,
+  Debian bullseye cross sysroots (glibc 2.31) for riscv64 and ppc64le,
   and the trixie sysroot (glibc 2.41) for loongarch64 under qemu 10.0,
   because qemu 7.2 faults on that glibc. The full artefact set also builds
   and passes `scripts/verify-artifacts.sh` per architecture, floor 2.31 for
-  three of them and 2.36 for loongarch64, whose oldest possible glibc is
+  two of them and 2.36 for loongarch64, whose oldest possible glibc is
   2.36. What is UNVERIFIED beyond qemu: the hardware, a real host Mesa
   behind the shims, and the evidence suite, which needs demo AppImages that
-  upstream does not publish for these four.
+  upstream does not publish for these three.
+- **CORRECTION. The ppc64 trampoline ran, and the artefact could never load
+  where it would ship.** The qemu-user result above held for ppc64 and that
+  measurement stands. What it did not establish is the ABI of the place the
+  artefact goes. Debian's `powerpc64-linux-gnu` toolchain targets ELFv1:
+  measured on `debian:bullseye-slim` and on `debian:trixie-slim`,
+  `powerpc64-linux-gnu-gcc` defines `_CALL_ELF 1`, the sysroot loader is
+  `ld64.so.1`, and `-mabi=elfv2` refuses to link with `ld: ABI version 2 is
+  not compatible with ABI version 1 output`. Every ppc64 artefact of v0.2.3
+  carries that ABI: `readelf -h ppc64-cross-libc-dlopen.so` reports
+  `flags 0x1, abiv1` and `readelf -d` reports `DT_NEEDED ld64.so.1`, against
+  `0x2, abiv2` and `ld64.so.2` for the ppc64le asset beside it. The AppImage
+  runtimes that would carry it are ELFv2 throughout, loader, libc and
+  application binary, so their loader refuses the object and prints
+  `ld.so: object 'cross-libc-dlopen.so' from --preload cannot be preloaded
+  (cannot open shared object file): ignored` on a path that exists. A process
+  is one ABI throughout, so an ELFv2 application cannot `dlopen` an ELFv1
+  host driver whatever this project ships, and an ELFv1 one cannot load this
+  project. ppc64 is therefore no longer built. ppc64le is ELFv2 and is
+  unaffected.
 - **The `_glapi_tls_Dispatch` case that motivates `gl-fwd`'s `RTLD_GLOBAL` was
   not reproduced on a shipping Mesa here.** The mechanism is measured (E54,
   E55); the report that a real DRI driver still relies on it is against Mesa
