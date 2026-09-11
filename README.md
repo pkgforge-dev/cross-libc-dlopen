@@ -144,6 +144,14 @@ project lets a bundled application *reach* that ceiling across a libc boundary;
 it does not raise the ceiling. What a driver cannot do stays undone, and
 [`docs/limits.md`](docs/limits.md) is the full, measured list.
 
+⚠ **ppc64, meaning PowerPC 64 big-endian, is not built at all.** That
+architecture is split across two incompatible ABIs, ELFv1 and ELFv2, and an ELF
+object is one or the other. A process is one ABI from its loader up, so an
+ELFv2 application cannot `dlopen` an ELFv1 host driver, and an ELFv1 one cannot
+load an ELFv2 preload. No preload changes that, so there is nothing this
+project can ship that works on both. `ppc64le` is ELFv2 and is built like every
+other target. The measurement is in [`docs/limits.md`](docs/limits.md).
+
 ---
 
 ## Reproducing it

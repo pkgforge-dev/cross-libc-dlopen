@@ -76,9 +76,10 @@ for pair in 'gl-fwd.so gl-fwd-gl.h' 'egl-fwd.so gl-fwd-egl.h' 'gles-fwd.so gl-fw
 	want_son=$(table_soname "$t"); got_son=$(soname_of "$p")
 	want_n=$(table_count "$t")
 	# readelf rather than nm: an nm built without PowerPC support reads an
-	# ELFv1 .opd function as data (D), and the count then refuses a correct
-	# ppc64 build. Measured: host nm counts 0 where cross nm counts 3470;
-	# readelf's FUNC/GLOBAL/DEFAULT form counts 3470 on both endiannesses.
+	# ELFv1 .opd function as data (D), and the count then refused a correct
+	# build of the ppc64 target this project no longer produces. Measured
+	# then: host nm counted 0 where cross nm counted 3470. The readelf
+	# FUNC/GLOBAL/DEFAULT form counts 3470 on every target and is kept.
 	got_n=$(readelf --dyn-syms -W "$p" 2>/dev/null | grep -cE ' +FUNC +GLOBAL +DEFAULT +[0-9]+ +(gl|egl)' || true)
 	[ "$got_son" = "$want_son" ] || bad "$so SONAME is '$got_son', must be '$want_son'"
 	[ "$got_n" = "$want_n" ]     || bad "$so exports $got_n entry points, the table declares $want_n"

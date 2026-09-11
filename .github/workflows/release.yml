@@ -4,7 +4,7 @@
 # two architectures that have runners, on real silicon for aarch64, and the
 # build does not start until it is green.
 #
-# ⚠ The evidence table covers x86_64 and aarch64 and NOTHING ELSE: the four
+# ⚠ The evidence table covers x86_64 and aarch64 and NOTHING ELSE: the three
 # cross-compiled architectures have no runner and no demo AppImages, so their
 # artefacts are released on the strength of the cross build plus
 # scripts/verify-artifacts.sh, with the trampolines run under qemu-user and
@@ -35,7 +35,7 @@ name: release
 # first release is a release workflow nobody has tested, and workflow_dispatch
 # cannot reach a workflow that is not yet on the default branch, so a pull
 # request is the only place this can be proven before it matters.
-# ⚠ `paths` keeps it off every unrelated pull request: it is a six-architecture
+# ⚠ `paths` keeps it off every unrelated pull request: it is a five-architecture
 # build and it is not a fast gate.
 on:
   push:
@@ -87,7 +87,7 @@ jobs:
     name: build and package ${{ matrix.arch }}
     needs: gate
     # ⛔ EVERY architecture builds on ubuntu-latest, and that is deliberate.
-    # scripts/build.sh CROSS-compiles aarch64 and the four newer targets
+    # scripts/build.sh CROSS-compiles aarch64 and the three newer targets
     # inside an x86-64 floor image (trixie for loongarch64, whose gcc-14 cross
     # compiler is the first to exist).
     # `podman run --platform linux/<arch>` would pull a tag for another
@@ -103,7 +103,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64, aarch64, riscv64, ppc64, ppc64le, loongarch64]
+        arch: [x86_64, aarch64, riscv64, ppc64le, loongarch64]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -181,7 +181,7 @@ jobs:
           path: staged
 
       # download-artifact writes one directory per uploaded artifact, so the
-      # six architectures arrive as staged/release-x86_64/... through
+      # five architectures arrive as staged/release-x86_64/... through
       # staged/release-loongarch64/.... Flatten them into the layout the two
       # scripts expect, and fail if ANY is missing rather than publishing
       # half a release. The first loop is the other direction: a matrix row
@@ -191,7 +191,7 @@ jobs:
       - name: collect every architecture
         run: |
           set -eu
-          arches="x86_64 aarch64 riscv64 ppc64 ppc64le loongarch64"
+          arches="x86_64 aarch64 riscv64 ppc64le loongarch64"
           for d in staged/release-*; do
             [ -d "$d" ] || { echo "no build artifacts were downloaded"; exit 1; }
             a=${d#staged/release-}; a=${a%-*}
@@ -223,7 +223,7 @@ jobs:
           fail=0
           # ⚠ The default build ships loose files, and there is one variant
           # now; every downloaded manifest has its loose set checked here.
-          for a in x86_64 aarch64 riscv64 ppc64 ppc64le loongarch64; do
+          for a in x86_64 aarch64 riscv64 ppc64le loongarch64; do
             man=build/$a/build-manifest.json
             for f in $(jq -r '.artifacts | keys[]' "$man"); do
               want=$(jq -r --arg f "$f" '.artifacts[$f].sha256' "$man")
