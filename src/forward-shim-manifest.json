@@ -81,6 +81,11 @@
    "reason": "no audited implementation"
   },
   "__stack_chk_guard": {
+   "excluded_on": [
+    "aarch64",
+    "riscv64",
+    "loongarch64"
+   ],
    "kind": "stub-only",
    "reason": "no audited implementation"
   },
@@ -250,7 +255,7 @@
   "tcgetwinsize",
   "tcsetwinsize"
  ],
- "note": "Covers only the enumerable gap. A symbol introduced after this manifest was generated is NOT covered and cannot be -- see REPORT.md. Design R (host-runtime switch) is the forward-compatible path.",
+ "note": "Covers only the enumerable gap. A symbol introduced after this manifest was generated is NOT covered and cannot be -- see ../docs/report/README.md. Design R (host-runtime switch) is the forward-compatible path.",
  "target": {
   "name": "glibc-2.44",
   "release": "2.44",

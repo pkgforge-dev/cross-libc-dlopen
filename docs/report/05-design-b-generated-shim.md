@@ -95,6 +95,17 @@ The generator now takes `--musl <inventory>` and folds musl's 46 floor-absent
 exports into the same enumerable gap, rather than relying on a hand-maintained
 list. That is what took the corpus from 243/247 to **247/247**.
 
+⚠ **The musl inventory is measured on one architecture, and one of its
+symbols is the loader's on others.** `__stack_chk_guard` is a musl-only name
+against the x86-64 floor, and musl exports it as an 8-byte object, but on
+aarch64, riscv64 and loongarch64 the dynamic loader exports that very name as
+the process-wide stack canary. The generator excludes it per architecture
+and emits it as zeroed data of the real size where the loader does not
+provide it; the merged kind table, not the x86-64 target's, decides the type.
+[Section 3.7](03-defects-found-by-measurement.md) has the measurement and the
+crash it caused, E102 is the case, and `scripts/verify-artifacts.sh` refuses
+any build whose preload exports a name the target's own libc family has.
+
 ### 5.4 The `___environ` rename
 
 Applied, and confirmed firing on the real `libLLVM.so.20.1`:

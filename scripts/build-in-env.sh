@@ -136,10 +136,11 @@ for f in cross-libc-dlopen.so gl-fwd.so egl-fwd.so gles-fwd.so runtime-select; d
 done
 
 # ------------------------------------------------------- verify, not assume --
-# Every artefact is checked AFTER it is built, against the three properties
+# Every artefact is checked AFTER it is built, against the four properties
 # that make it either work or fail silently: the SONAME ld.so will bind to,
-# the number of entry points the table promised, and the highest GLIBC_ symbol
-# version it ended up needing. The third is the floor rule, measured.
+# the number of entry points the table promised, the highest GLIBC_ symbol
+# version it ended up needing, and no name the target's own libc family also
+# exports. The third is the floor rule, measured; the fourth is issue #37.
 CLD_OBJDUMP="$OBJDUMP" \
 CLD_ARCH="$ARCH" CLD_FLOOR_GLIBC="$FLOOR" CLD_SRC="$WORK/src" CLD_CC="$CC" \
 CLD_VARIANT="${CLD_VARIANT:-default}" \

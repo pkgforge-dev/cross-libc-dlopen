@@ -93,7 +93,7 @@ g_attrib() {
 # section. Kept identical to the gates.yml step, including that.
 g_onehome() {
 	f=0
-	for n in 3470 358 64/64 60/60 45/45 40/40 26/26; do
+	for n in 3470 358 65/65 61/61 45/45 40/40 26/26; do
 		c=$(git grep -lF "$n" -- '*.md' ':(exclude)docs/history/*' |
 		    sed 's|^docs/report/.*|docs/report/|' | sort -u | wc -l)
 		[ "$c" -gt 1 ] && f=1
@@ -148,7 +148,7 @@ check "no tool is credited (tree)" g_attrib docs/_gate_probe.md \
 check "  the same, as a generated-with line" g_attrib docs/_gate_probe.md \
 	"Generated with [$TOOLNAME Code](https://example.invalid)"
 check "every headline number has one home" g_onehome docs/_gate_probe.md \
-	'the suite reports 64/64 predictions held'
+	'the suite reports 65/65 predictions held'
 
 # ⛔ THIS CHECK EXISTS BECAUSE THE RATCHET DID NOT REFUSE. It was written as a
 # budget with a hardcoded number and a printed suggestion that the next reader

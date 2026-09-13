@@ -227,8 +227,7 @@ SHIM(int) tcsetwinsize(int fd, const struct winsize *ws) {
    declaring a conflicting C identifier. */
 
 /* ___environ: no audited implementation */
-SHIM(void) shim_stub____environ(void) __asm__("___environ");
-SHIM(void) shim_stub____environ(void) { shim_fatal("___environ", "not implementable over this glibc"); }
+SHIM_DATA(char) shim_stub____environ[8] __asm__("___environ") __attribute__((aligned(16))) = { 0 };
 /* __fgetwc_unlocked: no audited implementation */
 SHIM(void) shim_stub___fgetwc_unlocked(void) __asm__("__fgetwc_unlocked");
 SHIM(void) shim_stub___fgetwc_unlocked(void) { shim_fatal("__fgetwc_unlocked", "not implementable over this glibc"); }
@@ -257,17 +256,22 @@ SHIM(void) shim_stub___lgammal_r(void) { shim_fatal("__lgammal_r", "not implemen
 SHIM(void) shim_stub___nl_langinfo(void) __asm__("__nl_langinfo");
 SHIM(void) shim_stub___nl_langinfo(void) { shim_fatal("__nl_langinfo", "not implementable over this glibc"); }
 /* __optpos: no audited implementation */
-SHIM(void) shim_stub___optpos(void) __asm__("__optpos");
-SHIM(void) shim_stub___optpos(void) { shim_fatal("__optpos", "not implementable over this glibc"); }
+SHIM_DATA(char) shim_stub___optpos[4] __asm__("__optpos") __attribute__((aligned(16))) = { 0 };
 /* __optreset: no audited implementation */
-SHIM(void) shim_stub___optreset(void) __asm__("__optreset");
-SHIM(void) shim_stub___optreset(void) { shim_fatal("__optreset", "not implementable over this glibc"); }
+SHIM_DATA(char) shim_stub___optreset[4] __asm__("__optreset") __attribute__((aligned(16))) = { 0 };
 /* __setjmp: no audited implementation */
 SHIM(void) shim_stub___setjmp(void) __asm__("__setjmp");
 SHIM(void) shim_stub___setjmp(void) { shim_fatal("__setjmp", "not implementable over this glibc"); }
 /* __stack_chk_guard: no audited implementation */
-SHIM(void) shim_stub___stack_chk_guard(void) __asm__("__stack_chk_guard");
-SHIM(void) shim_stub___stack_chk_guard(void) { shim_fatal("__stack_chk_guard", "not implementable over this glibc"); }
+/* Not defined on aarch64, riscv64, loongarch64: the dynamic loader
+   there exports the name itself, and a definition in
+   a preload wins every lookup in the process over
+   the loader's own. Measured against the floor libc
+   packages; issue #37. scripts/verify-artifacts.sh
+   re-measures it against the target every build. */
+#if !(defined(__aarch64__) || (defined(__riscv) && __riscv_xlen == 64) || defined(__loongarch64))
+SHIM_DATA(char) shim_stub___stack_chk_guard[8] __asm__("__stack_chk_guard") __attribute__((aligned(16))) = { 0 };
+#endif
 /* __strtoimax_internal: no audited implementation */
 SHIM(void) shim_stub___strtoimax_internal(void) __asm__("__strtoimax_internal");
 SHIM(void) shim_stub___strtoimax_internal(void) { shim_fatal("__strtoimax_internal", "not implementable over this glibc"); }
@@ -275,8 +279,7 @@ SHIM(void) shim_stub___strtoimax_internal(void) { shim_fatal("__strtoimax_intern
 SHIM(void) shim_stub___strtoumax_internal(void) __asm__("__strtoumax_internal");
 SHIM(void) shim_stub___strtoumax_internal(void) { shim_fatal("__strtoumax_internal", "not implementable over this glibc"); }
 /* _ns_flagdata: no audited implementation */
-SHIM(void) shim_stub__ns_flagdata(void) __asm__("_ns_flagdata");
-SHIM(void) shim_stub__ns_flagdata(void) { shim_fatal("_ns_flagdata", "not implementable over this glibc"); }
+SHIM_DATA(char) shim_stub__ns_flagdata[128] __asm__("_ns_flagdata") __attribute__((aligned(16))) = { 0 };
 /* fgetln: no audited implementation */
 SHIM(void) shim_stub_fgetln(void) __asm__("fgetln");
 SHIM(void) shim_stub_fgetln(void) { shim_fatal("fgetln", "not implementable over this glibc"); }
@@ -284,11 +287,9 @@ SHIM(void) shim_stub_fgetln(void) { shim_fatal("fgetln", "not implementable over
 SHIM(void) shim_stub_getdents(void) __asm__("getdents");
 SHIM(void) shim_stub_getdents(void) { shim_fatal("getdents", "not implementable over this glibc"); }
 /* h_errno: no audited implementation */
-SHIM(void) shim_stub_h_errno(void) __asm__("h_errno");
-SHIM(void) shim_stub_h_errno(void) { shim_fatal("h_errno", "not implementable over this glibc"); }
+SHIM_DATA(char) shim_stub_h_errno[4] __asm__("h_errno") __attribute__((aligned(16))) = { 0 };
 /* optreset: no audited implementation */
-SHIM(void) shim_stub_optreset(void) __asm__("optreset");
-SHIM(void) shim_stub_optreset(void) { shim_fatal("optreset", "not implementable over this glibc"); }
+SHIM_DATA(char) shim_stub_optreset[4] __asm__("optreset") __attribute__((aligned(16))) = { 0 };
 /* sigsetjmp: no audited implementation */
 SHIM(void) shim_stub_sigsetjmp(void) __asm__("sigsetjmp");
 SHIM(void) shim_stub_sigsetjmp(void) { shim_fatal("sigsetjmp", "not implementable over this glibc"); }

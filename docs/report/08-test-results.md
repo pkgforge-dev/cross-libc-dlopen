@@ -24,10 +24,10 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **64/64 predictions held on x86-64** and
-**60/60 on aarch64**. The x86-64 total was measured at the change that added
-E101; the aarch64 runner runs the same table, so its total is the
-x86-64 total minus the four skips below, and CI re-runs both on every push.
+`sh scripts/run-evidence.sh` reports **65/65 predictions held on x86-64** and
+**61/61 on aarch64**. The x86-64 total was measured at the change that added
+E102; the aarch64 runner runs the same table, so its total is the x86-64
+total minus the four skips below, and CI re-runs both on every push.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
 
@@ -43,7 +43,7 @@ naming the capability it lacks rather than the difference being unexplained:
 
 ⭐ **E23's skip is the one worth reading.** It was reporting MATCH on the ARM
 runner while asserting nothing, and skipping it with E22 is what stopped that.
-64 minus 4 is 60, and no case is missing for a reason nobody wrote down.
+65 minus 4 is 61, and no case is missing for a reason nobody wrote down.
 
 E1 through E13 measure the problem. E14 through E21 are one per fix from the first pass: the
 ELF self-test, the generated-shim compile and behaviour, and five selector
@@ -63,6 +63,7 @@ objects small enough that the mechanism is the only thing being measured:
 | E26 | the audit: no glibc may add a trap `version-compat.c` neither forwards nor declines |
 | E28 | the report names the dependency that failed to open, instead of accusing the libc |
 | E29 | and the caller still gets ld.so's message, not one of the report's own `dlsym` misses |
+| E102 | the built preload exports no name this host's own libc family also exports, beyond the audited interpositions: the case that caught `__stack_chk_guard` being defined where the loader owns it (3.7), and on the aarch64 runner the case that failed before that fix |
 | E54 | a plugin's undeclared import cannot see its loader's closure when that closure was loaded `RTLD_LOCAL` |
 | E55 | its control: `RTLD_GLOBAL`, same two files, and it resolves |
 | E56 | preload constructors run in REVERSE of the `.preload` order |

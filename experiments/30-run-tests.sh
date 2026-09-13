@@ -516,6 +516,61 @@ else
         echo "         exists; without it the unstripped answer is already 0."
     fi
 
+    # E102: the preload exports no name this host's own libc family also
+    #      exports, beyond the audited interpositions. This is the case the
+    #      aarch64 artefact shipped without: the generated shim defined
+    #      __stack_chk_guard as a function stub, this architecture's loader
+    #      exports the name as the process-wide stack canary, a preload
+    #      definition wins every lookup in the process including the
+    #      loader's own, and chromium's GPU process died with SIGSEGV under
+    #      the preload with the feature switch off (issue #37). On the x86-64
+    #      runner this libc exports no such name, because the canary lives
+    #      at %fs:0x28 there, so the case passes both ways on that row and
+    #      its teeth are the architectures whose loader owns the canary. It
+    #      still guards every row against a collision of the same shape.
+    #
+    # ⚠ readelf over "$@", not "$1": the target is a LIST, libc plus its
+    # loader, and the first shape of this check read only the first member
+    # and found nothing. A case that cannot see its own defect is the
+    # failure mode this repository calls a silent pass.
+    #
+    # ⚠ The exemptions are read out of the source that defines them, so the
+    # assertion cannot drift from the forwarder set: dlopen is the project's
+    # own interposition, and version-compat.c's forwarders each forward to
+    # the default definition they displaced.
+    host_libc="/lib/$TRIPLET/libc.so.6"
+    [ -f "$host_libc" ] || host_libc="/usr/lib/$TRIPLET/libc.so.6"
+    defined_names() {
+        # The [<localentry>: 8] column PPC64 ELFv2 readelf prints between
+        # visibility and index is stripped for the same reason as in
+        # scripts/verify-artifacts.sh: unstripped, every name parses as 8].
+        readelf --dyn-syms -W "$@" 2>/dev/null |
+            sed 's/\[<localentry>:[^]]*\]//' |
+            awk '$7 != "UND" && ($5 == "GLOBAL" || $5 == "WEAK") &&
+                 $6 == "DEFAULT" { n = $8; sub(/@.*/, "", n); print n }' |
+            sort -u
+    }
+    { printf '%s\n' dlopen cross_libc_dlopen_init_now
+      sed -n 's/^VC_VISIBLE .*[ *]\([A-Za-z_][A-Za-z0-9_]*\)(.*/\1/p' \
+          /repo/src/version-compat.c
+    } | sort -u > /work/e102-exempt
+    { defined_names /work/cross-libc-dlopen.so
+      defined_names "$host_libc" "$LIBDIR2/$LDSO"
+    } | sort | uniq -d | grep -vxF -f /work/e102-exempt \
+        > /work/e102-collisions || true
+    # ⛔ The colliding names are PRINTED, not just the verdict. The first
+    # shape asserted only that the file was empty, so a failure was
+    # `E102 MISMATCH` naming nothing; verify-artifacts.sh prints them and
+    # this case now does too. The needle is echoed only when the list is
+    # empty, so a collision cannot fall through to a pass.
+    run E102 OK "no libc-family name reexported" sh -c '
+        if [ -s /work/e102-collisions ]; then
+            echo "E102: the preload reexports names this libc family also has:"
+            sed "s/^/        /" /work/e102-collisions
+        else
+            echo no libc-family name reexported
+        fi'
+
     # ---- the deprecated ANYLINUX_* spellings, and that they are gone ------
     #
     # Every control here used to have a second spelling, read as a deprecated

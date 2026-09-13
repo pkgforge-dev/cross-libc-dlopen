@@ -92,7 +92,7 @@ which compared against a glibc floor is a number that means nothing.
 | `runtime-select` | a normal executable, same floor rule |
 
 Each is checked **after** it is built, by
-[`scripts/verify-artifacts.sh`](../scripts/verify-artifacts.sh), against three
+[`scripts/verify-artifacts.sh`](../scripts/verify-artifacts.sh), against four
 properties that all fail *silently* rather than loudly:
 
 - **the SONAME.** A shim whose SONAME is not the library it replaces still
@@ -103,9 +103,15 @@ properties that all fail *silently* rather than loudly:
   whichever call the missing one turns out to be.
 - **the maximum `GLIBC_*` requirement.** The floor rule, measured rather than
   assumed.
+- **no name the target's own libc family also exports.** An unversioned
+  definition in a preload wins the lookup for a versioned reference, so a
+  shared name replaces that implementation for the whole process, the
+  loader's own included. Issue #37 is the measured case, and the check
+  refuses rather than reporting the property unverified when it cannot find
+  the target's libc to compare against.
 
-The manifest records all three per artefact, plus the source hashes, the
-compiler and the floor.
+The manifest records the first three per artefact, plus the source hashes,
+the compiler and the floor.
 
 ---
 

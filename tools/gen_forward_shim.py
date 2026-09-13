@@ -91,6 +91,68 @@ def _impl(name, kind, code, needs=(), headers=(), note=""):
                       headers=list(headers), note=note)
 
 
+# ---------------------------------------------------------------------------
+# Symbols some architectures must not define at all: their own dynamic
+# loader exports the name, and a definition in a preload wins the lookup for
+# every reference in the process, the loader's own included.
+#
+# __stack_chk_guard is the process-wide stack canary on every glibc
+# architecture without THREAD_SET_STACK_GUARD, and the loader writes it in
+# security_init(). Measured against the floor libc packages the build
+# installs, libc6-<target>-cross 2.31 for the bullseye targets and
+# libc6-loong64-cross 2.41 for trixie, readelf --dyn-syms on ld-linux plus
+# libc.so.6 of each:
+#
+#   aarch64      exports it     (ld-linux-aarch64.so.1)
+#   riscv64      exports it     (ld-linux-riscv64-lp64d.so.1)
+#   loongarch64  exports it     (ld-linux-loongarch-lp64d.so.1)
+#   x86_64       does not       (the canary lives at %fs:0x28)
+#   ppc64le      does not       (the canary lives in the TCB)
+#
+# Defining it where the loader exports it interposes the canary itself: every
+# __stack_chk_guard GOT slot in the process, libc's own included, binds the
+# preload's definition, and chromium's GPU process on aarch64 died of exactly
+# that with the preload merely present and CROSS_LIBC_DLOPEN=0 (issue #37,
+# SIGSEGV, exit code 139, reproduced on real silicon). Where the loader does
+# NOT export it, musl-built guests still reference it by name and the
+# definition is load-bearing, so it is excluded per architecture rather than
+# dropped.
+#
+# scripts/verify-artifacts.sh re-measures this against the target's own libc
+# family after every build, so an architecture added later fails the build
+# rather than inheriting the crash.
+#
+# The preprocessor spellings match the triplet selection in
+# src/cross-libc-dlopen.c and src/runtime-select.c.
+ARCH_MACROS = {
+    "x86_64":      "defined(__x86_64__)",
+    "i386":        "defined(__i386__)",
+    "aarch64":     "defined(__aarch64__)",
+    "riscv64":     "(defined(__riscv) && __riscv_xlen == 64)",
+    "ppc64le":     "(defined(__powerpc64__) && defined(__LITTLE_ENDIAN__))",
+    # Measured against GCC's own loongarch-c.cc, loongarch_define_unconditional_
+    # macros: the compiler defines __loongarch64 for the 64-bit port (and
+    # __loongarch__ unconditionally), and NEVER __loongarch64__ with trailing
+    # underscores. The gate caught the first spelling of this entry on the real
+    # cross build, which emitted the excluded symbol and was refused.
+    "loongarch64": "defined(__loongarch64)",
+}
+
+ARCH_EXCLUDED = {
+    "__stack_chk_guard": ("aarch64", "riscv64", "loongarch64"),
+}
+
+
+def arch_exclusion_guard(sym):
+    """(pre, post) wrapping a definition on the architectures that must not
+    carry it, or ("", "") when every architecture may."""
+    arches = ARCH_EXCLUDED.get(sym)
+    if not arches:
+        return "", ""
+    cond = " || ".join(ARCH_MACROS[a] for a in arches)
+    return f"#if !({cond})", "#endif"
+
+
 # --- BSD string ------------------------------------------------------------
 _impl("strlcpy", "implementable", r"""
 SHIM(size_t) strlcpy(char *d, const char *s, size_t n) {
@@ -615,7 +677,7 @@ def _proto_of(code, sym):
     return None
 
 
-def render(floor, target, gap, decided, args):
+def render(floor, target, gap, decided, args, tkinds):
     """Emit forward-shim.c."""
     headers = set()
     n = {"implementable": 0, "forwardable": 0, "stub-only": 0, "irrelevant": 0}
@@ -653,11 +715,21 @@ def render(floor, target, gap, decided, args):
                    "   directly collides with the prototype <unistd.h> already made\n"
                    "   visible; the label sets the emitted symbol without ever\n"
                    "   declaring a conflicting C identifier. */\n")
-        kinds = target.get("kinds", {})
+        kinds = tkinds
         for s in stub:
             why = decided[s][1].replace("*/", "* /")
             k = kinds.get(s, {})
             out.append(f"/* {s}: {why} */")
+            pre, post = arch_exclusion_guard(s)
+            if pre:
+                excluded = ", ".join(ARCH_EXCLUDED[s])
+                out.append(f"/* Not defined on {excluded}: the dynamic loader")
+                out.append(f"   there exports the name itself, and a definition in")
+                out.append(f"   a preload wins every lookup in the process over")
+                out.append(f"   the loader's own. Measured against the floor libc")
+                out.append(f"   packages; issue #37. scripts/verify-artifacts.sh")
+                out.append(f"   re-measures it against the target every build. */")
+                out.append(pre)
             if k.get("type") == "OBJECT":
                 # A data symbol must be data. A function here would hand the
                 # caller code bytes to read as a value; zeroed storage of the
@@ -669,6 +741,8 @@ def render(floor, target, gap, decided, args):
                 out.append(f'SHIM(void) shim_stub_{s}(void) __asm__("{s}");')
                 out.append(f'SHIM(void) shim_stub_{s}(void) {{ shim_fatal("{s}", '
                            f'"not implementable over this glibc"); }}')
+            if post:
+                out.append(post)
         out.append("")
 
     # Runtime guard: a shim generated for the wrong floor would interpose over
@@ -757,7 +831,7 @@ def main():
         if emitted:
             print(f"emitting {len(emitted)} definitions")
 
-    src = render(floor, target, gap, emitted, a)
+    src = render(floor, target, gap, emitted, a, tkinds)
     if a.out:
         os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
         open(a.out, "w", encoding="utf-8", newline="\n").write(src)
@@ -773,8 +847,10 @@ def main():
         "counts": n,
         "gap_total": len(gap),
         "musl_only": musl_only,
-        "classification": {s: {"kind": k, "reason": w} for s, (k, w) in
-                           sorted(decided.items())},
+        "classification": {s: {"kind": k, "reason": w,
+                                **({"excluded_on": list(ARCH_EXCLUDED[s])}
+                                   if s in ARCH_EXCLUDED else {})}
+                           for s, (k, w) in sorted(decided.items())},
         "note": ("Covers only the enumerable gap. A symbol introduced after "
                  "this manifest was generated is NOT covered and cannot be -- "
                  "see ../docs/report/README.md. Design R (host-runtime switch) is the "
