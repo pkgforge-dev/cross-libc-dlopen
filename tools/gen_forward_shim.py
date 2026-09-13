@@ -131,11 +131,11 @@ ARCH_MACROS = {
     "riscv64":     "(defined(__riscv) && __riscv_xlen == 64)",
     "ppc64le":     "(defined(__powerpc64__) && defined(__LITTLE_ENDIAN__))",
     # Measured against GCC's own loongarch-c.cc, loongarch_define_unconditional_
-    # macros: the compiler defines __loongarch__ and __loongarch64, and NEVER
-    # __loongarch64__ with trailing underscores. The gate caught the first
-    # spelling of this entry on the real cross build, which emitted the
-    # excluded symbol and was refused.
-    "loongarch64": "defined(__loongarch__)",
+    # macros: the compiler defines __loongarch64 for the 64-bit port (and
+    # __loongarch__ unconditionally), and NEVER __loongarch64__ with trailing
+    # underscores. The gate caught the first spelling of this entry on the real
+    # cross build, which emitted the excluded symbol and was refused.
+    "loongarch64": "defined(__loongarch64)",
 }
 
 ARCH_EXCLUDED = {

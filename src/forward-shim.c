@@ -269,7 +269,7 @@ SHIM(void) shim_stub___setjmp(void) { shim_fatal("__setjmp", "not implementable 
    the loader's own. Measured against the floor libc
    packages; issue #37. scripts/verify-artifacts.sh
    re-measures it against the target every build. */
-#if !(defined(__aarch64__) || (defined(__riscv) && __riscv_xlen == 64) || defined(__loongarch__))
+#if !(defined(__aarch64__) || (defined(__riscv) && __riscv_xlen == 64) || defined(__loongarch64))
 SHIM_DATA(char) shim_stub___stack_chk_guard[8] __asm__("__stack_chk_guard") __attribute__((aligned(16))) = { 0 };
 #endif
 /* __strtoimax_internal: no audited implementation */
