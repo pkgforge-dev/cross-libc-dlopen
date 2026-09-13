@@ -186,6 +186,11 @@ before this fix and passes after; on the x86-64 runner it passes both ways,
 because that libc exports no such name, and it still guards that row against
 a collision of the same shape.
 
+Re-measured on the upstream matrix in run
+[34748810446](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/34748810446):
+all six build rows green, E102 matching on both evidence rows, so the ARM
+row above is measured rather than assumed.
+
 ---
 
 ---
