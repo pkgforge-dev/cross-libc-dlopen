@@ -18,7 +18,7 @@ resolves to the page below.
 |---|---|---|
 | 1 | [Summary](01-summary.md) | what the goals were and which of them were reached |
 | 2 | [Environment reached](02-environment.md) | the machines, images and drivers every number below came from |
-| 3 | [Defects found by measurement](03-defects-found-by-measurement.md) | six things that were wrong, each found by a case rather than by reading |
+| 3 | [Defects found by measurement](03-defects-found-by-measurement.md) | seven things that were wrong, each found by a case rather than by reading |
 | 4 | [Design R: host-runtime selection](04-design-r-runtime-selection.md) | swapping the libc runtime at exec time, and why a mixed set cannot be allowed |
 | 5 | [Design B: the generated shim](05-design-b-generated-shim.md) | the forward-compatibility shim, what it covers and what it cannot |
 | 6 | [Goal 2, and the last blocker](06-goal-2-the-last-blocker.md) | a musl-built driver loading into a glibc process, and how the final blocker fell |
