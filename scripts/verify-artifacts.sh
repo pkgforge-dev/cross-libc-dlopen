@@ -6,7 +6,7 @@
 # Standalone on purpose: CI runs it against a directory of downloaded
 # artefacts, without a compiler anywhere near it.
 #
-# THREE PROPERTIES, and each one fails silently if it is wrong rather than
+# FOUR PROPERTIES, and each one fails silently if it is wrong rather than
 # loudly, which is why they are checked rather than assumed:
 #
 #   SONAME        a forwarding shim whose SONAME is not the library it
@@ -18,6 +18,11 @@
 #   max GLIBC_    an artefact needing a symbol version newer than the floor
 #                 loads fine on the machine that built it and fails inside a
 #                 bundle whose glibc is older. This is THE floor rule.
+#   name collision an unversioned definition in a preload wins the lookup for
+#                 a versioned reference, so any exported name the target's own
+#                 libc family also exports silently replaces that
+#                 implementation for the WHOLE process, the loader's own
+#                 included. Measured as issue #37, __stack_chk_guard.
 set -eu
 
 DIR=${1:?usage: verify-artifacts.sh <artefact-dir> [repo-root]}
