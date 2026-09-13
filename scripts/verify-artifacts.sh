@@ -156,7 +156,16 @@ if [ -f "$DIR/cross-libc-dlopen.so" ]; then
 	targets=''
 	if [ -n "$triplet" ]; then
 		if [ -n "$SYSROOT" ]; then
-			for d in "$SYSROOT/lib" "$SYSROOT/lib64"; do
+			# An extracted distro rootfs, which is the obvious CLD_SYSROOT
+			# use. Its libc sits in the multiarch directory, the flat lib
+			# directory, or /usr/lib on a merged-/usr root, so all of them
+			# are tried. Measured: globbing only lib and lib64 found
+			# nothing in an extracted Debian rootfs and took the unverified
+			# path below.
+			for d in "$SYSROOT/usr/lib/$triplet" "$SYSROOT/lib/$triplet" \
+			         "$SYSROOT/usr/$triplet/lib" \
+			         "$SYSROOT/usr/lib" "$SYSROOT/usr/lib64" \
+			         "$SYSROOT/lib" "$SYSROOT/lib64"; do
 				[ -d "$d" ] || continue
 				for f in "$d"/libc.so.6 "$d"/ld-linux*.so* \
 				         "$d"/ld64.so* "$d"/ld-[0-9]*.so; do
@@ -191,32 +200,48 @@ if [ -f "$DIR/cross-libc-dlopen.so" ]; then
 		fi
 	fi
 	if [ -z "$(printf '%s' "$targets" | tr -d ' ')" ]; then
-		say "cross-libc-dlopen.so: no $ARCH libc family found to check"
-		say "exports against, name collisions unverified"
+		bad "cross-libc-dlopen.so: no $ARCH libc family found to check exports
+      against, so the name-collision property measured nothing. The build
+      container carries one in the cross sysroot; a verification run can name
+      one with CLD_SYSROOT."
 	else
 		defs=$(defined_names "$DIR/cross-libc-dlopen.so")
 		# shellcheck disable=SC2086
 		theirs=$(defined_names $targets)
-		{
-			printf '%s\n' dlopen cross_libc_dlopen_init_now
-			forwarder_names
-		} | sort -u > "$DIR/.cld-exempt.$$"
-		hits=$(printf '%s\n%s\n' "$defs" "$theirs" | sort | uniq -d |
-			grep -vxF -f "$DIR/.cld-exempt.$$" || true)
-		rm -f "$DIR/.cld-exempt.$$"
-		if [ -n "$hits" ]; then
-			bad "cross-libc-dlopen.so exports names the target libc family also
+		# An empty list on either side makes the intersection vacuously
+		# empty, and an empty intersection prints exactly like a clean
+		# result. readelf failing and a wrong file set both produce one, so
+		# neither side being empty is a pass. Measured: with readelf broken
+		# this check said "no name reexported".
+		if [ -z "$defs" ] || [ -z "$theirs" ]; then
+			bad "cross-libc-dlopen.so: the name-collision check read no defined
+      dynamic names from at least one side ($DIR/cross-libc-dlopen.so and
+      $targets), so it measured nothing."
+		else
+			exempt=$(mktemp)
+			{
+				printf '%s\n' dlopen cross_libc_dlopen_init_now
+				forwarder_names
+			} | sort -u > "$exempt"
+			hits=$(printf '%s\n%s\n' "$defs" "$theirs" | sort | uniq -d |
+				grep -vxF -f "$exempt" || true)
+			rm -f "$exempt"
+			if [ -n "$hits" ]; then
+				bad "cross-libc-dlopen.so exports names the target libc family also
       exports. A preload definition wins every lookup for each of them,
       the loader's own included. Issue #37. The shared names, verbatim:"
-			# IFS= read, not a for over the unquoted variable: a name with a
-			# space in it once printed as its own last word and named nothing.
-			printf '%s\n' "$hits" | while IFS= read -r h; do
-				printf '        %s\n' "$h"
-				readelf --dyn-syms -W "$DIR/cross-libc-dlopen.so" 2>/dev/null |
-					grep -F " $h" | sed 's/^/   so: /'
-			done
-		else
-			say "cross-libc-dlopen.so: no name reexported from the target libc family"
+				# IFS= read, not a for over the unquoted variable: a name with a
+				# space in it once printed as its own last word and named nothing.
+				# (@|$) so a name is not matched inside a longer one: a bare
+				# substring match printed puts_impl for puts.
+				printf '%s\n' "$hits" | while IFS= read -r h; do
+					printf '        %s\n' "$h"
+					readelf --dyn-syms -W "$DIR/cross-libc-dlopen.so" 2>/dev/null |
+						grep -E " ${h}(@|$)" | sed 's/^/   so: /'
+				done
+			else
+				say "cross-libc-dlopen.so: no name reexported from the target libc family"
+			fi
 		fi
 	fi
 fi
