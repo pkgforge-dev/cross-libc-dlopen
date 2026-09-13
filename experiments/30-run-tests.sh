@@ -558,8 +558,18 @@ else
       defined_names "$host_libc" "$LIBDIR2/$LDSO"
     } | sort | uniq -d | grep -vxF -f /work/e102-exempt \
         > /work/e102-collisions || true
-    run E102 OK "no libc-family name reexported" sh -c \
-        '[ ! -s /work/e102-collisions ] && echo no libc-family name reexported'
+    # ⛔ The colliding names are PRINTED, not just the verdict. The first
+    # shape asserted only that the file was empty, so a failure was
+    # `E102 MISMATCH` naming nothing; verify-artifacts.sh prints them and
+    # this case now does too. The needle is echoed only when the list is
+    # empty, so a collision cannot fall through to a pass.
+    run E102 OK "no libc-family name reexported" sh -c '
+        if [ -s /work/e102-collisions ]; then
+            echo "E102: the preload reexports names this libc family also has:"
+            sed "s/^/        /" /work/e102-collisions
+        else
+            echo no libc-family name reexported
+        fi'
 
     # ---- the deprecated ANYLINUX_* spellings, and that they are gone ------
     #
