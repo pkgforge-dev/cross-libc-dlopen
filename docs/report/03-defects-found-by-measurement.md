@@ -196,6 +196,17 @@ than aborting with the symbol named. Where the loader does not export
 gets a constant zero where it previously got a constant stub address;
 neither is a real canary.
 
+⭐ **Re-measured against a real consumer's own bundled glibc, not just the
+build floor.** The `Helium-0.16.3.1-anylinux` AppImages carry their own libc
+family, so they are the runtime the preload actually lands in. Its aarch64
+bundle is glibc 2.43 and its `ld-linux-aarch64.so.1` exports
+`__stack_chk_guard@@GLIBC_2.17` while its `libc.so.6` imports it; its x86-64
+bundle is glibc 2.44 and neither file carries the name at all. So the split in
+the table above is a property of the architecture rather than of the 2.31
+cross packages it was first measured on. Pointed at that AppDir with
+`CLD_SYSROOT`, the gate refuses the released v0.2.5 aarch64 object naming
+`__stack_chk_guard` and accepts this branch's build of the same object.
+
 Re-measured on the upstream matrix in run
 [34749521492](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/34749521492):
 all six build rows green, E102 matching on both evidence rows, so the ARM
