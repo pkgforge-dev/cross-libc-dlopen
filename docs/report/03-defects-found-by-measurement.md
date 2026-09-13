@@ -186,6 +186,16 @@ before this fix and passes after; on the x86-64 runner it passes both ways,
 because that libc exports no such name, and it still guards that row against
 a collision of the same shape.
 
+⚠ The same merged-kind-table fix turned six other symbols (`___environ`,
+`__optpos`, `__optreset`, `_ns_flagdata`, `h_errno`, `optreset`) from abort
+stubs into zeroed data of their real size. A data symbol must be data, so the
+type is now right where a function symbol handed the reader code bytes, but
+the loud failure is gone: a musl guest that reads `h_errno` now sees 0 rather
+than aborting with the symbol named. Where the loader does not export
+`__stack_chk_guard` (x86-64 and ppc64le) a musl guest reading it likewise
+gets a constant zero where it previously got a constant stub address;
+neither is a real canary.
+
 Re-measured on the upstream matrix in run
 [34748810446](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/34748810446):
 all six build rows green, E102 matching on both evidence rows, so the ARM

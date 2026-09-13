@@ -28,7 +28,7 @@ aarch64 CI today.
 
 ### 1. `__stack_chk_guard` must not be defined where the loader owns it
 
-⭐ **This is the session's work, on branch `no-loader-owned-exports`.**
+⭐ **This is the session's work, on branch `fix/loader-owned-exports`.**
 
 The generated shim emitted `__stack_chk_guard` as a function stub, because
 the generator consulted the x86-64 target inventory for its type and the name
