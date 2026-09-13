@@ -6,6 +6,13 @@
 # Standalone on purpose: CI runs it against a directory of downloaded
 # artefacts, without a compiler anywhere near it.
 #
+# ⚠ The fourth property needs the TARGET's own libc family to compare against,
+# and refuses rather than passing when it cannot find one. On the machine the
+# artefact was built for that is already present; verifying another
+# architecture's artefacts outside a build needs CLD_SYSROOT naming a sysroot
+# or an extracted rootfs. The first three properties need nothing but the
+# object.
+#
 # FOUR PROPERTIES, and each one fails silently if it is wrong rather than
 # loudly, which is why they are checked rather than assumed:
 #

@@ -91,8 +91,9 @@ work order lives nowhere else.
 - **The aarch64 and riscv64 and loongarch64 rows of `build` in CI are the
   only builds that exercise the new gate against a real target sysroot.** A
   green row means the artefact exports no name that target's libc family has;
-  a machine without the cross libc installed prints `name collisions
-  unverified` and that is a SKIP by name, not a pass.
+  a machine without that libc installed now REFUSES the build rather than
+  reporting the property unverified, so the three architectures with no
+  runner cannot ship on a check that measured nothing.
 - **`forward-shim.c` is one file compiled for every architecture, and its
   arch-conditioned emission is the only per-architecture behaviour in it.**
   The `#if` guard spells the three excluded architectures with the same

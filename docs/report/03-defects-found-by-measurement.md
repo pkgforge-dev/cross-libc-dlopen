@@ -197,9 +197,11 @@ gets a constant zero where it previously got a constant stub address;
 neither is a real canary.
 
 Re-measured on the upstream matrix in run
-[34748810446](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/34748810446):
+[34749521492](https://github.com/pkgforge-dev/cross-libc-dlopen/actions/runs/34749521492):
 all six build rows green, E102 matching on both evidence rows, so the ARM
-row above is measured rather than assumed.
+row above is measured rather than assumed. That is the run carrying the
+name-collision check in its current shape, where a target libc it cannot
+find refuses the build instead of reporting the property unverified.
 
 ---
 
