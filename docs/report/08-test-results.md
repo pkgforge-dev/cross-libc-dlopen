@@ -24,9 +24,9 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **65/65 predictions held on x86-64** and
-**61/61 on aarch64**. The x86-64 total was measured at the change that added
-E102; the aarch64 runner runs the same table, so its total is the x86-64
+`sh scripts/run-evidence.sh` reports **66/66 predictions held on x86-64** and
+**62/62 on aarch64**. The x86-64 total was measured at the change that added
+E103; the aarch64 runner runs the same table, so its total is the x86-64
 total minus the four skips below, and CI re-runs both on every push.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
@@ -43,7 +43,7 @@ naming the capability it lacks rather than the difference being unexplained:
 
 ⭐ **E23's skip is the one worth reading.** It was reporting MATCH on the ARM
 runner while asserting nothing, and skipping it with E22 is what stopped that.
-65 minus 4 is 61, and no case is missing for a reason nobody wrote down.
+66 minus 4 is 62, and no case is missing for a reason nobody wrote down.
 
 E1 through E13 measure the problem. E14 through E21 are one per fix from the first pass: the
 ELF self-test, the generated-shim compile and behaviour, and five selector
@@ -75,6 +75,7 @@ objects small enough that the mechanism is the only thing being measured:
 | E72 | an entry point the target does not provide, CALLED: a line naming it, and zero returned |
 | E73 | the distinct-name call count an application can be measured by |
 | E75 / E75b | the shim finds a target in a directory only `/etc/ld.so.conf` names, and does not when the conf file is removed |
+| E103 | a directory the host names first holds a wrong-class library: the shim skips it and finds the one that loads, instead of reporting no target |
 | E75c / E75d / E75e / E75f | a shim with no target serves each name from the provider behind it in the lookup order; the no-preload control; the log line pinning the fallthrough; the same in EAGER mode |
 | E76 / E76b | the aarch64 trampolines and resolver RUN, under qemu-user, forwarding and absent paths both |
 

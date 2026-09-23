@@ -1022,8 +1022,19 @@ echo "-- O. the shim asks the HOST where its libraries are ------------"
 # using the mechanism's own presence, not an env switch invented to disable it.
 mkdir -p /opt/cross-libc-unguessable-42 /etc/ld.so.conf.d
 cp libtgt.so /opt/cross-libc-unguessable-42/libtgt.so
+# E103's decoy: the same library with EI_CLASS flipped, so it is an ELF of the
+# other class and ld.so refuses it. A genuine ELF32 cannot be built on every
+# runner (as --32 is x86 only), and the ident byte is what decides the class on
+# all of them.
+mkdir -p /opt/cross-libc-wrongclass-41
+cp libtgt.so /opt/cross-libc-wrongclass-41/libtgt.so
+printf '\001' | dd of=/opt/cross-libc-wrongclass-41/libtgt.so bs=1 seek=4 conv=notrunc status=none
 [ -f /etc/ld.so.conf ] || printf 'include /etc/ld.so.conf.d/*.conf\n' > /etc/ld.so.conf
 confdir() { printf '/opt/cross-libc-unguessable-42\n' > /etc/ld.so.conf.d/zz-cross-libc.conf; }
+# The same file with the wrong-class directory named first, which is what a
+# host whose own answer orders its 32bit library directory before the 64bit one
+# looks like.
+confdir_decoy() { printf '/opt/cross-libc-wrongclass-41\n/opt/cross-libc-unguessable-42\n' > /etc/ld.so.conf.d/zz-cross-libc.conf; }
 noconf()  { rm -f /etc/ld.so.conf.d/zz-cross-libc.conf; }
 # No CROSS_LIBC_DLOPEN_GL_HOST_DIR here: the whole question is whether the shim finds it
 # without being told, so the handoff that would tell it is left out.
@@ -1032,6 +1043,13 @@ fwd_noenv() { env LD_PRELOAD="$PWD/tgt-fwd.so" CROSS_LIBC_DLOPEN_DEBUG=1 "$@"; }
 # E75: the directory is named ONLY by /etc/ld.so.conf.d, and the shim finds it.
 confdir
 run E75 OK "target /opt/cross-libc-unguessable-42/libtgt.so" fwd_noenv ./tramp2
+# E103: the same run with a directory the host names FIRST holding a
+#       wrong-class libtgt.so. The walk used to stop at the first name that
+#       existed, dlopen then refused that file, and the shim reported no target
+#       even though the next named directory held one that loads. The shim skips
+#       a candidate of the other class and keeps walking.
+confdir_decoy
+run E103 OK "target /opt/cross-libc-unguessable-42/libtgt.so" fwd_noenv ./tramp2
 # E75b: the control that must FAIL. Same directory, same library, same
 #       binary, with the conf file gone, so nothing names it and the shim comes up
 #       empty. Without this, E75 would also pass if the shim had simply
@@ -1131,7 +1149,7 @@ run E75f OK "OK: next-provider ints=205" \
     env LD_PRELOAD="$PWD/tgt-fwd.so" CROSS_LIBC_DLOPEN_GL_EAGER=1 ./nextprov
 # Left REMOVED, not restored: section P runs after this one and its aarch64
 # shim would otherwise find the x86-64 libtgt.so through this very conf file.
-rm -rf /opt/cross-libc-unguessable-42
+rm -rf /opt/cross-libc-unguessable-42 /opt/cross-libc-wrongclass-41
 
 echo
 echo "-- P. the aarch64 trampolines, RUN -----------------------------"
