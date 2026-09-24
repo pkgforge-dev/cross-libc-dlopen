@@ -18,7 +18,9 @@ published.
 | `release` | ✅ on `v0.2.6` |
 
 **This branch fixes the host lookup that stopped on a library the loader would
-refuse, on branch `fix/gl-fwd-wrong-class`.**
+refuse, on branch `fix/gl-fwd-wrong-class`, and needs a release once merged.
+`v0.2.6` was released from `main` before it, so no released artefact carries
+the fix.**
 
 ---
 
