@@ -58,6 +58,8 @@
 #endif
 #include <dirent.h>
 #include <dlfcn.h>
+#include <elf.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <sched.h>
 #include <stdarg.h>
@@ -868,12 +870,26 @@ struct glfwd_soname_lookup {
 	char path[PATH_MAX];
 };
 
+/* A candidate of the other ELF class cannot load, and the walk would stop on
+ * it before reaching the directory that can answer. Skip one, and leave a
+ * candidate that is not recognisable as an ELF to dlopen as before. */
+static int glfwd_wrong_class(const char *path) {
+	unsigned char id[EI_NIDENT];
+	int fd = open(path, O_RDONLY | O_CLOEXEC);
+	if (fd < 0)
+		return 0;
+	ssize_t n = read(fd, id, sizeof id);
+	close(fd);
+	return n == (ssize_t)sizeof id && memcmp(id, ELFMAG, SELFMAG) == 0 &&
+	       id[EI_CLASS] != (sizeof(void *) == 8 ? ELFCLASS64 : ELFCLASS32);
+}
+
 static int glfwd_try_soname(const char *dir, void *ctx) {
 	struct glfwd_soname_lookup *c = ctx;
 	char buf[PATH_MAX];
 	if (snprintf(buf, sizeof buf, "%s/%s", dir, c->name) >= (int)sizeof buf)
 		return 0;
-	if (access(buf, R_OK) != 0)
+	if (access(buf, R_OK) != 0 || glfwd_wrong_class(buf))
 		return 0;
 	snprintf(c->path, sizeof c->path, "%s", buf);
 	return 1;

@@ -362,7 +362,7 @@ Totals with this section in: **40/40 on the musl host** with five named skips,
 and ubuntu:16.04 with nineteen named skips, **7/7** on the gtk4 stage, and
 **53/53** in the container suite on x86-64, and **50/50** on aarch64 with the
 three skips named in section 8, at the measurement this section records; the
-totals for the tree as it ships are **65/65** and **61/61** in section 8.
+totals for the tree as it ships are **66/66** and **62/62** in section 8.
 
 ### 9.8 What the shim does not do, stated as a number
 
@@ -1493,6 +1493,43 @@ mode, where the pass executes in the constructor before main(). The
 pre-repair run of the suite showed
 E75c and E75e MISMATCH against a tree whose every other case held, and the
 repaired tree holds all of them.
+
+---
+
+### 9.21 The host lookup stopped on a library the loader would refuse
+
+`glfwd_try_soname` accepted the first directory in which its own soname
+existed, and `glfwd_each_dir` stopped the walk there. `ld.so` refuses a
+candidate of the other ELF class before it reads anything else, so a host whose
+own answer named a 32bit library directory before the 64bit one produced a
+target that could not load, and the directory after it was never reached. The
+shim reported no target and the application failed with its own message about
+visuals.
+
+Reproduced by removing `libGL.so.1` from the host-drivers demo AppDir, so that
+the shim takes the host path instead of the bundled dispatcher, and naming the
+32bit directory first with the explicit handoff:
+
+```
+CROSS_LIBC_DLOPEN_GL_HOST_DIR=/usr/lib/i386-linux-gnu:/usr/lib/x86_64-linux-gnu \
+CROSS_LIBC_DLOPEN_DEBUG=1 ./AppDir/AppRun glxgears
+
+ [cross-libc-dlopen.so] >> cross-libc dlopen failed: /usr/lib/i386-linux-gnu/libGL.so.1
+ [gl-fwd.so] >> host /usr/lib/i386-linux-gnu/libGL.so.1 would not load: /usr/lib/i386-linux-gnu/libGL.so.1.7.0: wrong ELF class: ELFCLASS32
+ [gl-fwd.so] >> libGL.so.1: no target; 358 of 3470 entry points fall through to the next provider in scope
+ [gl-fwd.so] >> ABSENT entry point called: glXChooseVisual -- no target on this host and no next provider for it; returning zero
+Error: couldn't get an RGB, Double-buffered visual
+```
+
+The repair is `glfwd_wrong_class`: the candidate's ELF ident is read, and one
+that is an ELF of the other class is skipped so the walk continues to the next
+directory. A candidate that is not recognisable as an ELF is left to `dlopen`
+exactly as before, so nothing that loads today stops being chosen.
+
+E103 is the case. It uses the five-name miniature of section O, with the
+`libtgt.so` in the directory named first carrying the other EI_CLASS. Before the
+repair the shim reports `no target`; after it, it reports the `libtgt.so` in the
+directory named second and the probe passes.
 
 ---
 
