@@ -811,14 +811,12 @@ static void rs_decide(struct rs_plan *p, const char *appdir) {
 		if (!strncmp(dir, appdir, strlen(appdir)))
 			continue;
 
-		size_t have = 0;
 		const char *first_missing = NULL;
 		for (size_t m = 0; m < p->member_count; m++) {
 			if (!strcmp(p->members[m], RS_LDSO))
 				continue;                /* located separately below */
-			if (rs_exists(dir, p->members[m], path, sizeof(path)))
-				have++;
-			else if (!first_missing)
+			if (!rs_exists(dir, p->members[m], path, sizeof(path)) &&
+			    !first_missing)
 				first_missing = p->members[m];
 		}
 		if (first_missing) {
