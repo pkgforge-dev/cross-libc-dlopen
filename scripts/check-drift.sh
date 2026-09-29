@@ -6,16 +6,10 @@
 # it; a convention with a check behind it is followed by everyone. This is the
 # mechanical half of "documentation ships with the code it describes".
 #
-# Five questions, each reported separately so the failure names itself:
-#
-#   1. Every CROSS_LIBC_DLOPEN_* control the code reads is documented, and
-#      every one the documents name is actually read. ⭐ This is the one that
-#      matters most: a switch that stops working is invisible, because the
-#      documented name and the read name look identical from either side.
-#   2. Every repository path a document cites exists.
-#   3. Every `make` target a document names exists in src/Makefile.
-#   4. No dash is used as punctuation, in markdown prose or in a comment.
-#      See docs/conventions/prose.md.
+# Each check is numbered in the body below and reported separately, so a
+# failure names itself. Section 1 is the one that matters most: a switch that
+# stops working is invisible, because the documented control name and the read
+# name look identical from either side.
 #
 #   sh scripts/check-drift.sh
 #
