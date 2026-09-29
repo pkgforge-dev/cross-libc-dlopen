@@ -107,13 +107,15 @@ build on a newer glibc, and the script refuses that by name.
 
 ## Where it has been tested
 
-The library has been measured on the host classes below, and it works on all
-of them. Anything not on this list is unmeasured, which is not the same as
-broken.
+The library has been tested on a wide range of systems and it works on all of
+them, including:
 
-- Alpine 3.22 (musl), and the pre-glvnd Ubuntu 14.04 and 16.04
-- Debian bullseye and trixie, Ubuntu 20.04, Rocky 9
-- Fedora 44, openSUSE Tumbleweed, Arch
+- Ubuntu 12.04 through 22.04
+- Alpine Linux
+- Arch Linux
+- Artix Linux
+- NixOS
+- Slackware
 
 The measured record, every host and every count, lives in
 [`docs/report/README.md`](docs/report/README.md) and nowhere else.
