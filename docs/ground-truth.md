@@ -11,8 +11,8 @@ Reproduce with the commands shown; the tooling is in `tools/`.
 .\experiments\run.ps1
 ```
 
-**22/22 predictions held.** E1 to E13 unchanged, E14 to E21 added by this work.
-Before any change it was 14/14, so nothing here regressed the baseline.
+The totals and the per-prediction table have their one home in
+[`report/08-test-results.md`](report/08-test-results.md).
 
 ## The musl gap is exactly two symbols
 
