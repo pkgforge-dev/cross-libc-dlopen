@@ -12,15 +12,15 @@ nowhere else. This file is a list, not an order and not a log.
 | | open | partially done | done | total |
 |---|---|---|---|---|
 | measurement | 5 | 1 | 0 | 6 |
-| infrastructure | 7 | 0 | 2 | 9 |
+| infrastructure | 6 | 0 | 3 | 9 |
 | blocked | 7 | 0 | 2 reclassified | 9 |
-| **total** | **19** | **1** | **2 done, 2 reclassified** | **24** |
+| **total** | **18** | **1** | **3 done, 2 reclassified** | **24** |
 
 By priority, across the open and partially-done rows:
 
 | priority | count |
 |---|---|
-| high | 6 |
+| high | 5 |
 | medium | 7 |
 | low | 0 |
 | blocked (no priority, because a machine unblocks these rather than a decision) | 7 |
@@ -45,7 +45,7 @@ By priority, across the open and partially-done rows:
 | T-15 | [A corpus test with a fresh process per library](infrastructure.md) | infrastructure | medium | open |
 | T-16 | [Delete the path that would mask the failure](infrastructure.md) | infrastructure | medium | open |
 | T-17 | [The IBT property note is documented and is not there](infrastructure.md) | infrastructure | medium | open |
-| T-18 | [There is no release](infrastructure.md) | infrastructure | high | open |
+| T-18 | [There is no release](infrastructure.md) | infrastructure | high | done |
 | B-01 to B-09 | [the blocked list](blocked.md), nine rows. ⚠ **Two of them are not blocked**; the correction is at the foot of that file and the work is T-02 and T-06 | blocked | n/a | 7 open, 2 reclassified |
 
 ---

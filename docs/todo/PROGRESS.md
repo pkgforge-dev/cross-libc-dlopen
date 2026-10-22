@@ -8,63 +8,70 @@
 
 ## Where the work is right now
 
-[v0.2.6](https://github.com/pkgforge-dev/cross-libc-dlopen/releases/tag/v0.2.6) is
+[v0.2.8](https://github.com/pkgforge-dev/cross-libc-dlopen/releases/tag/v0.2.8) is
 published.
 
 | workflow | latest on `main` |
 |---|---|
 | `gates` | ✅ |
 | `secret-sweep` | ✅ |
-| `release` | ✅ on `v0.2.6` |
+| `release` | ✅ on `v0.2.8` |
 
-**This branch fixes the host lookup that stopped on a library the loader would
-refuse, on branch `fix/gl-fwd-wrong-class`, and needs a release once merged.
-`v0.2.6` was released from `main` before it, so no released artefact carries
-the fix.**
+`v0.2.8` is the first release that carries the ppc64le resolver frame repair
+(PR #60). Every earlier release, `v0.2.7` included, ships a `gl-fwd.so` whose
+`glfwd_resolve_asm` saved r5 and r6 where the C callee writes its caller's LR
+and TOC slots, so the first call of any GL entry point taking a third or fourth
+integer argument was handed garbage. Issue #59 is the report; the gtk3-demo
+ppc64le AppImage exits 139 under `v0.2.7` and stays alive under a build from
+this commit.
 
 ---
 
 ## ⛔ The work order
 
-### 1. `glfwd_try_soname` must not stop on a library the loader will refuse
+### 1. `glfwd_try_vendor` accepts a matching filename without checking its class
 
-`glfwd_try_soname` took the first directory in which its own soname existed, and
-`glfwd_each_dir` stopped the walk there. A candidate of the other ELF class
-cannot load, so a host whose own answer named a 32bit library directory first
-produced a target that could not load, and the directory after it was never
-reached. Reproduced by removing `libGL.so.1` from the host-drivers demo AppDir,
-which forces the host path, and naming the 32bit directory first with
-`CROSS_LIBC_DLOPEN_GL_HOST_DIR`.
+`glfwd_try_soname` now skips a candidate of the other ELF class, and
+`glfwd_try_vendor` does not. A host whose only vendor library is the wrong
+class is therefore reported as having one. It is a different path, reached only
+when the bundle carries a dispatcher, so it needs a bundled-dispatcher case to
+measure. Nothing in this session's change touches it.
 
-The repair reads the candidate's ELF ident and skips a candidate of the other
-class, so the walk continues. `docs/report/09-the-second-boundary.md` 9.21 has
-the transcript, E103 is the case, and `docs/report/08-test-results.md` owns the
-new totals.
+### 2. Wire `make gl-fwd-qemu-check` into a runner
 
-### 2. What is still open
+The case that caught the ppc64le frame exists and fails on the old source, but
+nothing runs it: `gates.yml` builds ppc64le and runs
+`scripts/verify-artifacts.sh`, which never executes a trampoline. The target is
+run by hand today. ⚠ This is issue #59's first loose end and it is the reason
+that class of bug reached a release at all.
 
-`glfwd_try_vendor` accepts a matching filename without checking its class, so a
-host whose only vendor library is the wrong class is reported as having one. It
-is a different path, reached only when the bundle carries a dispatcher, and it
-needs a bundled-dispatcher case to measure. Nothing in this session's change
-touches it.
+### 3. Close the release-shaped staleness the tracker already reported
+
+Issue #46 named this file and T-18. Both are corrected here. ⚠ The same class
+remains in [`../ground-truth.md`](../ground-truth.md), which still states the
+evidence table as 22/22 (issue #45); that is the next document to check against
+[`../report/08-test-results.md`](../report/08-test-results.md), which owns the
+totals.
 
 ---
 
 ## ⚠ What a new session should distrust
 
-- **E103 forces the order through `/etc/ld.so.conf.d`, and a host whose own
-  answer puts the 64bit directory first never reaches the defect.** Debian 10
-  is such a host: `libc6-i386` names `/usr/lib32` and `/lib32` in
-  `zz_i386-biarch-compat.conf`, which sorts after `x86_64-linux-gnu.conf`. So
-  the case pins the predicate, not a claim about any one distribution.
-- **The host-drivers demo AppDir bundles the glvnd dispatcher, so the shim
-  takes the bundled path on a glvnd host and never reaches the host lookup.**
-  Removing `libGL.so.1` from that AppDir is what exposes the path, and the
-  deletion is a harness step rather than a change to any shipped AppImage.
-- **A Qt6 GLX path does not link `libGL.so.1`.** `libqxcb-glx-integration.so`
-  and `libQt6Gui.so.6` need `libGLX.so.0` and `libOpenGL.so.0`, so which arm a
-  Qt application reaches depends on what else in its AppDir links
-  `libGL.so.1`. Check `readelf -d` before assuming.
-- **`docs/todo/INDEX.md` carries the counts it carried before this session.**
-  Reconcile them if an entry moves.
+- **The scheduled `appimage-suite` on `main` is red, and the failure is
+  upstream's, not this tree's.** Both architectures fail at
+  `experiments/41-extract.sh` with `no dispatcher slot in AppDir/lib.`: the
+  `demo` release of `Anylinux-AppImages` no longer carries
+  `cross-libc-dlopen.so` or `foreign-dlopen.so` in `lib/`. The extraction
+  refuses rather than guessing, which is what it was built to do. Verify against
+  the upstream asset before treating it as a defect here.
+- **The release gate is not the wide suite.** `release.yml` runs the evidence
+  table on x86_64 and aarch64 and then builds all five architectures. It does
+  not run `run-appimage.sh`, so a green `v0.2.8` does not mean the AppImage
+  suite is green.
+- **`v0.2.8` was tagged on `main` at `900a393`, which is the PR #60 merge
+  commit.** CI for that PR ran on the PR head commits, whose tree is
+  `62985da`. The trees are identical; the commits are not. Do not read the
+  merge commit's absence from the run list as "the tag was never tested".
+- **`docs/todo/INDEX.md`'s counts were reconciled in this session** with T-18
+  closed. `sh scripts/check-drift.sh` checks the rows against the entries and
+  does not check the totals, so a future closure moves numbers no gate reads.
