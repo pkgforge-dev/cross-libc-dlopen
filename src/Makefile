@@ -261,7 +261,9 @@ gl-fwd-asm-check:
 # ppc64le. The vehicle passes one argument of every
 # register class through a trampoline, calls twice so the patched slot is
 # taken too, checks a double return value, and calls a name the target does
-# not define so the absent stub is exercised; m.c verifies each value and
+# not define so the absent stub is exercised, and makes the first call of
+# a slot with all eight integer argument registers live, which the resolver
+# must save and restore across a C call; m.c verifies each value and
 # prints "all passed" only when every one held.
 #
 # The emulator is named rather than reached through binfmt_misc: a binfmt
@@ -295,9 +297,9 @@ gl-fwd-qemu-check:
 	     continue; \
 	   fi; \
 	   d=$$(mktemp -d); \
-	   printf 'long t_args(int a, long b, double c, const char *d) {\n	if (a != 7)            return 1;\n	if (b != 0x123456789L) return 2;\n	if (c != 2.718281828)  return 3;\n	if (!d || d[0] != 120 || d[1] != 121) return 4;\n	return a + b + (long)c + d[2];\n}\ndouble t_fret(int a) { return a * 1.5; }\nvoid t_one(void) {}\n' > $$d/tgt.c; \
-	   printf '#ifndef GLFWD_SONAME\n#define GLFWD_SONAME "libtgt.so"\n#define GLFWD_COUNT 5\n#endif\nGLFWD_SYM(0, t_args)\nGLFWD_SYM(1, t_fret)\nGLFWD_SYM(2, t_one)\nGLFWD_SYM(3, t_absent)\nGLFWD_SYM(4, t_absent_f)\n' > $$d/tgt-fwd.h; \
-	   printf '#include <stdio.h>\nextern long t_args(int, long, double, const char *);\nextern double t_fret(int);\nextern void t_one(void);\nextern long t_absent(int);\nextern double t_absent_f(int);\nint main(void) {\n\tconst char *s = "xyz";\n\tlong r1 = t_args(7, 0x123456789L, 2.718281828, s);\n\tlong r2 = t_args(7, 0x123456789L, 2.718281828, s);\n\tif (r1 != r2) return 1;\n\tdouble d1 = t_fret(4), d2 = t_fret(4);\n\tif (d1 != 6.0 || d2 != 6.0) return 2;\n\tt_one();\n\tif (t_absent(9) != 0) return 3;\n\tif (t_absent_f(9) != 0.0) return 4;\n\tputs("all passed");\n\treturn 0;\n}\n' > $$d/m.c; \
+	   printf 'long t_args(int a, long b, double c, const char *d) {\n	if (a != 7)            return 1;\n	if (b != 0x123456789L) return 2;\n	if (c != 2.718281828)  return 3;\n	if (!d || d[0] != 120 || d[1] != 121) return 4;\n	return a + b + (long)c + d[2];\n}\ndouble t_fret(int a) { return a * 1.5; }\nvoid t_one(void) {}\nlong t_many(long a, long b, long c, long d, long e, long f, long g, long h) {\n	return (a==1 && b==2 && c==3 && d==4 && e==5 && f==6 && g==7 && h==8) ? 0 : 1;\n}\n' > $$d/tgt.c; \
+	   printf '#ifndef GLFWD_SONAME\n#define GLFWD_SONAME "libtgt.so"\n#define GLFWD_COUNT 6\n#endif\nGLFWD_SYM(0, t_args)\nGLFWD_SYM(1, t_fret)\nGLFWD_SYM(2, t_one)\nGLFWD_SYM(3, t_absent)\nGLFWD_SYM(4, t_absent_f)\nGLFWD_SYM(5, t_many)\n' > $$d/tgt-fwd.h; \
+	   printf '#include <stdio.h>\nextern long t_args(int, long, double, const char *);\nextern double t_fret(int);\nextern void t_one(void);\nextern long t_absent(int);\nextern double t_absent_f(int);\nextern long t_many(long, long, long, long, long, long, long, long);\nint main(void) {\n\t/* First call of a slot, all eight argument registers live: the resolver must hand every one back intact. */\n\tif (t_many(1, 2, 3, 4, 5, 6, 7, 8) != 0) return 5;\n\tconst char *s = "xyz";\n\tlong r1 = t_args(7, 0x123456789L, 2.718281828, s);\n\tlong r2 = t_args(7, 0x123456789L, 2.718281828, s);\n\tif (r1 != r2) return 1;\n\tdouble d1 = t_fret(4), d2 = t_fret(4);\n\tif (d1 != 6.0 || d2 != 6.0) return 2;\n\tt_one();\n\tif (t_absent(9) != 0) return 3;\n\tif (t_absent_f(9) != 0.0) return 4;\n\tputs("all passed");\n\treturn 0;\n}\n' > $$d/m.c; \
 	   cp gl-fwd.c ld-conf.h cld-env.h $$d/; \
 	   if $$t-gcc -shared -fPIC -O2 $$d/tgt.c -o $$d/libtgt.so -Wl,-soname,libtgt.so -lm \
 	      && (cd $$d && $$t-gcc -shared -fPIC -O2 -DGLFWD_TABLE='"tgt-fwd.h"' \

@@ -66,7 +66,8 @@ E76b  ABSENT entry point called: t_absent
   rebuilds the TOC from r12. The qemu vehicle passes one argument of every register
   class (integer, long, double, pointer) and verifies each value inside the
   target, calls twice so both the resolver and the patched slot are taken,
-  checks a double return, and exercises the absent stub. Measured with the
+  checks a double return, makes the first call of a slot with eight live
+  integer arguments, and exercises the absent stub. Measured with the
   Debian bullseye cross sysroots (glibc 2.31) for riscv64 and ppc64le,
   and the trixie sysroot (glibc 2.41) for loongarch64 under qemu 10.0,
   because qemu 7.2 faults on that glibc. The full artefact set also builds

@@ -221,7 +221,9 @@ The qemu check is stronger than a smoke run: it passes one argument of every
 register class through a trampoline (integer, long, double, pointer), calls
 each entry point twice so the patched slot is taken as well as the resolver,
 checks a double return value, and calls a name the target does not define so
-the absent stub is exercised. On ppc64le it runs the ELFv2 global-entry
+the absent stub is exercised. It also makes the first call of a slot with
+all eight integer argument registers live, which the resolver must save and
+restore across a C call. On ppc64le it runs the ELFv2 global-entry
 TOC rebuild.
 
 ⚠ qemu emulates the instructions, not a memory model. Real silicon is what
