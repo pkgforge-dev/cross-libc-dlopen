@@ -21,9 +21,14 @@ published.
 (PR #60). Every earlier release, `v0.2.7` included, ships a `gl-fwd.so` whose
 `glfwd_resolve_asm` saved r5 and r6 where the C callee writes its caller's LR
 and TOC slots, so the first call of any GL entry point taking a third or fourth
-integer argument was handed garbage. Issue #59 is the report; the gtk3-demo
+integer argument was handed garbage. Issue #59 is the report.
+
+⚠ **The report's own reproduction was not rerun here.** It says the gtk3-demo
 ppc64le AppImage exits 139 under `v0.2.7` and stays alive under a build from
-this commit.
+this commit, and the commit message repeats that. What was measured in this
+session is narrower: `make gl-fwd-qemu-check` fails on the pre-fix `gl-fwd.c`
+and passes on the shipped one, and the published `ppc64le-gl-fwd.so` carries
+the 288-byte frame. Nothing here ran a GTK3 application.
 
 ---
 
@@ -68,10 +73,11 @@ totals.
   table on x86_64 and aarch64 and then builds all five architectures. It does
   not run `run-appimage.sh`, so a green `v0.2.8` does not mean the AppImage
   suite is green.
-- **`v0.2.8` was tagged on `main` at `900a393`, which is the PR #60 merge
-  commit.** CI for that PR ran on the PR head commits, whose tree is
-  `62985da`. The trees are identical; the commits are not. Do not read the
-  merge commit's absence from the run list as "the tag was never tested".
+- **`v0.2.8` was tagged on `main` at `900a393`, the squashed commit that
+  landed PR #60.** CI for that PR ran on the PR head commits, and the tree they
+  tested is `62985da`, which is the tree the tag carries. The commits differ and
+  the trees do not, so the tag's absence from the run list is not evidence that
+  the tag was never tested.
 - **`docs/todo/INDEX.md`'s counts were reconciled in this session** with T-18
   closed. `sh scripts/check-drift.sh` checks the rows against the entries and
   does not check the totals, so a future closure moves numbers no gate reads.
