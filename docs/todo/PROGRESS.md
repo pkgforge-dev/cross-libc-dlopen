@@ -25,12 +25,12 @@ differently and silently.
 
 ⚠ **The three cases ran in the container; no NixOS host was behind them.** E104,
 E105 and E106 create `/run/opengl-driver/lib`, which needs root, so the container
-suite runs all three and reports MATCH; that is why the local total is **69/69 on
-x86-64** and not the 66 the previous release recorded. Where `/run` is not
-writable each SKIPS by name instead. ⛔ **Nothing in this tree has run the shims
-on a NixOS host.** The cases prove the lists carry the directories and that a
-library placed there is found; they do not prove the directories are where a
-real NixOS system puts its GPU userspace, and
+suite runs all three and reports MATCH, which is why the local total is higher
+than the previous release's. Where `/run` is not writable each SKIPS by name
+instead. ⛔ **Nothing in this tree has run the shims on a NixOS host.** The cases
+prove the lists carry the directories and that a library placed there is found;
+they do not prove the directories are where a real NixOS system puts its GPU
+userspace, and
 [`../report/10-measured-versus-assumed.md`](../report/10-measured-versus-assumed.md)
 does not yet carry that distinction. Writing it there is open work, not a
 citation.
@@ -70,7 +70,7 @@ that class of bug reached a release at all.
 
 It still states the evidence table as 22/22 (issue #45). The home for the
 totals is [`../report/08-test-results.md`](../report/08-test-results.md), which
-now says 69/69 and 65/65. This is the last document of the release-shaped
+carries the current pair. This is the last document of the release-shaped
 staleness class that issue #46 opened, and T-18 is closed.
 
 ---
