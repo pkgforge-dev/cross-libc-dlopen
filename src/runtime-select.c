@@ -113,6 +113,15 @@ static const char *rs_host_libdirs[] = {
 	NULL
 };
 
+/* NixOS is not FHS and writes no /etc/ld.so.conf: the host's GPU userspace is
+ * published under /run/opengl-driver/lib and its system profile under
+ * /run/current-system/sw/lib. sharun appends the same two after everything
+ * else, and this is that act for the switched runtime. */
+static const char *rs_nixos_libdirs[] = {
+	"/run/opengl-driver/lib", "/run/current-system/sw/lib",
+	NULL
+};
+
 static int rs_debug;
 
 static void rs_log(const char *fmt, ...) {
@@ -1029,6 +1038,9 @@ static char *rs_library_path(const struct rs_plan *p, const char *appdir,
 	/* The budget and its one-shot warning are per-walk state inside
 	 * ldconf_each_dir now, so there is nothing to reset here. */
 	rs_conf_dirs("/etc/ld.so.conf", s, cap, &n);
+	for (size_t i = 0; rs_nixos_libdirs[i]; i++)
+		if (!rs_path_append(s, cap, &n, rs_nixos_libdirs[i]))
+			rs_log("library-path is full; %s omitted\n", rs_nixos_libdirs[i]);
 	return s;
 }
 

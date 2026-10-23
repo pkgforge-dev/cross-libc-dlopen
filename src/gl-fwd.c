@@ -704,8 +704,15 @@ static const char *const glfwd_names[GLFWD_COUNT] = {
  * PR #4's mesa-egl entries are kept in list 3 for the same reason: a host with
  * the alternatives layout and no readable ld.so.conf is not hypothetical, and
  * an access() that misses costs nothing.
+ *
+ * NixOS is a host class none of the three reaches by itself: it is not FHS and
+ * it writes no /etc/ld.so.conf naming its GPU userspace, which lives under
+ * /run/opengl-driver/lib (with the system profile at
+ * /run/current-system/sw/lib). sharun names the same two for the bundled
+ * runtime, and an access() that misses costs nothing.
  */
 static const char *const glfwd_host_dirs[] = {
+	"/run/opengl-driver/lib", "/run/current-system/sw/lib",
 	"/usr/lib/" GLFWD_TRIPLET, "/lib/" GLFWD_TRIPLET,
 	"/usr/lib/" GLFWD_TRIPLET "/mesa", "/usr/lib/" GLFWD_TRIPLET "/mesa-egl",
 	"/usr/lib64", "/lib64", "/usr/lib64/mesa", "/usr/lib64/mesa-egl",

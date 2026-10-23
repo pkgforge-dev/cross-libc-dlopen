@@ -1490,9 +1490,12 @@ VISIBLE void cross_libc_dlopen_init_now(void) {
 
 // The conventional libdirs of the hosts this runs on, each probed as
 // <dir>/dri. Debian and Ubuntu keep their VA drivers under the triplet
-// directory, Alpine in /usr/lib/dri, Fedora in /usr/lib64/dri. A missed
-// access() costs nothing.
+// directory, Alpine in /usr/lib/dri, Fedora in /usr/lib64/dri. NixOS is
+// neither FHS nor ld.so.conf: hardware.graphics publishes the host's VA
+// drivers under /run/opengl-driver/lib/dri, the directory sharun appends for
+// the bundled runtime. A missed access() costs nothing.
 static const char *const cld_va_libdirs[] = {
+	"/run/opengl-driver/lib",
 	"/usr/lib/" CLD_TRIPLET, "/lib/" CLD_TRIPLET,
 	"/usr/lib64", "/lib64",
 	"/usr/lib", "/lib",

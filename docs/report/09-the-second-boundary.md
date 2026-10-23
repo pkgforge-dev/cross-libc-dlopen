@@ -362,7 +362,7 @@ Totals with this section in: **40/40 on the musl host** with five named skips,
 and ubuntu:16.04 with nineteen named skips, **7/7** on the gtk4 stage, and
 **53/53** in the container suite on x86-64, and **50/50** on aarch64 with the
 three skips named in section 8, at the measurement this section records; the
-totals for the tree as it ships are **66/66** and **62/62** in section 8.
+totals for the tree as it ships are **69/69** and **65/65** in section 8.
 
 ### 9.8 What the shim does not do, stated as a number
 
@@ -1530,6 +1530,45 @@ E103 is the case. It uses the five-name miniature of section O, with the
 `libtgt.so` in the directory named first carrying the other EI_CLASS. Before the
 repair the shim reports `no target`; after it, it reports the `libtgt.so` in the
 directory named second and the probe passes.
+
+### 9.22 NixOS is a host class the FHS lists cannot reach
+
+NixOS is neither FHS nor a host that writes its layout down where this project
+reads it. It has no `/etc/ld.so.conf`, `/usr/lib` holds no host libraries, and
+`hardware.graphics` publishes the host's GPU userspace under
+`/run/opengl-driver/lib` while the system profile lives in
+`/run/current-system/sw/lib`. Three lists here therefore had no answer on a
+NixOS host, and each failed differently:
+
+- `LIBVA_DRIVERS_PATH` never received `/run/opengl-driver/lib/dri`, so a
+  bundled libva found no host VA driver at all.
+- `rs_library_path()` never put the two directories on the assembled
+  `--library-path`, so a host library reachable only there was invisible to the
+  switched runtime.
+- `glfwd_host_dirs` never looked in `/run/opengl-driver/lib`, so the shim's
+  one-name lookup had no target on a host whose GL vendor library lives there.
+
+sharun appends the same directories for the bundled runtime, so the repair is
+the same three additions here. `/run/opengl-driver/lib` joins
+`cld_va_libdirs` and is probed as `<dir>/dri`, the two directories are appended
+to the library path after the `/etc/ld.so.conf` entries, and both join the
+shim's fixed host list. Every entry is access-guarded, so a host without them
+pays one failed probe each and nothing else.
+
+E104, E105 and E106 are the cases, one per list, and the container suite runs
+all three on both architectures and reports MATCH for each, with
+`DRIVER=NIX env=[/run/opengl-driver/lib/dri]` as E106's line. Section 8 owns the
+totals. They create `/run/opengl-driver/lib`, so where `/run` is not writable
+each SKIPS by name instead of running.
+
+The same three mechanisms were also measured before CI ran them, on a machine
+with no root, with the prefix substituted for a writable one. There the
+assembled library path gains both directories after the `/etc/ld.so.conf`
+entries, the shim reports `target .../opengl-driver/lib/libtgt.so`, and the fake
+libva answers `DRIVER=NIX` from a driver that exists only in the substituted
+directory. The same runs against the unmodified source report the directories
+absent, no target, and no driver, which is what makes each of the three an A/B
+rather than a check that a string appeared.
 
 ---
 

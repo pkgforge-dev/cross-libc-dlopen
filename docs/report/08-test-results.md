@@ -24,12 +24,19 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **66/66 predictions held on x86-64** and
-**62/62 on aarch64**. The x86-64 total was measured at the change that added
-E103; the aarch64 runner runs the same table, so its total is the x86-64
-total minus the four skips below, and CI re-runs both on every push.
-`experiments/run.ps1` drives the same three stage scripts for a machine with
-PowerShell and no POSIX shell.
+`sh scripts/run-evidence.sh` reports **69/69 predictions held on x86-64** and
+**65/65 on aarch64**. The x86-64 total was measured at the change that added
+E104, E105 and E106, the cases for the NixOS host directories, which the
+container suite runs as root; the aarch64 runner runs the same table, so its
+total is the x86-64 total minus the four skips below, and CI re-runs both on
+every push. `experiments/run.ps1` drives the same three stage scripts for a
+machine with PowerShell and no POSIX shell.
+
+⚠ **The three NixOS cases SKIP by name where `/run` is not writable.** E104,
+E105 and E106 each create `/run/opengl-driver/lib`, which needs root, and each
+reports the missing capability rather than being silently omitted. That is why
+they were added to this table before they were measured: the machine that wrote
+them had no root, and CI had it.
 
 ⚠ **The two totals differ by exactly the four cases aarch64 SKIPS**, each
 naming the capability it lacks rather than the difference being unexplained:
@@ -43,7 +50,7 @@ naming the capability it lacks rather than the difference being unexplained:
 
 ⭐ **E23's skip is the one worth reading.** It was reporting MATCH on the ARM
 runner while asserting nothing, and skipping it with E22 is what stopped that.
-66 minus 4 is 62, and no case is missing for a reason nobody wrote down.
+69 minus 4 is 65, and no case is missing for a reason nobody wrote down.
 
 E1 through E13 measure the problem. E14 through E21 are one per fix from the first pass: the
 ELF self-test, the generated-shim compile and behaviour, and five selector
@@ -76,6 +83,9 @@ objects small enough that the mechanism is the only thing being measured:
 | E73 | the distinct-name call count an application can be measured by |
 | E75 / E75b | the shim finds a target in a directory only `/etc/ld.so.conf` names, and does not when the conf file is removed |
 | E103 | a directory the host names first holds a wrong-class library: the shim skips it and finds the one that loads, instead of reporting no target |
+| E104 | the switched runtime's `--library-path` carries `/run/opengl-driver/lib` and `/run/current-system/sw/lib`, which NixOS publishes and no `ld.so.conf` names |
+| E105 | the shim finds a target under `/run/opengl-driver/lib`, the directory a NixOS host keeps its GPU userspace in |
+| E106 | `LIBVA_DRIVERS_PATH` gets `/run/opengl-driver/lib/dri`, the directory a NixOS host keeps its VA drivers in |
 | E75c / E75d / E75e / E75f | a shim with no target serves each name from the provider behind it in the lookup order; the no-preload control; the log line pinning the fallthrough; the same in EAGER mode |
 | E76 / E76b | the aarch64 trampolines and resolver RUN, under qemu-user, forwarding and absent paths both |
 

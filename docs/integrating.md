@@ -136,7 +136,9 @@ place and no `--library-path` can fix it.
 
 When `libva.so.2` is in the process, the preload assembles the answer: every
 host `<libdir>/dri` directory it finds is appended to `LIBVA_DRIVERS_PATH`,
-behind anything already set. A process that never loads libva is not touched.
+behind anything already set. NixOS is one of those `<libdir>`s, and its VA
+drivers live under `/run/opengl-driver/lib/dri`. A process that never loads
+libva is not touched.
 The bundle's own `lib/dri` is never added. A bundle that ships VA drivers
 manages the variable itself, and its entries stay ahead of anything appended
 here.

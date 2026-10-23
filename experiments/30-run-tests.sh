@@ -379,6 +379,35 @@ else
     run E21 OK "runtime      : host" \
         env APPDIR="$PWD/app_old" ./runtime-select --probe --host-dir "$PWD/goodhost"
 
+    # E104: the NixOS directories are on the assembled library path. NixOS is
+    #       not FHS and writes no /etc/ld.so.conf: hardware.graphics publishes
+    #       the host's GPU userspace under /run/opengl-driver/lib and the system
+    #       profile is /run/current-system/sw/lib. sharun appends both, and the
+    #       switched runtime has to as well or a host library that lives only
+    #       there is invisible.
+    if mkdir -p /run/opengl-driver/lib /run/current-system/sw/lib 2>/dev/null; then
+        run E104 OK "OK: both NixOS dirs on the library path" \
+            env APP="$PWD/app_old" HOSTD="$PWD/goodhost" sh -c '
+                lp=$(env APPDIR="$APP" ./runtime-select --probe \
+                            --host-dir "$HOSTD" --no-self-test |
+                     sed -n "s/^library-path : //p")
+                case ":$lp:" in
+                    *:/run/opengl-driver/lib:*) a=yes ;;
+                    *) a=no ;;
+                esac
+                case ":$lp:" in
+                    *:/run/current-system/sw/lib:*) b=yes ;;
+                    *) b=no ;;
+                esac
+                if [ "$a" = yes ] && [ "$b" = yes ]; then
+                    echo "OK: both NixOS dirs on the library path"
+                else
+                    echo "MISSING: $lp"
+                fi'
+    else
+        echo "  E104   SKIPPED - cannot create /run/opengl-driver/lib: not root"
+    fi
+
     # ---- the build-time strict-environment option -------------------------
     #
     # APPDIR is a convention this project does not own: an AppImage runtime
@@ -1057,6 +1086,18 @@ run E103 OK "target /opt/cross-libc-unguessable-42/libtgt.so" fwd_noenv ./tramp2
 noconf
 run E75b FAIL "no target; all 5 entry points return zero" fwd_noenv ./tramp2
 
+# E105: NixOS publishes the host's GPU userspace under /run/opengl-driver/lib
+#       and writes no /etc/ld.so.conf naming it. The shim's fixed host list has
+#       to carry that directory, or a NixOS host has no target at all. The conf
+#       file is still gone, from E75b's control, so nothing else names it.
+if mkdir -p /run/opengl-driver/lib 2>/dev/null &&
+   cp libtgt.so /run/opengl-driver/lib/libtgt.so 2>/dev/null; then
+    run E105 OK "target /run/opengl-driver/lib/libtgt.so" fwd_noenv ./tramp2
+    rm -f /run/opengl-driver/lib/libtgt.so
+else
+    echo "  E105   SKIPPED - cannot write /run/opengl-driver/lib: not root"
+fi
+
 # E75c: a shim with no target must not shadow the providers behind it. The
 #       preload wins the lookup, so with tgt-fwd.so preloaded the binary's
 #       t_ints binds to the shim whatever else the process carries, and
@@ -1417,6 +1458,19 @@ run E99 OK "bundle-dri-absent" sh -c \
 #       Consumer B links nothing of the kind and the feature is ON.
 run E100 OK "env=[(unset)]" \
     env LD_PRELOAD=/work/cross-libc-dlopen.so ./va_nolib
+
+# E106: NixOS publishes the host's VA drivers under /run/opengl-driver/lib/dri,
+#       which is neither FHS nor named by /etc/ld.so.conf, so only a list that
+#       carries it can answer. LD_LIBRARY_PATH is cleared, because a directory
+#       on the process's own search list is not what this case is about.
+if mkdir -p /run/opengl-driver/lib/dri 2>/dev/null; then
+    gcc -shared -fPIC -O2 -DVA_VENDOR='"NIX"' va_drv.c \
+        -o /run/opengl-driver/lib/dri/vastub_drv_video.so 2>"$BERR" || bfail vastub-NIX
+    run E106 OK "DRIVER=NIX env=[/run/opengl-driver/lib/dri" \
+        env -u LD_LIBRARY_PATH LD_PRELOAD=/work/cross-libc-dlopen.so ./va_consumer
+else
+    echo "  E106   SKIPPED - cannot create /run/opengl-driver/lib/dri: not root"
+fi
 
 echo
 echo "================================================================"
