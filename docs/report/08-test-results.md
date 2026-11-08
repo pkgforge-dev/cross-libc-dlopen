@@ -24,14 +24,14 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **71/71 predictions held on x86-64** and
-**67/67 on aarch64**. The x86-64 total was measured at the change that added
+`sh scripts/run-evidence.sh` reports **72/72 predictions held on x86-64** and
+**68/68 on aarch64**. The x86-64 total was measured at the change that added
 E104, E105 and E106, the cases for the NixOS host directories, and E111, E112 and
 E113, the set that keeps `libcrypt.so.1` on the bundle-only list and off the
-host one; the
-aarch64 runner runs the same table, so its total is the x86-64 total minus the
-four skips below, and CI measured both on that change. `experiments/run.ps1` drives the same three stage scripts for a
-machine with PowerShell and no POSIX shell.
+host one. The aarch64 runner runs the same table, so its total is the x86-64
+total minus the four skips below, and CI measured both on that change.
+`experiments/run.ps1` drives the same three stage scripts for a machine with
+PowerShell and no POSIX shell.
 
 ⚠ **The three NixOS cases SKIP by name where `/run` is not writable.** E104,
 E105 and E106 each create `/run/opengl-driver/lib`, which needs root, and each
