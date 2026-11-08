@@ -29,8 +29,7 @@ wrong.
 E104, E105 and E106, the cases for the NixOS host directories, and E111 and
 E112, the pair that keeps `libcrypt.so.1` off `cld_global_scope_libs[]`; the
 aarch64 runner runs the same table, so its total is the x86-64 total minus the
-four skips below, and CI re-runs both on every push. ⚠ The aarch64 figure is
-UNVERIFIED at the two additions until CI measures them. `experiments/run.ps1` drives the same three stage scripts for a
+four skips below, and CI measured both on that change. `experiments/run.ps1` drives the same three stage scripts for a
 machine with PowerShell and no POSIX shell.
 
 ⚠ **The three NixOS cases SKIP by name where `/run` is not writable.** E104,
