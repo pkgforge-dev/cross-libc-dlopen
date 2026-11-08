@@ -60,13 +60,46 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 
 ======================================================================
-crypt_md5.c, crypt_sha256.c, crypt_sha512.c, crypt_blowfish.c
+crypt_md5.c: MD5, Poul-Henning Kamp
 ======================================================================
 
-Public domain. Each file states so in its own header: the three hash files
-describe themselves as a "public domain ... crypt implementation", and
-crypt_blowfish.c says "No copyright is claimed, and the software is hereby
-placed in the public domain".
+This one is NOT public domain, whatever the file's opening comment implies
+about the algorithm it implements. It carries a BSD-2 notice attached to the
+MD5 block itself, so unlike the two below it requires its notice to travel
+with a binary distribution.
+
+Copyright (c) 2003 Poul-Henning Kamp
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+
+======================================================================
+crypt_sha256.c, crypt_sha512.c, crypt_blowfish.c
+======================================================================
+
+Public domain. crypt_sha256.c and crypt_sha512.c say so in their own headers,
+and crypt_blowfish.c says "No copyright is claimed, and the software is
+hereby placed in the public domain". None of the three requires a notice to
+travel with a binary, which is why they are listed here rather than above.
 
 crypt_blowfish.c adds that if that disclaimer is ever deemed void, the
 software is Copyright (c) 1998-2014 Solar Designer and released under terms

@@ -36,9 +36,12 @@ imports them with no `DT_NEEDED` on anything, and glibc keeps them in
 
 ## Licence
 
-`crypt_des.c` is BSD-3 (FreeSec, David Burren and Solar Designer).
-`crypt_md5.c`, `crypt_sha256.c`, `crypt_sha512.c` and `crypt_blowfish.c` are
-public domain. `crypt.c`, `crypt_r.c` and `encrypt.c` carry no notice of their
-own and fall under musl's MIT. `LICENSE` beside this file reproduces the two
-that require it, because BSD-3's binary-distribution clause requires the notice
-to travel with the binary.
+`crypt_des.c` is BSD-3 (FreeSec, David Burren and Solar Designer), and
+`crypt_md5.c` is BSD-2 (Poul-Henning Kamp, on the MD5 block itself).
+`crypt_sha256.c`, `crypt_sha512.c` and `crypt_blowfish.c` are public domain.
+`crypt.c`, `crypt_r.c` and `encrypt.c` carry no notice of their own and fall
+under musl's MIT.
+
+`LICENSE` beside this file reproduces the three that require it, because both
+BSD licences make the notice travel with a binary distribution. It is packed as
+`LICENSE.musl-crypt` beside the artefacts for that reason.
