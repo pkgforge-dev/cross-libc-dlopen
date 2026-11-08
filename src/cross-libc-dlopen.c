@@ -1370,11 +1370,17 @@ static int cld_dryrun_enabled(void) {
 //
 // This is rung 6 of the diagnostic ladder applied as a policy rather
 // than per incident: load the library instead of shimming the symbol.
+//
+// ⛔ libcrypt is the exception, and it is not on the list. glibc keeps crypt,
+// crypt_r, encrypt and setkey in libcrypt.so.1, which is a separate package
+// that a musl host does not ship and a bundle need not carry, so the load
+// either failed or dragged a host glibc DSO into the global scope. The four
+// names are provided by crypt-shim.c instead, which forwards to a real
+// libcrypt when the process has one and falls back to musl's implementation.
 static const char *cld_global_scope_libs[] = {
 	// musl folds these into libc.so; glibc splits them out
 	"libm.so.6",
 	"libresolv.so.2",
-	"libcrypt.so.1",
 	// glibc's own pre-2.34 split libraries (E6/E7)
 	"libpthread.so.0",
 	"libdl.so.2",

@@ -27,9 +27,18 @@ had just failed, so `ld.so` fell back to loading the unrewritten originals,
 which still carry the musl `DT_NEEDED`.
 
 **Fix:** load every glibc library that can hold a re-homed name into the
-**global** scope at startup: `libm.so.6`, `libresolv.so.2`, `libcrypt.so.1`,
-plus glibc's own pre-2.34 split libraries. `cld_global_scope_libs[]` in
+**global** scope at startup: `libm.so.6`, `libresolv.so.2`, plus glibc's own
+pre-2.34 split libraries. `cld_global_scope_libs[]` in
 `src/cross-libc-dlopen.c`.
+
+⚠ **`libcrypt.so.1` was on that list and is not any more.** musl keeps
+`crypt`, `crypt_r`, `encrypt` and `setkey` inside `libc.so`, so a musl-built
+object imports them with no `DT_NEEDED`, and the same re-homing applies. But
+glibc keeps them in `libcrypt.so.1`, which is a separate package: a musl host
+does not ship it, and a bundle need not carry it. The load therefore either
+failed or pulled a host glibc DSO into the global scope. `src/crypt-shim.c`
+provides the four names instead, forwarding to a real libcrypt when the
+process has one. E107, E108 and E109 are the cases.
 
 ### 3.2 Bundled libraries were losing to host libraries
 

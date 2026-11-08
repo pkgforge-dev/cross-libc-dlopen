@@ -131,15 +131,15 @@
   },
   "crypt": {
    "kind": "irrelevant",
-   "reason": "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; shimming it would interpose over a working implementation"
+   "reason": "provided by src/crypt-shim.c, which forwards to a real libcrypt when the process has one and falls back to musl's implementation"
   },
   "crypt_r": {
    "kind": "irrelevant",
-   "reason": "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; shimming it would interpose over a working implementation"
+   "reason": "provided by src/crypt-shim.c, which forwards to a real libcrypt when the process has one and falls back to musl's implementation"
   },
   "encrypt": {
    "kind": "irrelevant",
-   "reason": "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; shimming it would interpose over a working implementation"
+   "reason": "provided by src/crypt-shim.c, which forwards to a real libcrypt when the process has one and falls back to musl's implementation"
   },
   "fgetln": {
    "kind": "stub-only",
@@ -179,7 +179,7 @@
   },
   "setkey": {
    "kind": "irrelevant",
-   "reason": "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; shimming it would interpose over a working implementation"
+   "reason": "provided by src/crypt-shim.c, which forwards to a real libcrypt when the process has one and falls back to musl's implementation"
   },
   "sigsetjmp": {
    "kind": "stub-only",

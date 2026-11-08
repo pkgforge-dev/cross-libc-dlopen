@@ -104,6 +104,8 @@ done
 
 cp "$MAN" "$STAGE/build-manifest.json"
 [ -f "$ROOT/LICENSE" ] && cp "$ROOT/LICENSE" "$STAGE/LICENSE"
+# BSD-3's binary-distribution clause: the notice has to travel with the binary.
+[ -f "$ROOT/src/musl-crypt/LICENSE" ] && cp "$ROOT/src/musl-crypt/LICENSE" "$STAGE/LICENSE.musl-crypt"
 
 # ------------------------------------------------ 2. loose, then tar, then zip --
 if [ "$LOOSE" = 1 ]; then

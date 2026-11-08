@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 # build products
 src/cross-libc-dlopen.so
+src/musl-crypt/*.o
 src/gl-fwd.so
 src/egl-fwd.so
 src/gles-fwd.so

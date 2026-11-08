@@ -26,6 +26,19 @@ PYTHON  ?= python3
 CFLAGS  ?= -O2 -Wall -Wextra -Wno-format-truncation
 SOFLAGS  = -shared -fPIC
 
+# musl's crypt implementation, vendored under musl-crypt/. It supplies the four
+# names a musl-built host object imports with no DT_NEEDED, which glibc keeps
+# in libcrypt.so.1; src/crypt-shim.c carries the argument. Compiled separately
+# because the rename keeps musl's public entry points from colliding with the
+# forwarding definitions in crypt-shim.c.
+MUSL_CRYPT_SRCS = musl-crypt/crypt.c musl-crypt/crypt_r.c musl-crypt/crypt_des.c \
+                  musl-crypt/crypt_md5.c musl-crypt/crypt_sha256.c \
+                  musl-crypt/crypt_sha512.c musl-crypt/crypt_blowfish.c \
+                  musl-crypt/encrypt.c
+MUSL_CRYPT_OBJS = $(MUSL_CRYPT_SRCS:.c=.o)
+MUSL_CRYPT_RENAME = -Dcrypt=musl_crypt -Dcrypt_r=musl_crypt_r \
+                    -Dencrypt=musl_encrypt -Dsetkey=musl_setkey
+
 # Appended to every compile, for a caller that wants a BUILD VARIANT without
 # restating the defaults above and letting the two drift apart.
 # `make portable` and `scripts/build.sh --portable` pass -DCLD_STRICT_ENV
@@ -89,20 +102,26 @@ portable:
 
 # The preload carries the shim: it is already in the global lookup scope, so
 # its exports satisfy undefined symbols in anything dlopen'd later (E2, E5).
-cross-libc-dlopen.so: cross-libc-dlopen.c forward-shim.c version-compat.c cld-env.h
+musl-crypt/%.o: musl-crypt/%.c musl-crypt/compat.h musl-crypt/crypt.h
+	$(CC) $(SOFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -I musl-crypt \
+		-Wno-sign-compare -Wno-missing-braces \
+		-include musl-crypt/compat.h $(MUSL_CRYPT_RENAME) -c $< -o $@
+
+cross-libc-dlopen.so: cross-libc-dlopen.c forward-shim.c version-compat.c crypt-shim.c cld-env.h $(MUSL_CRYPT_OBJS)
 	@# $(filter %.c,$^), not $^: cld-env.h is a prerequisite so a change to it
 	@# rebuilds this, but handing a .h to gcc makes it precompile the header
 	@# and drop a .gch beside the source instead of compiling anything.
-	$(CC) $(SOFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(filter %.c,$^) -o $@ -ldl
+	$(CC) $(SOFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(filter %.c,$^) $(MUSL_CRYPT_OBJS) -o $@ -ldl
 	@# 5.1's build check: exactly one exported definition, no accidental dupes.
 	@# atexit comes from the musl bridge, pthread_cond_init and realpath from
-	@# the version-trap forwarders. A collision between the two files, or a
-	@# generator that emitted a name twice, shows up here as 2.
-	@for s in atexit pthread_cond_init realpath; do \
+	@# the version-trap forwarders, and the four crypt names from crypt-shim.c.
+	@# A collision between two files, or a generator that emitted a name twice,
+	@# shows up here as 2.
+	@for s in atexit pthread_cond_init realpath crypt crypt_r encrypt setkey; do \
 	   n=$$(nm -D --defined-only $@ 2>/dev/null | grep -cw $$s); \
 	   if [ "$$n" != "1" ]; then echo "FAIL: $$s exported $$n times, want 1"; exit 1; fi; \
 	 done; \
-	 echo "ok: atexit, pthread_cond_init, realpath each exported exactly once"
+	 echo "ok: atexit, pthread_cond_init, realpath, crypt, crypt_r, encrypt, setkey each exported exactly once"
 
 # The OpenGL and EGL forwarding shims. Each is built with the SONAME of the
 # bundled dispatcher it replaces, so preloading it makes ld.so bind an
@@ -331,6 +350,7 @@ traps:
 
 clean:
 	rm -f cross-libc-dlopen.so gl-fwd.so egl-fwd.so gles-fwd.so runtime-select
+	rm -f musl-crypt/*.o
 
 .PHONY: all shim traps clean gl-syms gl-syms-check gles-syms gles-syms-check \
         gl-fwd-verify gl-fwd-asm-check gl-fwd-qemu-check

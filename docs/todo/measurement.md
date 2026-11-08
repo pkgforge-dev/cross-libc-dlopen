@@ -161,3 +161,47 @@ Entries whose deliverable is a number that does not exist yet.
   E50 currently reports `2 live hazard(s)`. Closes when it reports 0 **and**
   E47/E49 still pass: a translation that breaks the same-libc control is not a
   fix.
+
+---
+
+## T-07 `crypt(3)` for a musl-built host object
+
+- **Source.** The PPSSPP report of a `libcrypt.so.1` probe at startup,
+  [hrydgard/ppsspp#22988](https://github.com/hrydgard/ppsspp/issues/22988),
+  and the measurement that followed it.
+- **Category** measurement, **Priority** high, **Effort** medium,
+  **Status** done
+- **Problem.** `cld_global_scope_libs[]` loaded `libcrypt.so.1` so that a
+  musl-built host object's `crypt` reference would resolve after its libc edge
+  was dropped. glibc keeps those names in `libcrypt.so.1`, which is a separate
+  package: Alpine ships no such file at all, and a bundle need not carry one.
+  The probe therefore failed on the host it was written for, and on a host that
+  did have one it loaded a host glibc DSO into the global scope.
+- **Premise.** Measured, not assumed. A musl-built object importing `crypt`
+  and `crypt_r` fails to load with `undefined symbol: crypt` when no libcrypt
+  is present. When a bundled `libcrypt.so.1` is present the same object binds
+  to it instead, and that is worse: musl's `struct crypt_data` is 260 bytes and
+  libxcrypt's is 32768, so the call writes past the caller's buffer (measured:
+  SIGSEGV, exit 139).
+- **Approach.** Vendor musl's crypt implementation under `src/musl-crypt/` and
+  define the four names in `src/crypt-shim.c`. Prefer a real libcrypt through
+  `dlsym(RTLD_NEXT)` when the process has one, because musl has no yescrypt
+  (`$y$`) or scrypt (`$7$`) and treats an unrecognised salt as DES. `crypt_r`
+  gives the real implementation scratch of its own and copies back only the
+  result string, because the caller's struct size cannot be recovered.
+- **Prove.**
+  ```bash
+  sh scripts/run-evidence.sh
+  ```
+  E107 and E108 fail before the change and pass after; E109 is the control
+  that the forwarding did not replace a working libcrypt. Measured:
+
+  ```
+  E107   MATCH predicted=OK    OK: musl_crypt_call()=42
+  E108   MATCH predicted=OK    OK: musl_crypt_r_call()=42
+  E109   MATCH predicted=OK    $y$j9T$saltsalt$0ZRt7zd0gn9pQsq3yDeuwj9hFSoqeo/...
+  predictions matched: 72   mismatched: 0
+  ```
+
+  Before the change the same two report
+  `dlopen FAILED: libc.musl-x86_64.so.1: cannot open shared object file`.

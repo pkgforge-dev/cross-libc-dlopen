@@ -116,6 +116,7 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT INT TERM
 mkdir -p "$WORK/src" "$WORK/inventories" "$WORK/tools"
 cp "$REPO"/src/*.c "$REPO"/src/*.h "$REPO"/src/Makefile "$WORK/src/"
+cp -r "$REPO"/src/musl-crypt "$WORK/src/"
 cp "$REPO"/src/forward-shim-manifest.json "$WORK/src/" 2>/dev/null || true
 cp "$REPO"/inventories/* "$WORK/inventories/" 2>/dev/null || true
 cp "$REPO"/tools/* "$WORK/tools/" 2>/dev/null || true

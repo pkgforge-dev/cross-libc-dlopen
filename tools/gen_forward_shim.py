@@ -59,13 +59,15 @@ IRRELEVANT_RE = [
     (r"^_IO_", "stdio internals"),
     (r"^__ctype|^__c(type|locale)", "locale table internals"),
     (r"^__tls_|^__libc_tls", "TLS internals owned by ld.so"),
-    # These look musl-only against a libc/libm/split-lib inventory, but glibc
-    # ships them in libcrypt.so.1, which cross-libc-dlopen.c now loads into the
-    # global scope precisely so re-homed names resolve (B4). Shimming them
-    # would INTERPOSE over the real implementation and abort a working call.
+    # These look musl-only against a libc/libm/split-lib inventory, and they
+    # are: musl keeps them inside libc.so, glibc keeps them in libcrypt.so.1.
+    # They are NOT shimmed here because src/crypt-shim.c defines them, and a
+    # second definition would be a multiple-definition link error. That file
+    # forwards to a real libcrypt when the process has one, because musl has
+    # no yescrypt or scrypt and treats an unrecognised salt as DES.
     (r"^(crypt|crypt_r|encrypt|encrypt_r|setkey|setkey_r)$",
-     "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; "
-     "shimming it would interpose over a working implementation"),
+     "provided by src/crypt-shim.c, which forwards to a real libcrypt when "
+     "the process has one and falls back to musl's implementation"),
     # ELF machinery, not API. _init/_fini ARE the .init/.fini sections and are
     # supplied by crti.o; defining them is a multiple-definition link error.
     (r"^(_init|_fini)$",

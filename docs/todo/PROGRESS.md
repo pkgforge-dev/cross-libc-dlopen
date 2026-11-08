@@ -17,54 +17,47 @@ published.
 | `secret-sweep` | ✅ |
 | `release` | ✅ on `v0.2.6` |
 
-**This branch fixes the host lookup that stopped on a library the loader would
-refuse, on branch `fix/gl-fwd-wrong-class`, and needs a release once merged.
-`v0.2.6` was released from `main` before it, so no released artefact carries
-the fix.**
+**`feat/crypt-shim` closes T-07: `crypt(3)` for a musl-built host object.**
+The four names are now defined in `src/crypt-shim.c` over musl's vendored
+implementation, and `libcrypt.so.1` is no longer loaded into the global scope.
+`v0.2.6` predates it, so no released artefact carries the fix.
 
 ---
 
 ## ⛔ The work order
 
-### 1. `glfwd_try_soname` must not stop on a library the loader will refuse
+### 1. `glfwd_try_vendor` accepts a matching filename without checking its class
 
-`glfwd_try_soname` took the first directory in which its own soname existed, and
-`glfwd_each_dir` stopped the walk there. A candidate of the other ELF class
-cannot load, so a host whose own answer named a 32bit library directory first
-produced a target that could not load, and the directory after it was never
-reached. Reproduced by removing `libGL.so.1` from the host-drivers demo AppDir,
-which forces the host path, and naming the 32bit directory first with
-`CROSS_LIBC_DLOPEN_GL_HOST_DIR`.
-
-The repair reads the candidate's ELF ident and skips a candidate of the other
-class, so the walk continues. `docs/report/09-the-second-boundary.md` 9.21 has
-the transcript, E103 is the case, and `docs/report/08-test-results.md` owns the
-new totals.
+A host whose only vendor library is the wrong class is reported as having one.
+It is a different path from the `glfwd_try_soname` defect fixed in #41, reached
+only when the bundle carries a dispatcher, and it needs a bundled-dispatcher
+case to measure.
 
 ### 2. What is still open
 
-`glfwd_try_vendor` accepts a matching filename without checking its class, so a
-host whose only vendor library is the wrong class is reported as having one. It
-is a different path, reached only when the bundle carries a dispatcher, and it
-needs a bundled-dispatcher case to measure. Nothing in this session's change
-touches it.
+T-02 (`libepoxy`), T-04 (two struct sizes), T-05 (NixOS as a host class), T-06
+(the two live struct hazards) and T-10 to T-18. Nothing in this session's
+change touches them.
 
 ---
 
 ## ⚠ What a new session should distrust
 
+- **`libcrypt.so.1` is not a glibc runtime-set member any more, and the three
+  wrong answers this session produced are worth not repeating.** Bundling it
+  fails because a musl host has none to bundle and a modern one needs
+  `GLIBC_2.38`; loading a host copy drags a foreign glibc DSO into the global
+  scope; and forwarding `crypt_r` to a real libcrypt without translating the
+  struct writes 32768 bytes into musl's 260-byte one (measured: SIGSEGV).
+  `src/crypt-shim.c` carries the argument and T-07 the measurements.
+- **musl's crypt is not a drop-in for libxcrypt.** It has no yescrypt (`$y$`)
+  or scrypt (`$7$`) and treats an unrecognised salt as DES, returning a
+  plausible-looking wrong hash rather than failing. That is why the shim
+  prefers a real libcrypt, and why E109 exists.
+- **The aarch64 total in `docs/report/08-test-results.md` predates E107-E109.**
+  It is labelled UNVERIFIED there rather than estimated; CI re-runs the table.
 - **E103 forces the order through `/etc/ld.so.conf.d`, and a host whose own
   answer puts the 64bit directory first never reaches the defect.** Debian 10
   is such a host: `libc6-i386` names `/usr/lib32` and `/lib32` in
   `zz_i386-biarch-compat.conf`, which sorts after `x86_64-linux-gnu.conf`. So
   the case pins the predicate, not a claim about any one distribution.
-- **The host-drivers demo AppDir bundles the glvnd dispatcher, so the shim
-  takes the bundled path on a glvnd host and never reaches the host lookup.**
-  Removing `libGL.so.1` from that AppDir is what exposes the path, and the
-  deletion is a harness step rather than a change to any shipped AppImage.
-- **A Qt6 GLX path does not link `libGL.so.1`.** `libqxcb-glx-integration.so`
-  and `libQt6Gui.so.6` need `libGLX.so.0` and `libOpenGL.so.0`, so which arm a
-  Qt application reaches depends on what else in its AppDir links
-  `libGL.so.1`. Check `readelf -d` before assuming.
-- **`docs/todo/INDEX.md` carries the counts it carried before this session.**
-  Reconcile them if an entry moves.

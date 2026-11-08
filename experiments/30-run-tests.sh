@@ -31,7 +31,7 @@ printf '%s\n' 'deb http://archive.debian.org/debian bullseye main' \
 rm -f /etc/apt/sources.list.d/*.sources 2>/dev/null || true
 apt-get update -qq -o Acquire::Check-Valid-Until=false -o Acquire::Retries=3 \
 	>/work/.apt-update.log 2>&1 || true
-apt-get install -y -qq -o Acquire::Retries=3 gcc binutils python3 make \
+apt-get install -y -qq -o Acquire::Retries=3 gcc binutils python3 make libcrypt-dev \
 	>/work/.apt-install.log 2>&1 || true
 for _tool in gcc python3 readelf make; do
     command -v "$_tool" >/dev/null 2>&1 || {
@@ -520,8 +520,24 @@ else
     #      CROSS_LIBC_DLOPEN is deliberately NOT set: no dlopen
     #      interception, no ELF rewriting, nothing but version-compat.c's
     #      unversioned definitions sitting in the global lookup scope.
+    #
+    # ⚠ The preload carries musl's crypt implementation too (src/crypt-shim.c).
+    # Its vendored sources are compiled separately because the rename keeps
+    # musl's entry points from colliding with the forwarding definitions, and
+    # /repo is read-only, so the objects land in /work.
+    mkdir -p /work/musl-crypt-obj
+    for _f in crypt crypt_r crypt_des crypt_md5 crypt_sha256 crypt_sha512 crypt_blowfish encrypt; do
+        gcc -shared -fPIC -O2 -I/repo/src/musl-crypt \
+            -include /repo/src/musl-crypt/compat.h \
+            -Wno-sign-compare -Wno-missing-braces \
+            -Dcrypt=musl_crypt -Dcrypt_r=musl_crypt_r \
+            -Dencrypt=musl_encrypt -Dsetkey=musl_setkey \
+            -c "/repo/src/musl-crypt/$_f.c" -o "/work/musl-crypt-obj/$_f.o" \
+            2>"$BERR" || bfail "musl-crypt-$_f"
+    done
     gcc -shared -fPIC -O2 -Wall -Wextra -Wno-format-truncation -I/repo/src \
         /repo/src/cross-libc-dlopen.c /repo/src/forward-shim.c /repo/src/version-compat.c \
+        /repo/src/crypt-shim.c /work/musl-crypt-obj/*.o \
         -o cross-libc-dlopen.so -ldl 2>"$BERR" || bfail cross-libc-dlopen.so
     # ⛔ E23 is skipped WITH E22, not left running. E22's comment above says
     # why: with no trap in this libc the stripped object already returns 0, so
@@ -1471,6 +1487,48 @@ if mkdir -p /run/opengl-driver/lib/dri 2>/dev/null; then
 else
     echo "  E106   SKIPPED - cannot create /run/opengl-driver/lib/dri: not root"
 fi
+
+# ---- crypt(3) for musl-built host objects --------------------------------
+#
+# musl keeps crypt, crypt_r, encrypt and setkey inside libc.so, so a
+# musl-built object imports them with no DT_NEEDED on anything. Dropping the
+# libc edge leaves the names with no provider and the rewritten object fails
+# to load. glibc keeps them in libcrypt.so.1, which a musl host does not ship
+# and a bundle need not carry, so src/crypt-shim.c supplies them and forwards
+# to a real libcrypt when the process has one.
+#
+# ⛔ E107 and E108 are the two shapes that failed before it: a bare crypt()
+# reference and a crypt_r() one. E108 is also the size hazard: musl's struct
+# crypt_data is 260 bytes and libxcrypt's is 32768, so a forwarder that passed
+# the caller's buffer through would write past its end.
+#
+# ⭐ E109 is the control. musl has no yescrypt, so an embedded-only answer
+# returns a DES hash for a $y$ salt; the case fails if the forwarding stops
+# preferring the libcrypt the application already links.
+mkdir -p /work/cryptbundle
+cat > yesapp.c <<'CEOF'
+#define _GNU_SOURCE
+#include <crypt.h>
+#include <stdio.h>
+int main(void){ struct crypt_data d; d.initialized = 0;
+    printf("%s\n", crypt_r("password", "$y$j9T$saltsalt$", &d)); return 0; }
+CEOF
+gcc -O2 loader.c -o loader_crypt -ldl -lcrypt 2>"$BERR" || bfail loader_crypt
+gcc -O2 yesapp.c -o yesapp -lcrypt 2>"$BERR" || bfail yesapp
+
+run E107 OK 'musl_crypt_call()=42' \
+    env CROSS_LIBC_DLOPEN_ROOT=/work/cryptbundle \
+        LD_PRELOAD=/work/cross-libc-dlopen.so \
+        ./loader /work/libmuslcrypt.so musl_crypt_call
+
+run E108 OK 'musl_crypt_r_call()=42' \
+    env CROSS_LIBC_DLOPEN_ROOT=/work/cryptbundle \
+        LD_PRELOAD=/work/cross-libc-dlopen.so \
+        ./loader_crypt /work/libmuslcrypt.so musl_crypt_r_call
+
+run E109 OK '$y$j9T$saltsalt$0ZRt7zd0gn9pQsq3yDeuwj9hFSoqeo' \
+    env CROSS_LIBC_DLOPEN_ROOT=/work/cryptbundle \
+        LD_PRELOAD=/work/cross-libc-dlopen.so ./yesapp
 
 echo
 echo "================================================================"
