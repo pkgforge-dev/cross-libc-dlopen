@@ -25,12 +25,10 @@ wrong.
 ### Tier 1, the evidence table
 
 `sh scripts/run-evidence.sh` reports **74/74 predictions held on x86-64** and
-**68/68 on aarch64**. The x86-64 total was measured at the change that added
+**70/70 on aarch64**. The x86-64 total was measured at the change that added
 E107 through E110b, the cases for `crypt(3)` on a musl-built host object; the
 aarch64 runner runs the same table, so its total is the x86-64 total minus the
-four skips below. The aarch64 runner has not yet been measured at the two
-cases added last, so it carries **68/68 UNVERIFIED** rather than 70/70, which
-CI settles when this lands.
+four skips below, and CI measured both on that change.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
 

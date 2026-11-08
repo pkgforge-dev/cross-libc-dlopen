@@ -93,7 +93,7 @@ g_attrib() {
 # section. Kept identical to the gates.yml step, including that.
 g_onehome() {
 	f=0
-	for n in 3470 358 74/74 68/68 45/45 40/40 26/26; do
+	for n in 3470 358 74/74 70/70 45/45 40/40 26/26; do
 		c=$(git grep -lF "$n" -- '*.md' ':(exclude)docs/history/*' |
 		    sed 's|^docs/report/.*|docs/report/|' | sort -u | wc -l)
 		[ "$c" -gt 1 ] && f=1
