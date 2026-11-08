@@ -175,7 +175,10 @@ Entries whose deliverable is a number that does not exist yet.
   was dropped. That file is a separate glibc package, not part of the runtime
   set: a musl host does not ship one, and a bundle need not carry it. The load
   either failed or put a glibc DSO of unknown vintage in the global scope.
-  Removing it was the safe half; supplying the four names is the open half.
+  Supplying the four names from the preload is the open half. The HOST load is
+  settled: `cld_global_scope_bundled[]` loads the BUNDLE's copy and nothing
+  else, which is the difference between a library whoever assembled the bundle
+  chose and one of unknown vintage that happens to be on the host.
 - **Premise.** Measured, and the measurement is why this is open rather than
   done. Shimming `crypt`, `crypt_r`, `encrypt` and `setkey` over musl's own
   implementation was built and is **not ready**, for two reasons that a
@@ -198,6 +201,16 @@ Entries whose deliverable is a number that does not exist yet.
   answer where it does not, with the same object. The forwarding must be
   distinguishable from the fallback: a `$y$` salt works as the needle and the
   DES ciphertext does not, because musl and libxcrypt agree on it.
+
+  ⚠ **What the interim state does cover, measured on the floor image.** With
+  the bundle carrying `libcrypt.so.1`, a musl object's bare `crypt()` works and
+  returns the correct `$6$s$...` hash, because that ABI is `char *` and no
+  caller buffer is involved. `crypt_r()` SIGSEGVs: the object passes musl's
+  260-byte `struct crypt_data` and libxcrypt writes its 32768-byte one over it.
+  That is not a regression from the interim change; the same call SIGSEGVs on
+  `main` with the library bundled, because main loads it too. Any app hitting
+  `crypt_r` from a musl object needs this entry closed, not a bundled library.
 - **Status note.** The attempt is on `feat/crypt-shim` (PR #63) and should not
-  merge as it stands. E111 and E112 here are the pair that keeps the interim
-  state honest: the probe is gone, and the constructor still runs.
+  merge as it stands. E111, E112 and E113 are the set that keeps the interim
+  state honest: the host copy is not reached, the constructor still runs, and
+  a bundle that carries one still gets it.

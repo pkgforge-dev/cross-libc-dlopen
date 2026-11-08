@@ -31,7 +31,15 @@ which still carry the musl `DT_NEEDED`.
 pre-2.34 split libraries. `cld_global_scope_libs[]` in
 `src/cross-libc-dlopen.c`.
 
-⚠ **`libcrypt.so.1` was on that list and is not any more.** musl keeps
+⚠ **`libcrypt.so.1` moved to a second, bundle-only list.** It is not loaded
+from the host at all, and that is the point: every entry above has a host copy
+worth having, because a host driver wants the host's own libm. libcrypt is a
+separate package a musl host does not ship, and a host's copy may be a
+131232-byte ufc-crypt or a 32768-byte libxcrypt that disagrees with the musl
+object calling it about the size of `struct crypt_data` (measured on glibc
+2.24: SIGSEGV). The bundle's copy is chosen by whoever assembled the bundle and
+matches the runtime it carries, so `cld_global_scope_bundled[]` loads that and
+nothing else. E111, E112 and E113 are the set that keeps both halves true. musl keeps
 `crypt`, `crypt_r`, `encrypt` and `setkey` inside `libc.so`, so the re-homing
 argument applies to them as much as to `fmod`. But glibc keeps them in
 `libcrypt.so.1`, which is a separate package and not part of the runtime set:

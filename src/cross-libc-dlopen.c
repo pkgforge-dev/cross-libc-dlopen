@@ -1406,6 +1406,33 @@ static const char *cld_global_scope_libs[] = {
 	NULL
 };
 
+// Loaded ONLY when the bundle carries it, never from the host.
+//
+// ⛔ The distinction is the whole point, and it is why these two lists exist.
+// Every entry above is a glibc split-out library whose HOST copy is a normal
+// thing to load: a host driver built against the host's own libm wants the
+// host's libm. libcrypt.so.1 is not that. It is a separate package rather
+// than part of the runtime set, so a musl host has none at all (Alpine keeps
+// crypt inside libc.so) and a glibc host may have one of any vintage, from a
+// 131232-byte ufc-crypt to a 32768-byte libxcrypt to a 260-byte none.
+//
+// Loading the host's is what made this noisy and, on the old ones, unsafe: an
+// unversioned crypt_r in the global scope interposes over a musl object's
+// reference, and the two disagree about the size of the struct crypt_data the
+// caller passes. Measured on glibc 2.24: SIGSEGV.
+//
+// The bundle's copy is a different thing. Whoever assembled the bundle chose
+// it, it matches the runtime the bundle carries, and a musl-built object that
+// imports crypt has no provider otherwise: nothing in the process ever loads
+// libcrypt.so.1, because the object's DT_NEEDED edge on libc is the one
+// cross-libc-dlopen drops. Naming it in the preload list is what makes the
+// lookup resolve. Measured: with it present the call works and returns the
+// correct hash; without it the dlopen fails with "undefined symbol: crypt".
+static const char *cld_global_scope_bundled[] = {
+	"libcrypt.so.1",
+	NULL
+};
+
 __attribute__((constructor))
 static void cld_load_global_scope_libs(void) {
 	// Idempotent, because it is also reachable from cross_libc_dlopen_init_now()
@@ -1440,6 +1467,22 @@ static void cld_load_global_scope_libs(void) {
 			h = dlopen(name, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
 
 		DEBUG_PRINT("global-scope lib %s: %s\n", name, h ? "loaded" : "absent");
+	}
+
+	// The bundle-only list. No host fallback, and the absence is reported
+	// with its own word so a trace says which of the two lists answered.
+	for (size_t i = 0; cld_global_scope_bundled[i]; i++) {
+		const char *name = cld_global_scope_bundled[i];
+		void *h = NULL;
+
+		if (appdir && *appdir) {
+			snprintf(path, sizeof(path), "%s/%s/%s", appdir, cld_libdir(), name);
+			if (access(path, R_OK) == 0)
+				h = dlopen(path, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+		}
+
+		DEBUG_PRINT("global-scope lib %s: %s\n", name,
+		            h ? "loaded from the bundle" : "not bundled");
 	}
 }
 
