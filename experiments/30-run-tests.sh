@@ -678,6 +678,42 @@ else
             LD_PRELOAD=/work/cross-libc-dlopen.so \
             ./loader /work/verprobe.so probe_cond_init
 
+    # ---- libcrypt.so.1 is no longer loaded ------------------------------
+    #
+    # It was on cld_global_scope_libs[] and is not. The load either failed,
+    # because a musl host has no such file (Alpine keeps crypt inside libc.so),
+    # or succeeded and put a glibc DSO of unknown vintage into the global
+    # scope, where an old libxcrypt's 32768-byte struct crypt_data meets a
+    # musl object built against 260 bytes.
+    #
+    # ⛔ These two are a PAIR, the same shape as E84/E85. E111 says the probe
+    # is gone; E112 says the OTHER libraries are still loaded, so a build whose
+    # constructor stopped running altogether cannot pass E111 by printing
+    # nothing. An absence asserted without its control is the silent pass this
+    # repository counts as a defect.
+    run E111 OK "libcrypt-not-probed" sh -c \
+        'out=$(env CROSS_LIBC_DLOPEN_DEBUG=1 \
+                   LD_PRELOAD=/work/cross-libc-dlopen.so \
+                   ./loader /work/verprobe.so probe_cond_init 2>&1)
+         case "$out" in
+             *"global-scope lib libcrypt"*) echo "libcrypt-STILL-PROBED" ;;
+             *)                             echo "libcrypt-not-probed" ;;
+         esac'
+
+    # ⚠ The needle is narrowed to the line E111 would have matched, so this
+    # cannot pass on some other library's line. `run` greps for a substring of
+    # the whole output and the debug trace prints several "global-scope lib"
+    # lines; the first version needled only that prefix and was scored MATCH
+    # on the LIBVA line, which is to say it asserted nothing about libm.
+    run E112 OK "global-scope lib libm.so.6: loaded" sh -c \
+        'out=$(env CROSS_LIBC_DLOPEN_DEBUG=1 \
+                   LD_PRELOAD=/work/cross-libc-dlopen.so \
+                   ./loader /work/verprobe.so probe_cond_init 2>&1)
+         case "$out" in
+             *"global-scope lib libm.so.6: loaded"*) echo "global-scope lib libm.so.6: loaded" ;;
+             *) echo "controller-missing" ;;
+         esac'
+
     # E24: the trap stated in terms of libc alone, the obsolete definition
     #      really does reject the attribute Mesa passes.
     # E25: the memcpy exclusion is justified, not assumed.

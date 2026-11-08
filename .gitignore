@@ -2,6 +2,8 @@ __pycache__/
 *.pyc
 # build products
 src/cross-libc-dlopen.so
+# vendored crypt objects, built from src/musl-crypt/*.c
+src/musl-crypt/*.o
 src/gl-fwd.so
 src/egl-fwd.so
 src/gles-fwd.so

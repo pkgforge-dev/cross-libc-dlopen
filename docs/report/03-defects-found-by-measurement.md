@@ -27,9 +27,21 @@ had just failed, so `ld.so` fell back to loading the unrewritten originals,
 which still carry the musl `DT_NEEDED`.
 
 **Fix:** load every glibc library that can hold a re-homed name into the
-**global** scope at startup: `libm.so.6`, `libresolv.so.2`, `libcrypt.so.1`,
-plus glibc's own pre-2.34 split libraries. `cld_global_scope_libs[]` in
+**global** scope at startup: `libm.so.6`, `libresolv.so.2`, plus glibc's own
+pre-2.34 split libraries. `cld_global_scope_libs[]` in
 `src/cross-libc-dlopen.c`.
+
+⚠ **`libcrypt.so.1` was on that list and is not any more.** musl keeps
+`crypt`, `crypt_r`, `encrypt` and `setkey` inside `libc.so`, so the re-homing
+argument applies to them as much as to `fmod`. But glibc keeps them in
+`libcrypt.so.1`, which is a separate package and not part of the runtime set:
+a musl host does not ship one at all, and a bundle need not carry one. The
+load therefore either failed, which is the startup noise it caused, or put a
+glibc DSO of unknown vintage in the process's global scope where its
+`struct crypt_data` may disagree with the musl object that calls it. A
+`$y$`-capable libcrypt is 32768 bytes and a pre-2.27 ufc-crypt is 131232,
+against musl's 260. E111 and E112 are the pair that keeps the removal in
+place; a musl object importing one of the four now fails to load by name.
 
 ### 3.2 Bundled libraries were losing to host libraries
 

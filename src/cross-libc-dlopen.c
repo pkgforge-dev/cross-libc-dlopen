@@ -1370,11 +1370,33 @@ static int cld_dryrun_enabled(void) {
 //
 // This is rung 6 of the diagnostic ladder applied as a policy rather
 // than per incident: load the library instead of shimming the symbol.
+//
+// ⛔ libcrypt is the exception, and it is not on the list. The three names
+// musl folds into libc.so are libm, the resolver and libcrypt; the first two
+// are glibc split-out libraries a bundle carries, and libcrypt is not.
+// glibc has kept crypt, crypt_r, encrypt and setkey in libcrypt.so.1 since it
+// split them out, that file is a separate package rather than part of the
+// runtime set, and a musl host does not ship it at all: Alpine has no
+// libcrypt.so.1, because musl puts those names inside libc.so.
+//
+// So the load either fails, which is the noise that started this, or on a
+// host that does have one it puts a glibc DSO of unknown vintage into the
+// process's global scope. A host carrying an old libxcrypt supplies a
+// 32768-byte struct crypt_data, and the musl object calling crypt_r was built
+// against a 260-byte one, which is the mixed-set shape E11 measures.
+//
+// ⚠ The consequence is stated rather than hidden: a musl-built object that
+// imports crypt or crypt_r now fails to load with "undefined symbol", where
+// before it sometimes found a host libcrypt and sometimes did not. That is a
+// loud failure replacing a silent one, and it is the state this project was
+// in before libcrypt was added here. Shimming the four names was attempted and
+// is not ready: dlsym from inside a preload resolves to the preload itself, so
+// forwarding to the application's libcrypt never happened. Nothing on this
+// list is a candidate for the same treatment until that is settled.
 static const char *cld_global_scope_libs[] = {
 	// musl folds these into libc.so; glibc splits them out
 	"libm.so.6",
 	"libresolv.so.2",
-	"libcrypt.so.1",
 	// glibc's own pre-2.34 split libraries (E6/E7)
 	"libpthread.so.0",
 	"libdl.so.2",

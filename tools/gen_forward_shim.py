@@ -59,13 +59,18 @@ IRRELEVANT_RE = [
     (r"^_IO_", "stdio internals"),
     (r"^__ctype|^__c(type|locale)", "locale table internals"),
     (r"^__tls_|^__libc_tls", "TLS internals owned by ld.so"),
-    # These look musl-only against a libc/libm/split-lib inventory, but glibc
-    # ships them in libcrypt.so.1, which cross-libc-dlopen.c now loads into the
-    # global scope precisely so re-homed names resolve (B4). Shimming them
-    # would INTERPOSE over the real implementation and abort a working call.
+    # These look musl-only against a libc/libm/split-lib inventory, and they
+    # are: musl keeps them inside libc.so and glibc keeps them in
+    # libcrypt.so.1. That file is a separate package, not part of the runtime
+    # set, so cross-libc-dlopen.c no longer loads it and a musl object that
+    # imports one of these fails to load by name. Shimming them is the
+    # obvious repair and was attempted; it is not ready, because dlsym from
+    # inside a preload resolves to the preload itself and the forwarding to
+    # the application's libcrypt never happened. Recorded so the next attempt
+    # starts from the measurement rather than repeating it.
     (r"^(crypt|crypt_r|encrypt|encrypt_r|setkey|setkey_r)$",
-     "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; "
-     "shimming it would interpose over a working implementation"),
+     "musl keeps these in libc.so and glibc in libcrypt.so.1; neither the "
+     "load nor the shim is settled, see cld_global_scope_libs[]"),
     # ELF machinery, not API. _init/_fini ARE the .init/.fini sections and are
     # supplied by crti.o; defining them is a multiple-definition link error.
     (r"^(_init|_fini)$",

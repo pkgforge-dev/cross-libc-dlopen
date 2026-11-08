@@ -161,3 +161,43 @@ Entries whose deliverable is a number that does not exist yet.
   E50 currently reports `2 live hazard(s)`. Closes when it reports 0 **and**
   E47/E49 still pass: a translation that breaks the same-libc control is not a
   fix.
+
+---
+
+## T-08 `crypt(3)` for a musl-built host object
+
+- **Source.** The PPSSPP report of a `libcrypt.so.1` probe at startup,
+  [hrydgard/ppsspp#22988](https://github.com/hrydgard/ppsspp/issues/22988).
+- **Category** measurement, **Priority** medium, **Effort** high,
+  **Status** open
+- **Problem.** `cld_global_scope_libs[]` loaded `libcrypt.so.1` so a
+  musl-built host object's `crypt` reference would resolve after its libc edge
+  was dropped. That file is a separate glibc package, not part of the runtime
+  set: a musl host does not ship one, and a bundle need not carry it. The load
+  either failed or put a glibc DSO of unknown vintage in the global scope.
+  Removing it was the safe half; supplying the four names is the open half.
+- **Premise.** Measured, and the measurement is why this is open rather than
+  done. Shimming `crypt`, `crypt_r`, `encrypt` and `setkey` over musl's own
+  implementation was built and is **not ready**, for two reasons that a
+  preload cannot work around the obvious way:
+  1. `dlsym(RTLD_NEXT, "crypt_r")` from inside the preload resolves to the
+     preload's own `crypt_r`, not to the application's libcrypt. Measured with
+     `dl_iterate_phdr`: the address lands in `cross-libc-dlopen.so`. So the
+     forward never happened and musl answered every call.
+  2. `struct crypt_data` has three sizes in the wild, musl 260, libxcrypt
+     32768 and glibc's own ufc-crypt 131232, and the caller's does not say
+     which. A scratch sized for the middle one overruns by 128 KiB on the
+     third: measured on glibc 2.24, SIGSEGV.
+- **Approach.** Resolve the application's libcrypt through a `dlopen` handle
+  rather than `dlsym`, which is a different design and not a tweak. Anything
+  that keeps a per-thread scratch must give it a destructor: measured, a bare
+  `__thread` pointer leaks 36 kB per thread that ever hashes, unbounded under
+  thread churn.
+- **Prove.** A musl-built object importing `crypt_r` loads and returns
+  libxcrypt's `$y$` answer on a host that has libxcrypt, **and** musl's own
+  answer where it does not, with the same object. The forwarding must be
+  distinguishable from the fallback: a `$y$` salt works as the needle and the
+  DES ciphertext does not, because musl and libxcrypt agree on it.
+- **Status note.** The attempt is on `feat/crypt-shim` (PR #63) and should not
+  merge as it stands. E111 and E112 here are the pair that keeps the interim
+  state honest: the probe is gone, and the constructor still runs.

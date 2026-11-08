@@ -131,15 +131,15 @@
   },
   "crypt": {
    "kind": "irrelevant",
-   "reason": "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; shimming it would interpose over a working implementation"
+   "reason": "musl keeps these in libc.so and glibc in libcrypt.so.1; neither the load nor the shim is settled, see cld_global_scope_libs[]"
   },
   "crypt_r": {
    "kind": "irrelevant",
-   "reason": "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; shimming it would interpose over a working implementation"
+   "reason": "musl keeps these in libc.so and glibc in libcrypt.so.1; neither the load nor the shim is settled, see cld_global_scope_libs[]"
   },
   "encrypt": {
    "kind": "irrelevant",
-   "reason": "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; shimming it would interpose over a working implementation"
+   "reason": "musl keeps these in libc.so and glibc in libcrypt.so.1; neither the load nor the shim is settled, see cld_global_scope_libs[]"
   },
   "fgetln": {
    "kind": "stub-only",
@@ -179,7 +179,7 @@
   },
   "setkey": {
    "kind": "irrelevant",
-   "reason": "glibc provides this in libcrypt.so.1, which B4 loads RTLD_GLOBAL; shimming it would interpose over a working implementation"
+   "reason": "musl keeps these in libc.so and glibc in libcrypt.so.1; neither the load nor the shim is settled, see cld_global_scope_libs[]"
   },
   "sigsetjmp": {
    "kind": "stub-only",

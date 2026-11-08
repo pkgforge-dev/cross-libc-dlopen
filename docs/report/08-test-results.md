@@ -24,12 +24,13 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **69/69 predictions held on x86-64** and
-**65/65 on aarch64**. The x86-64 total was measured at the change that added
-E104, E105 and E106, the cases for the NixOS host directories, which the
-container suite runs as root; the aarch64 runner runs the same table, so its
-total is the x86-64 total minus the four skips below, and CI re-runs both on
-every push. `experiments/run.ps1` drives the same three stage scripts for a
+`sh scripts/run-evidence.sh` reports **71/71 predictions held on x86-64** and
+**67/67 on aarch64**. The x86-64 total was measured at the change that added
+E104, E105 and E106, the cases for the NixOS host directories, and E111 and
+E112, the pair that keeps `libcrypt.so.1` off `cld_global_scope_libs[]`; the
+aarch64 runner runs the same table, so its total is the x86-64 total minus the
+four skips below, and CI re-runs both on every push. ⚠ The aarch64 figure is
+UNVERIFIED at the two additions until CI measures them. `experiments/run.ps1` drives the same three stage scripts for a
 machine with PowerShell and no POSIX shell.
 
 ⚠ **The three NixOS cases SKIP by name where `/run` is not writable.** E104,
