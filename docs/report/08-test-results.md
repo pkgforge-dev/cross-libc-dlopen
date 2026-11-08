@@ -50,7 +50,7 @@ naming the capability it lacks rather than the difference being unexplained:
 
 ⭐ **E23's skip is the one worth reading.** It was reporting MATCH on the ARM
 runner while asserting nothing, and skipping it with E22 is what stopped that.
-69 minus 4 is 65, and no case is missing for a reason nobody wrote down.
+72 minus 4 is 68, and no case is missing for a reason nobody wrote down.
 
 E1 through E13 measure the problem. E14 through E21 are one per fix from the first pass: the
 ELF self-test, the generated-shim compile and behaviour, and five selector
