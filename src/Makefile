@@ -38,6 +38,12 @@ MUSL_CRYPT_SRCS = musl-crypt/crypt.c musl-crypt/crypt_r.c musl-crypt/crypt_des.c
 MUSL_CRYPT_OBJS = $(MUSL_CRYPT_SRCS:.c=.o)
 MUSL_CRYPT_RENAME = -Dcrypt=musl_crypt -Dcrypt_r=musl_crypt_r \
                     -Dencrypt=musl_encrypt -Dsetkey=musl_setkey
+# The vendored sources are musl's, and musl's own build marks its cross-file
+# entry points hidden. Nothing here does that by default, so without this the
+# preload would export __crypt_sha512, __des_setkey, musl_crypt and the rest
+# besides the four names it means to provide. A preload definition wins the
+# lookup for versioned references too, which is the shape issue #37 measured.
+MUSL_CRYPT_VISIBILITY = -fvisibility=hidden
 
 # Appended to every compile, for a caller that wants a BUILD VARIANT without
 # restating the defaults above and letting the two drift apart.
@@ -104,7 +110,7 @@ portable:
 # its exports satisfy undefined symbols in anything dlopen'd later (E2, E5).
 musl-crypt/%.o: musl-crypt/%.c musl-crypt/compat.h musl-crypt/crypt.h
 	$(CC) $(SOFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -I musl-crypt \
-		-Wno-sign-compare -Wno-missing-braces \
+		-Wno-sign-compare -Wno-missing-braces $(MUSL_CRYPT_VISIBILITY) \
 		-include musl-crypt/compat.h $(MUSL_CRYPT_RENAME) -c $< -o $@
 
 cross-libc-dlopen.so: cross-libc-dlopen.c forward-shim.c version-compat.c crypt-shim.c cld-env.h $(MUSL_CRYPT_OBJS)
@@ -122,6 +128,16 @@ cross-libc-dlopen.so: cross-libc-dlopen.c forward-shim.c version-compat.c crypt-
 	   if [ "$$n" != "1" ]; then echo "FAIL: $$s exported $$n times, want 1"; exit 1; fi; \
 	 done; \
 	 echo "ok: atexit, pthread_cond_init, realpath, crypt, crypt_r, encrypt, setkey each exported exactly once"
+	@# The vendored crypt sources carry names of their own, and a preload
+	@# definition wins the lookup for versioned references too, which is the
+	@# shape issue #37 measured. -fvisibility=hidden is what keeps them in, and
+	@# this is the case that notices if it stops working: without it the object
+	@# exports __crypt_sha512, __des_setkey, musl_crypt and nine more.
+	@leaked=$$(nm -D --defined-only $@ 2>/dev/null | awk '{print $$3}' | \
+	   grep -E '^(musl_|__crypt_|__des_|__do_des)$$' || true); \
+	 if [ -n "$$leaked" ]; then \
+	   echo "FAIL: vendored crypt internals exported: $$leaked"; exit 1; fi; \
+	 echo "ok: no vendored crypt internal is exported"
 
 # The OpenGL and EGL forwarding shims. Each is built with the SONAME of the
 # bundled dispatcher it replaces, so preloading it makes ld.so bind an

@@ -529,7 +529,7 @@ else
     for _f in crypt crypt_r crypt_des crypt_md5 crypt_sha256 crypt_sha512 crypt_blowfish encrypt; do
         gcc -shared -fPIC -O2 -I/repo/src/musl-crypt \
             -include /repo/src/musl-crypt/compat.h \
-            -Wno-sign-compare -Wno-missing-braces \
+            -Wno-sign-compare -Wno-missing-braces -fvisibility=hidden \
             -Dcrypt=musl_crypt -Dcrypt_r=musl_crypt_r \
             -Dencrypt=musl_encrypt -Dsetkey=musl_setkey \
             -c "/repo/src/musl-crypt/$_f.c" -o "/work/musl-crypt-obj/$_f.o" \
