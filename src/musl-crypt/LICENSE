@@ -1,9 +1,10 @@
 Notices for the vendored sources in this directory.
 
 ======================================================================
-musl as a whole, including crypt.c, crypt_r.c, crypt_md5.c,
-crypt_sha256.c, crypt_sha512.c and crypt_blowfish.c
+musl as a whole: crypt.c, crypt_r.c, encrypt.c
 ======================================================================
+
+These three carry no licence header of their own, so they fall under musl's.
 
 Copyright (c) 2005-2020 Rich Felker, et al.
 
@@ -62,6 +63,13 @@ SUCH DAMAGE.
 crypt_md5.c, crypt_sha256.c, crypt_sha512.c, crypt_blowfish.c
 ======================================================================
 
-Public domain. crypt_blowfish.c states that no copyright is claimed and
-offers a permissive fallback licence in case that disclaimer is void; its
-full text is in the file's own header.
+Public domain. Each file states so in its own header: the three hash files
+describe themselves as a "public domain ... crypt implementation", and
+crypt_blowfish.c says "No copyright is claimed, and the software is hereby
+placed in the public domain".
+
+crypt_blowfish.c adds that if that disclaimer is ever deemed void, the
+software is Copyright (c) 1998-2014 Solar Designer and released under terms
+permitting redistribution and use in source and binary forms, with or
+without modification. That fallback grants no less than the public domain
+dedication does, so the notice above is the one a redistributor has to carry.

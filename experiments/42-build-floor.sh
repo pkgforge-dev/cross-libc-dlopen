@@ -26,6 +26,11 @@ for _tool in gcc make python3 readelf; do
 done
 mkdir -p /build/src && cd /build/src
 cp /repo/src/*.c /repo/src/*.h /repo/src/Makefile .
+# The preload links musl's vendored crypt objects, so the sources have to
+# travel with the Makefile that names them. Without this the target has no
+# rule and the whole stage fails before it builds anything.
+mkdir -p musl-crypt
+cp /repo/src/musl-crypt/*.c /repo/src/musl-crypt/*.h musl-crypt/
 mkdir -p /build/inventories /build/tools
 cp /repo/inventories/* /build/inventories/ 2>/dev/null || true
 cp /repo/tools/* /build/tools/ 2>/dev/null || true

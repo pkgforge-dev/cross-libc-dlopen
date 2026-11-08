@@ -1505,6 +1505,17 @@ fi
 # ⭐ E109 is the control. musl has no yescrypt, so an embedded-only answer
 # returns a DES hash for a $y$ salt; the case fails if the forwarding stops
 # preferring the libcrypt the application already links.
+#
+# ⛔ WHAT FAILS BEFORE THE CHANGE, measured on main (586e61b) in THIS image.
+# E108 fails, and it fails with SIGSEGV: this image carries libcrypt1, so
+# main's cld_global_scope_libs[] loads libcrypt.so.1 and the musl object's
+# crypt_r binds to libxcrypt, which writes 32768 bytes into musl's 260-byte
+# struct. E107 does NOT fail before the change here, because the same load
+# satisfies the bare crypt reference; it is in the table because it covers
+# the no-libcrypt host, where both names are unresolvable, not because it
+# separates main from this branch in this image. Recorded rather than
+# removed, because a case that passes both ways is the silent pass this
+# repository counts as a defect and a reader has to be told which is which.
 mkdir -p /work/cryptbundle
 cat > yesapp.c <<'CEOF'
 #define _GNU_SOURCE

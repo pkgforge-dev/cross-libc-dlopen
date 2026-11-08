@@ -108,7 +108,8 @@ portable:
 
 # The preload carries the shim: it is already in the global lookup scope, so
 # its exports satisfy undefined symbols in anything dlopen'd later (E2, E5).
-musl-crypt/%.o: musl-crypt/%.c musl-crypt/compat.h musl-crypt/crypt.h
+musl-crypt/%.o: musl-crypt/%.c musl-crypt/compat.h musl-crypt/crypt.h \
+                 musl-crypt/crypt_des.h
 	$(CC) $(SOFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -I musl-crypt \
 		-Wno-sign-compare -Wno-missing-braces $(MUSL_CRYPT_VISIBILITY) \
 		-include musl-crypt/compat.h $(MUSL_CRYPT_RENAME) -c $< -o $@
@@ -134,7 +135,7 @@ cross-libc-dlopen.so: cross-libc-dlopen.c forward-shim.c version-compat.c crypt-
 	@# this is the case that notices if it stops working: without it the object
 	@# exports __crypt_sha512, __des_setkey, musl_crypt and nine more.
 	@leaked=$$(nm -D --defined-only $@ 2>/dev/null | awk '{print $$3}' | \
-	   grep -E '^(musl_|__crypt_|__des_|__do_des)$$' || true); \
+	   grep -E '^(musl_|__crypt_|__des_|__do_des)' || true); \
 	 if [ -n "$$leaked" ]; then \
 	   echo "FAIL: vendored crypt internals exported: $$leaked"; exit 1; fi; \
 	 echo "ok: no vendored crypt internal is exported"

@@ -116,7 +116,14 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT INT TERM
 mkdir -p "$WORK/src" "$WORK/inventories" "$WORK/tools"
 cp "$REPO"/src/*.c "$REPO"/src/*.h "$REPO"/src/Makefile "$WORK/src/"
-cp -r "$REPO"/src/musl-crypt "$WORK/src/"
+# Sources only, never the objects: a .o carried in from the working tree is
+# newer than its .c, so make would skip the rebuild and a host-built object
+# would ride into a floor artefact. Measured: a .o from a glibc 2.44 host puts
+# __isoc23_strtoul@GLIBC_2.38 into a 2.31 build, and verify-artifacts.sh cannot
+# see it because the reference is unversioned at that link.
+mkdir -p "$WORK/src/musl-crypt"
+cp "$REPO"/src/musl-crypt/*.c "$REPO"/src/musl-crypt/*.h \
+   "$REPO"/src/musl-crypt/README.md "$REPO"/src/musl-crypt/LICENSE "$WORK/src/musl-crypt/"
 cp "$REPO"/src/forward-shim-manifest.json "$WORK/src/" 2>/dev/null || true
 cp "$REPO"/inventories/* "$WORK/inventories/" 2>/dev/null || true
 cp "$REPO"/tools/* "$WORK/tools/" 2>/dev/null || true

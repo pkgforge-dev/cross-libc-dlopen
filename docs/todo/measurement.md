@@ -183,25 +183,59 @@ Entries whose deliverable is a number that does not exist yet.
   to it instead, and that is worse: musl's `struct crypt_data` is 260 bytes and
   libxcrypt's is 32768, so the call writes past the caller's buffer (measured:
   SIGSEGV, exit 139).
+
+  ⚠ **Three sizes are in the wild, not two.** glibc's own `libcrypt.so.1`,
+  which every host at or below glibc 2.27 ships, has a **131232**-byte struct:
+  a keyschedule plus four 32768-byte DES tables. Scratch sized for libxcrypt
+  is 128 KiB too small for it, and its DES path populates all four tables
+  (measured on glibc 2.24: SIGSEGV). The first version of this fix made that
+  mistake on the other side of the same bug.
 - **Approach.** Vendor musl's crypt implementation under `src/musl-crypt/` and
-  define the four names in `src/crypt-shim.c`. Prefer a real libcrypt through
-  `dlsym(RTLD_NEXT)` when the process has one, because musl has no yescrypt
-  (`$y$`) or scrypt (`$7$`) and treats an unrecognised salt as DES. `crypt_r`
-  gives the real implementation scratch of its own and copies back only the
+  define the four names in `src/crypt-shim.c`. Prefer a real libcrypt when the
+  process has one, because musl has no yescrypt (`$y$`) or scrypt (`$7$`) and
+  treats an unrecognised salt as DES. `crypt_r` gives the real implementation
+  scratch of its own, sized for the largest of the three and held in
+  thread-local storage rather than on the stack, then copies back only the
   result string, because the caller's struct size cannot be recovered.
+
+  ⚠ **The real implementation is found through `dlsym(RTLD_NEXT)`.** Two other
+  resolutions were tried and both are wrong here. `RTLD_DEFAULT` starts at the
+  front of the global scope, which contains this preload, so it returns our own
+  `crypt_r`, the self-check rejects it, and the caller silently gets musl
+  instead of the libcrypt the application links: measured as E109 falling back
+  to a DES hash for a `$y$` salt. Skipping one match is not enough, because the
+  application's libcrypt may be after the preload in the same loop. `RTLD_NEXT`
+  begins the search at the next object, which is what forwarding means.
+
+  ⚠ **What still does not work, and is not fixed:** a plugin that `DT_NEED`s
+  libcrypt and is loaded `RTLD_LOCAL` keeps it out of the global scope, so
+  neither `RTLD_NEXT` nor `RTLD_DEFAULT` can reach it. The plugin's own
+  versioned `crypt@XCRYPT_2.0` reference still binds to this preload, so it
+  calls us, we find nothing, and it gets musl's answer. Measured: `$y$`
+  returns `$yz8eIFW3uJoo` instead of the `$y$j9T$...` hash, which is a wrong
+  password rather than a miss. Reaching the plugin's private libcrypt needs
+  its handle, which this object does not have.
 - **Prove.**
   ```bash
   sh scripts/run-evidence.sh
   ```
-  E107 and E108 fail before the change and pass after; E109 is the control
-  that the forwarding did not replace a working libcrypt. Measured:
+  E108 fails before the change and passes after; E109 is the control that the
+  forwarding did not replace a working libcrypt. Measured:
 
   ```
-  E107   MATCH predicted=OK    OK: musl_crypt_call()=42
   E108   MATCH predicted=OK    OK: musl_crypt_r_call()=42
-  E109   MATCH predicted=OK    $y$j9T$saltsalt$0ZRt7zd0gn9pQsq3yDeuwj9hFSoqeo/...
+  E109   MATCH predicted=OK    $y$j9T$saltsalt$0ZRt7zd0gn9pQsq3yDeuwj9hFSoqeo/y42wyzM0m.d0
   predictions matched: 72   mismatched: 0
   ```
 
-  Before the change the same two report
-  `dlopen FAILED: libc.musl-x86_64.so.1: cannot open shared object file`.
+  ⚠ **E107 does not fail before the change in the image the suite runs it, and
+  an earlier version of this entry said it did.** The stage-3 image carries
+  `libcrypt1`, so `main`'s `cld_global_scope_libs[]` load of `libcrypt.so.1`
+  satisfies the bare `crypt` reference and E107 passes both ways there.
+  Measured on `main` (586e61b) in that image: E107 `OK` exit 0, E108
+  `Segmentation fault` exit 139. The `dlopen FAILED: libc.musl-x86_64.so.1`
+  line quoted here before was a measurement on a host with no libcrypt at all,
+  which is a different machine from the one the case runs on. E107 stays in the
+  table because it covers that host, and the stage-3 comment now says which of
+  the two separates the branch from `main`.
+

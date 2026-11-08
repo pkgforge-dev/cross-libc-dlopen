@@ -8,19 +8,19 @@
 
 ## Where the work is right now
 
-[v0.2.6](https://github.com/pkgforge-dev/cross-libc-dlopen/releases/tag/v0.2.6) is
+[v0.2.9](https://github.com/pkgforge-dev/cross-libc-dlopen/releases/tag/v0.2.9) is
 published.
 
 | workflow | latest on `main` |
 |---|---|
 | `gates` | ✅ |
 | `secret-sweep` | ✅ |
-| `release` | ✅ on `v0.2.6` |
+| `release` | ✅ on `v0.2.9` |
 
 **`feat/crypt-shim` closes T-07: `crypt(3)` for a musl-built host object.**
 The four names are now defined in `src/crypt-shim.c` over musl's vendored
 implementation, and `libcrypt.so.1` is no longer loaded into the global scope.
-`v0.2.6` predates it, so no released artefact carries the fix.
+`v0.2.9` predates it, so no released artefact carries the fix.
 
 ---
 
@@ -50,6 +50,14 @@ change touches them.
   scope; and forwarding `crypt_r` to a real libcrypt without translating the
   struct writes 32768 bytes into musl's 260-byte one (measured: SIGSEGV).
   `src/crypt-shim.c` carries the argument and T-07 the measurements.
+- **The crypt scratch is sized for the LARGEST struct, and there are three.**
+  musl 260, libxcrypt 32768, glibc's own `libcrypt.so.1` 131232. Scratch sized
+  for libxcrypt overruns by 128 KiB on a glibc-2.24 host and SIGSEGVs. It is a
+  thread-local heap block, not a stack array, because a 128 KiB frame puts
+  `crypt_r` out of reach of a small thread stack.
+- **A `RTLD_LOCAL` libcrypt is unreachable from the preload** and gets musl's
+  DES answer for a `$y$` salt. T-07 records it as a known gap; do not claim it
+  is fixed.
 - **musl's crypt is not a drop-in for libxcrypt.** It has no yescrypt (`$y$`)
   or scrypt (`$7$`) and treats an unrecognised salt as DES, returning a
   plausible-looking wrong hash rather than failing. That is why the shim

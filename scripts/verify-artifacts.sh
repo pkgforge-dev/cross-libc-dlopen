@@ -308,8 +308,17 @@ man=$DIR/build-manifest.json
 	printf '  "compiler": "%s",\n' "$(${CLD_CC:-cc} --version 2>/dev/null | head -1 | sed 's/"/\\"/g')"
 	printf '  "sources": {\n'
 	first=1
+	# crypt-shim.c and the musl-crypt sources are here because a manifest for a
+	# shipped artefact has to be able to answer "which crypt implementation is
+	# inside this binary". The vendored primitives are the one part of this
+	# tree whose provenance a reader cannot recover from the object file.
 	for s in cross-libc-dlopen.c gl-fwd.c runtime-select.c forward-shim.c version-compat.c \
-	         cld-env.h cld-symver.h ld-conf.h gl-fwd-gl.h gl-fwd-egl.h gl-fwd-gles2.h; do
+	         crypt-shim.c cld-env.h cld-symver.h ld-conf.h gl-fwd-gl.h gl-fwd-egl.h \
+	         gl-fwd-gles2.h \
+	         musl-crypt/crypt.c musl-crypt/crypt_r.c musl-crypt/crypt_des.c \
+	         musl-crypt/crypt_md5.c musl-crypt/crypt_sha256.c \
+	         musl-crypt/crypt_sha512.c musl-crypt/crypt_blowfish.c \
+	         musl-crypt/encrypt.c musl-crypt/crypt.h musl-crypt/crypt_des.h; do
 		[ -f "$SRC/$s" ] || continue
 		[ $first = 1 ] || printf ',\n'; first=0
 		printf '    "%s": "%s"' "$s" "$(sha "$SRC/$s")"

@@ -13,15 +13,19 @@ https://git.musl-libc.org/cgit/musl/tree/include/crypt.h?h=v1.2.5
 
 ## What was changed
 
-Two include lines, and nothing else. `crypt.c` and `crypt_r.c` include
-`"crypt.h"` rather than `<crypt.h>`, so the build uses the header beside them
-instead of whatever the floor image happens to ship. `crypt_des.c` and
-`encrypt.c` are unchanged and still include `"crypt_des.h"`.
+Three things differ from upstream, and no line of algorithm code is touched.
+
+`crypt.c` and `crypt_r.c` include `"crypt.h"` rather than `<crypt.h>`, so the
+build uses the header beside them instead of whatever the floor image happens
+to ship. `crypt.h` is musl's own, with a different include guard and a header
+comment saying why it is here, because the floor image has no libcrypt
+development package. The other seven files are byte-identical to musl v1.2.5.
 
 `compat.h` supplies the two macros musl's own build defines and a glibc build
 does not: `hidden` and `weak_alias`. The rename from musl's public entry points
-to the `musl_` names happens at compile time, in `src/Makefile`, so these files
-stay byte-identical to upstream.
+to the `musl_` names happens at compile time, in `src/Makefile`, as does the
+`-fvisibility=hidden` that keeps those names out of the preload's export
+table.
 
 ## Why they are here
 
@@ -32,9 +36,9 @@ imports them with no `DT_NEEDED` on anything, and glibc keeps them in
 
 ## Licence
 
-musl as a whole is MIT. `crypt_des.c` is BSD-3 (FreeSec, David Burren and
-Solar Designer). `crypt_md5.c`, `crypt_sha256.c` and `crypt_sha512.c` are public
-domain, and `crypt_blowfish.c` is public domain with a permissive fallback.
-Each file carries its own notice. `LICENSE` beside this file reproduces the two
+`crypt_des.c` is BSD-3 (FreeSec, David Burren and Solar Designer).
+`crypt_md5.c`, `crypt_sha256.c`, `crypt_sha512.c` and `crypt_blowfish.c` are
+public domain. `crypt.c`, `crypt_r.c` and `encrypt.c` carry no notice of their
+own and fall under musl's MIT. `LICENSE` beside this file reproduces the two
 that require it, because BSD-3's binary-distribution clause requires the notice
 to travel with the binary.
