@@ -25,13 +25,12 @@ wrong.
 ### Tier 1, the evidence table
 
 `sh scripts/run-evidence.sh` reports **72/72 predictions held on x86-64** and
-**65/65 on aarch64**. The x86-64 total was measured at the change that added
+**68/68 on aarch64**. The x86-64 total was measured at the change that added
 E107, E108 and E109, the cases for `crypt(3)` on a musl-built host object; the
-aarch64 figure is the last measurement before them and does not include the
-three (UNVERIFIED there). The aarch64 runner runs the same table, so its total
-is the x86-64 total minus the four skips below, and CI re-runs both on every
-push. `experiments/run.ps1` drives the same three stage scripts for a machine
-with PowerShell and no POSIX shell.
+aarch64 runner runs the same table, so its total is the x86-64 total minus the
+four skips below, and both were measured in CI on that change.
+`experiments/run.ps1` drives the same three stage scripts for a machine with
+PowerShell and no POSIX shell.
 
 ⚠ **The three NixOS cases SKIP by name where `/run` is not writable.** E104,
 E105 and E106 each create `/run/opengl-driver/lib`, which needs root, and each

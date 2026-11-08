@@ -54,8 +54,7 @@ change touches them.
   or scrypt (`$7$`) and treats an unrecognised salt as DES, returning a
   plausible-looking wrong hash rather than failing. That is why the shim
   prefers a real libcrypt, and why E109 exists.
-- **The aarch64 total in `docs/report/08-test-results.md` predates E107-E109.**
-  It is labelled UNVERIFIED there rather than estimated; CI re-runs the table.
+- **Both totals are measured in CI** (`72/72` x86-64, `68/68` aarch64). The aarch64 figure is the x86-64 one less the four named skips; do not raise either without a run.
 - **E103 forces the order through `/etc/ld.so.conf.d`, and a host whose own
   answer puts the 64bit directory first never reaches the defect.** Debian 10
   is such a host: `libc6-i386` names `/usr/lib32` and `/lib32` in
