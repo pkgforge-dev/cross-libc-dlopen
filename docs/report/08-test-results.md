@@ -24,11 +24,13 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **72/72 predictions held on x86-64** and
+`sh scripts/run-evidence.sh` reports **74/74 predictions held on x86-64** and
 **68/68 on aarch64**. The x86-64 total was measured at the change that added
-E107, E108 and E109, the cases for `crypt(3)` on a musl-built host object; the
+E107 through E110b, the cases for `crypt(3)` on a musl-built host object; the
 aarch64 runner runs the same table, so its total is the x86-64 total minus the
-four skips below, and both were measured in CI on that change.
+four skips below. The aarch64 runner has not yet been measured at the two
+cases added last, so it carries **68/68 UNVERIFIED** rather than 70/70, which
+CI settles when this lands.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
 
@@ -50,7 +52,7 @@ naming the capability it lacks rather than the difference being unexplained:
 
 ⭐ **E23's skip is the one worth reading.** It was reporting MATCH on the ARM
 runner while asserting nothing, and skipping it with E22 is what stopped that.
-72 minus 4 is 68, and no case is missing for a reason nobody wrote down.
+74 minus 4 is 70, and no case is missing for a reason nobody wrote down.
 
 E1 through E13 measure the problem. E14 through E21 are one per fix from the first pass: the
 ELF self-test, the generated-shim compile and behaviour, and five selector

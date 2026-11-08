@@ -196,7 +196,10 @@ Entries whose deliverable is a number that does not exist yet.
   treats an unrecognised salt as DES. `crypt_r` gives the real implementation
   scratch of its own, sized for the largest of the three and held in
   thread-local storage rather than on the stack, then copies back only the
-  result string, because the caller's struct size cannot be recovered.
+  result string from the pointer the implementation returns, because the
+  caller's struct size cannot be recovered and the three do not agree on where
+  in the buffer the output starts: glibc's DES path returns `crypt_3_buf` at
+  offset 131200 (measured on glibc 2.24).
 
   ⚠ **The real implementation is found through `dlsym(RTLD_NEXT)`.** Two other
   resolutions were tried and both are wrong here. `RTLD_DEFAULT` starts at the
@@ -206,6 +209,16 @@ Entries whose deliverable is a number that does not exist yet.
   to a DES hash for a `$y$` salt. Skipping one match is not enough, because the
   application's libcrypt may be after the preload in the same loop. `RTLD_NEXT`
   begins the search at the next object, which is what forwarding means.
+
+  ⛔ **The scratch size is covered by no case in the suite, and that is
+  recorded rather than glossed.** E107, E108, E109 and E110 all run in the
+  stage-3 image, which carries libxcrypt. libxcrypt's struct is what the
+  scratch is sized for, so a scratch too small for glibc's 131232-byte
+  ufc-crypt passes every one of them: measured, the pre-fix shim returns the
+  right DES hash in that image and SIGSEGVs on Debian 9, whose libcrypt.so.1
+  is glibc's own. Closing it needs a glibc-2.27-or-older host in the stage
+  matrix. Until then the size is argued from the three structs in the file
+  header and measured by hand on glibc 2.24, not asserted by CI.
 
   ⚠ **What still does not work, and is not fixed:** a plugin that `DT_NEED`s
   libcrypt and is loaded `RTLD_LOCAL` keeps it out of the global scope, so

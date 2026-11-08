@@ -1541,6 +1541,48 @@ run E109 OK '$y$j9T$saltsalt$0ZRt7zd0gn9pQsq3yDeuwj9hFSoqeo' \
     env CROSS_LIBC_DLOPEN_ROOT=/work/cryptbundle \
         LD_PRELOAD=/work/cross-libc-dlopen.so ./yesapp
 
+# E110: the case E107, E108 and E109 together do not reach. They exercise "no
+#      libcrypt anywhere"; this exercises a REAL libcrypt bound to the preload,
+#      which is what every host that ships one gets, because the shim's
+#      unversioned crypt_r interposes over the application's
+#      crypt_r@XCRYPT_2.0 and over a glibc-era crypt_r@GLIBC_2.2.5.
+#
+#      The needle is the DES ciphertext, so a shim that fell back to musl
+#      instead of forwarding fails rather than passing on a plausible hash,
+#      and the DES path is the one that writes far more than a result string.
+#
+#      ⛔ WHAT THIS DOES NOT COVER, and it is the case that matters most.
+#      This image carries libxcrypt, whose struct is what the scratch was
+#      sized for, so a scratch too small for glibc's 131232-byte ufc-crypt
+#      PASSES here. Measured: the pre-fix shim returns the right hash in this
+#      image and SIGSEGVs on Debian 9, whose libcrypt.so.1 is glibc's own.
+#      Covering that needs a glibc-2.27-or-older host added to the stage
+#      matrix; T-07 in docs/todo/measurement.md records the gap and the
+#      measurement, because a case that cannot fail is worse than no case.
+cat > realcrypt.c <<'CEOF'
+#define _GNU_SOURCE
+#include <crypt.h>
+#include <stdio.h>
+#include <string.h>
+int main(void){
+    struct crypt_data d;
+    memset(&d, 0, sizeof d);
+    char *r = crypt_r("password", "aa", &d);
+    printf("real-crypt_r(DES) = %s\n", r ? r : "(null)");
+    return r && strcmp(r, "aajfMKNH1hTm2") == 0 ? 0 : 1;
+}
+CEOF
+gcc -O2 realcrypt.c -o realcrypt -lcrypt 2>"$BERR" || bfail realcrypt
+
+# Both arms: the preload present with the feature off, and on. The DES write
+# happens under `dlsym(RTLD_NEXT)` regardless, so a crash here is the shim and
+# not the feature.
+run E110 OK 'real-crypt_r(DES) = aajfMKNH1hTm2' \
+    env LD_PRELOAD=/work/cross-libc-dlopen.so ./realcrypt
+
+run E110b OK 'real-crypt_r(DES) = aajfMKNH1hTm2' \
+    env CROSS_LIBC_DLOPEN=0 LD_PRELOAD=/work/cross-libc-dlopen.so ./realcrypt
+
 echo
 echo "================================================================"
 echo " predictions matched: $PASS   mismatched: $FAIL"

@@ -28,8 +28,13 @@
  * The caller's size cannot be recovered, and handing a smaller buffer to a
  * larger implementation writes past its end (measured: SIGSEGV). So the real
  * implementation never sees the caller's buffer: it gets scratch of our own
- * and only the result string is copied back, which is safe because all three
- * put the output at offset 0.
+ * and only the result string is copied back.
+ *
+ * The copy uses the pointer the implementation returns, not an assumed
+ * offset. The three do NOT agree on where that is: musl and libxcrypt return
+ * the start of the buffer, and glibc's DES path returns its crypt_3_buf at
+ * offset 131200 (measured on glibc 2.24). Reading from the returned pointer
+ * covers all three; assuming offset 0 would read the keyschedule instead.
  *
  * The scratch must fit the largest of the three. A buffer sized for
  * libxcrypt is not enough: glibc's own libcrypt.so.1 populates all four DES
