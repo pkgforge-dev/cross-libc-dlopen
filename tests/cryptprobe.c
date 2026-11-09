@@ -54,16 +54,39 @@ static const char want[] =
  * resolves crypt from /lib/x86_64-linux-gnu/libcrypt.so.1 and returns 15.
  * Measured: a list naming the wrong soname returned 15 that way. A caller
  * that has set the variable is asking the bundle question and gets 31 only
- * when the answer came from inside the root. */
+ * when the answer came from inside the root.
+ *
+ * The variable may name more than one prefix, colon-separated, because the
+ * two ways this is run disagree about what a path looks like. Native, the
+ * loader resolves /work/hascrypt/lib/libcrypt.so.1 and dladdr reports it. Under
+ * qemu-user with a -L sysroot the guest path /lib/libcrypt.so.1 is what the
+ * loader used, but dladdr reports the path qemu opened on the host,
+ * /tmp/.../sys-aarch64/lib/libcrypt.so.1. Measured on aarch64: a single
+ * prefix matched neither reliably, and the case read 15 for a bundle copy
+ * that had loaded. */
+static int under(const char *p, const char *list)
+{
+	size_t n;
+	while (*list) {
+		n = strcspn(list, ":");
+		if (n && strncmp(p, list, n) == 0)
+			return 1;
+		list += n;
+		if (*list == ':')
+			list++;
+	}
+	return 0;
+}
+
 static int from_root(void)
 {
-	const char *root = getenv("CLD_CRYPT_PROBE_ROOT");
-	if (!root || !*root)
+	const char *roots = getenv("CLD_CRYPT_PROBE_ROOT");
+	if (!roots || !*roots)
 		return 0;
 	Dl_info info;
 	if (!dladdr((void *)crypt, &info) || !info.dli_fname)
 		return 0;
-	return strncmp(info.dli_fname, root, strlen(root)) == 0;
+	return under(info.dli_fname, roots);
 }
 
 int crypt_probe(void)
