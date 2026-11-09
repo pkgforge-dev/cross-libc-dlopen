@@ -29,8 +29,7 @@ wrong.
 E104, E105 and E106, the cases for the NixOS host directories, and E111 through
 E114b, the set that keeps `libcrypt.so.1` on the bundle-only list and off the
 host one. The aarch64 runner runs the same table, so its total is the x86-64
-total minus the four skips below; the aarch64 figure is UNVERIFIED at the two
-cases E114 and E114b until CI measures them.
+total minus the four skips below, and CI measured both on that change.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
 
