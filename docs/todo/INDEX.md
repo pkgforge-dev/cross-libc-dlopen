@@ -11,17 +11,17 @@ nowhere else. This file is a list, not an order and not a log.
 
 | | open | partially done | done | total |
 |---|---|---|---|---|
-| measurement | 5 | 1 | 0 | 6 |
+| measurement | 6 | 1 | 0 | 7 |
 | infrastructure | 7 | 0 | 2 | 9 |
 | blocked | 7 | 0 | 2 reclassified | 9 |
-| **total** | **19** | **1** | **2 done, 2 reclassified** | **24** |
+| **total** | **20** | **1** | **2 done, 2 reclassified** | **25** |
 
 By priority, across the open and partially-done rows:
 
 | priority | count |
 |---|---|
 | high | 6 |
-| medium | 7 |
+| medium | 8 |
 | low | 0 |
 | blocked (no priority, because a machine unblocks these rather than a decision) | 7 |
 
@@ -37,6 +37,7 @@ By priority, across the open and partially-done rows:
 | T-04 | [Two struct sizes where this project and solo disagree](measurement.md) | measurement | medium | open |
 | T-05 | [NixOS as a host class](measurement.md) | measurement | medium | open |
 | T-06 | [Translate the two live struct hazards at the call](measurement.md) | measurement | high | open |
+| T-08 | [`crypt(3)` for a musl-built host object](measurement.md) | measurement | medium | open |
 | T-10 | [Prove every CI gate can fail](infrastructure.md) | infrastructure | high | open |
 | T-11 | [A machine-readable suite result](infrastructure.md) | infrastructure | medium | open |
 | T-12 | [Measure the stage timeouts on a runner before trusting them](infrastructure.md) | infrastructure | medium | open |

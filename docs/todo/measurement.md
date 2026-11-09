@@ -161,3 +161,71 @@ Entries whose deliverable is a number that does not exist yet.
   E50 currently reports `2 live hazard(s)`. Closes when it reports 0 **and**
   E47/E49 still pass: a translation that breaks the same-libc control is not a
   fix.
+
+---
+
+## T-08 `crypt(3)` for a musl-built host object
+
+- **Source.** The PPSSPP report of a `libcrypt.so.1` probe at startup,
+  [hrydgard/ppsspp#22988](https://github.com/hrydgard/ppsspp/issues/22988).
+- **Category** measurement, **Priority** medium, **Effort** high,
+  **Status** open
+- **Problem.** `cld_global_scope_libs[]` loaded `libcrypt.so.1` so a
+  musl-built host object's `crypt` reference would resolve after its libc edge
+  was dropped. That file is a separate glibc package, not part of the runtime
+  set: a musl host does not ship one, and a bundle need not carry it. The load
+  either failed or put a glibc DSO of unknown vintage in the global scope.
+
+  ⚠ **"Nothing else in the process loads it" is true of the bundle case and
+  not in general.** A host driver that itself `DT_NEED`s `libcrypt.so.1` brings
+  one into scope before the musl object does, and the same struct-size crash
+  follows. Measured with the bundle's copy absent: the host copy answered and
+  `crypt_r` still SIGSEGVd. The second list fixes the bundle-shaped instance,
+  not every instance.
+  Supplying the four names from the preload is the open half. The HOST load is
+  settled: `cld_global_scope_bundled[]` loads the BUNDLE's copy and nothing
+  else, which is the difference between a library whoever assembled the bundle
+  chose and one of unknown vintage that happens to be on the host.
+- **Premise.** Measured, and the measurement is why this is open rather than
+  done. Shimming `crypt`, `crypt_r`, `encrypt` and `setkey` over musl's own
+  implementation was built and is **not ready**, for two reasons that a
+  preload cannot work around the obvious way:
+  1. `dlsym(RTLD_NEXT, "crypt_r")` from inside the preload resolved to the
+     preload's own `crypt_r` in the configuration that was measured, so the
+     forward never happened and musl answered every call. ⚠ **This is
+     configuration-dependent, not a blanket property.** A second measurement,
+     an application linking `-lcrypt` with the preload defining `crypt_r`,
+     resolved to `/lib/x86_64-linux-gnu/libcrypt.so.1` instead. What is
+     established is that the resolution cannot be relied on; which way it goes
+     depends on load order, and no arrangement was found that makes it
+     consistent.
+  2. `struct crypt_data` has three sizes in the wild, musl 260, libxcrypt
+     32768 and glibc's own ufc-crypt 131232, and the caller's does not say
+     which. A scratch sized for the middle one overruns by 128 KiB on the
+     third: measured on glibc 2.24, SIGSEGV.
+- **Approach.** Resolve the application's libcrypt through a `dlopen` handle
+  rather than `dlsym`, which is a different design and not a tweak. Anything
+  that keeps a per-thread scratch must give it a destructor: measured, a bare
+  `__thread` pointer leaks 36 kB per thread that ever hashes, unbounded under
+  thread churn.
+- **Prove.** A musl-built object importing `crypt_r` loads and returns
+  libxcrypt's `$y$` answer on a host that has libxcrypt, **and** musl's own
+  answer where it does not, with the same object. The forwarding must be
+  distinguishable from the fallback: a `$y$` salt works as the needle and the
+  DES ciphertext does not, because musl and libxcrypt agree on it.
+
+  ⚠ **What the interim state does cover, measured on the floor image.** With
+  the bundle carrying `libcrypt.so.1`, a musl object's bare `crypt()` resolves
+  and returns the correct `$6$s$...` hash, because that ABI is `char *` and no
+  caller buffer is involved. E114 loads `tests/cryptprobe.c`, an object with
+  `crypt` undefined and no `DT_NEEDED` on a provider, and asserts four things
+  at once: the load resolved, `crypt` returned, the answer came from outside
+  the object, and the hash is libxcrypt's rather than musl's DES fallback. `crypt_r()` SIGSEGVs: the object passes musl's
+  260-byte `struct crypt_data` and libxcrypt writes its 32768-byte one over it.
+  That is not a regression from the interim change; the same call SIGSEGVs on
+  `main` with the library bundled, because main loads it too. Any app hitting
+  `crypt_r` from a musl object needs this entry closed, not a bundled library.
+- **Status note.** The attempt is on `feat/crypt-shim` (PR #63) and should not
+  merge as it stands. E111, E112 and E113 are the set that keeps the interim
+  state honest: the host copy is not reached, the constructor still runs, and
+  a bundle that carries one still gets it.

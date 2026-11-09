@@ -72,7 +72,9 @@ When something fails, report **which rung caught it**.
 6. **Is `X` merely re-homed?** musl folds `libm`, `libpthread`, `libdl`, `librt`
    and the resolver into `libc`; glibc splits them out, and glibc 2.34 merged its
    own split libraries back in. Load the library instead of shimming the symbol.
-   `cld_global_scope_libs[]` in `src/cross-libc-dlopen.c` is the list.
+   `cld_global_scope_libs[]` in `src/cross-libc-dlopen.c` is the list, and
+   `cld_global_scope_bundled[]` beside it is the one whose entries are loaded
+   only when the bundle carries them and never from the host.
 8. **Did the rewrite corrupt the image?** Re-parse
    `$XDG_RUNTIME_DIR/.cross-libc-dlopen-*.so` with `tools/elfsym.py`.
 9. **Did it need rewriting at all?** `CROSS_LIBC_DLOPEN_DEBUG=1` prints

@@ -1370,17 +1370,79 @@ static int cld_dryrun_enabled(void) {
 //
 // This is rung 6 of the diagnostic ladder applied as a policy rather
 // than per incident: load the library instead of shimming the symbol.
+//
+// ⛔ libcrypt is the exception, and it is not on the list. The three names
+// musl folds into libc.so are libm, the resolver and libcrypt; the first two
+// are glibc split-out libraries a bundle carries, and libcrypt is not.
+// glibc has kept crypt, crypt_r, encrypt and setkey in libcrypt.so.1 since it
+// split them out, that file is a separate package rather than part of the
+// runtime set, and a musl host does not ship it at all: Alpine has no
+// libcrypt.so.1, because musl puts those names inside libc.so.
+//
+// So the load either fails, which is the noise that started this, or on a
+// host that does have one it puts a glibc DSO of unknown vintage into the
+// process's global scope. A host carrying an old libxcrypt supplies a
+// 32768-byte struct crypt_data, and the musl object calling crypt_r was built
+// against a 260-byte one, which is the mixed-set shape E11 measures.
+//
+// ⛔ The consequence, both halves of it, because the second is a crash.
+//
+// With no libcrypt in the bundle, a musl-built object importing crypt or
+// crypt_r fails to load with "undefined symbol". That is loud, and it is what
+// this project did before the entry was added here.
+//
+// With one in the bundle, crypt() works, and crypt_r() SEGFAULTS. The object
+// passes musl's 260-byte struct crypt_data and the bundled libxcrypt writes
+// its 32768-byte one over it; a pre-2.27 ufc-crypt writes 131232. Measured on
+// the floor image and on glibc 2.24, and the same crash happens on the tree
+// before this change whenever a bundle carried the library, so it is not
+// caused by the second list. It is caused by the ABI, and no choice of which
+// copy to load fixes it: it needs the call translated, which is the shim.
+//
+// That shim was attempted and is not ready (T-08): dlsym from inside a preload
+// can resolve to the preload's own symbols, so forwarding to the application's
+// libcrypt did not happen. Nothing on either list is a candidate for the same
+// treatment until that is settled, and docs/limits.md carries the crash for a
+// reader who never opens this file.
 static const char *cld_global_scope_libs[] = {
 	// musl folds these into libc.so; glibc splits them out
 	"libm.so.6",
 	"libresolv.so.2",
-	"libcrypt.so.1",
 	// glibc's own pre-2.34 split libraries (E6/E7)
 	"libpthread.so.0",
 	"libdl.so.2",
 	"librt.so.1",
 	"libutil.so.1",
 	"libanl.so.1",
+	NULL
+};
+
+// Loaded ONLY when the bundle carries it, never from the host.
+//
+// ⛔ The distinction is the whole point, and it is why these two lists exist.
+// Every entry above is a glibc split-out library whose HOST copy is a normal
+// thing to load: a host driver built against the host's own libm wants the
+// host's libm. libcrypt.so.1 is not that. It is a separate package rather
+// than part of the runtime set, so a musl host has none at all (Alpine keeps
+// crypt inside libc.so) and a glibc host may have one of any vintage: a
+// 131232-byte ufc-crypt before 2.28, a 32768-byte libxcrypt after. The third
+// size, 260, is what musl's in-libc version uses, and a musl host has no such
+// file to load.
+//
+// Loading the host's is what made this noisy and, on the old ones, unsafe: an
+// unversioned crypt_r in the global scope interposes over a musl object's
+// reference, and the two disagree about the size of the struct crypt_data the
+// caller passes. Measured on glibc 2.24: SIGSEGV.
+//
+// The bundle's copy is a different thing. Whoever assembled the bundle chose
+// it, it matches the runtime the bundle carries, and a musl-built object that
+// imports crypt has no provider otherwise: nothing in the process ever loads
+// libcrypt.so.1, because the object's DT_NEEDED edge on libc is the one
+// cross-libc-dlopen drops. Naming it in the preload list is what makes the
+// lookup resolve. Measured: with it present the call works and returns the
+// correct hash; without it the dlopen fails with "undefined symbol: crypt".
+static const char *cld_global_scope_bundled[] = {
+	"libcrypt.so.1",
 	NULL
 };
 
@@ -1418,6 +1480,29 @@ static void cld_load_global_scope_libs(void) {
 			h = dlopen(name, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
 
 		DEBUG_PRINT("global-scope lib %s: %s\n", name, h ? "loaded" : "absent");
+	}
+
+	// The bundle-only list. No host fallback, and the absence is reported
+	// with its own word so a trace says which of the two lists answered.
+	for (size_t i = 0; cld_global_scope_bundled[i]; i++) {
+		const char *name = cld_global_scope_bundled[i];
+		void *h = NULL;
+
+		if (appdir && *appdir) {
+			snprintf(path, sizeof(path), "%s/%s/%s", appdir, cld_libdir(), name);
+			if (access(path, R_OK) == 0)
+				h = dlopen(path, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+		}
+
+		// ⛔ A different prefix from the loop above, and it is load-bearing.
+		// E84, E86 and E89 needle "global-scope lib" to prove the feature is
+		// ON: that line is printed only from the enabled path. This loop runs
+		// on the same path and prints for every name whether or not the
+		// bundle has it, so wording it "global-scope lib %s: not bundled"
+		// would satisfy their needle with nothing loaded at all: measured, a
+		// build with the other list emptied still MATCHed all three.
+		DEBUG_PRINT("global-scope bundled %s: %s\n", name,
+		            h ? "loaded" : "not bundled");
 	}
 }
 
