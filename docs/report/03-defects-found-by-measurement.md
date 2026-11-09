@@ -39,17 +39,14 @@ separate package a musl host does not ship, and a host's copy may be a
 object calling it about the size of `struct crypt_data` (measured on glibc
 2.24: SIGSEGV). The bundle's copy is chosen by whoever assembled the bundle and
 matches the runtime it carries, so `cld_global_scope_bundled[]` loads that and
-nothing else. E111, E112 and E113 are the set that keeps both halves true. musl keeps
-`crypt`, `crypt_r`, `encrypt` and `setkey` inside `libc.so`, so the re-homing
-argument applies to them as much as to `fmod`. But glibc keeps them in
-`libcrypt.so.1`, which is a separate package and not part of the runtime set:
-a musl host does not ship one at all, and a bundle need not carry one. The
-load therefore either failed, which is the startup noise it caused, or put a
-glibc DSO of unknown vintage in the process's global scope where its
-`struct crypt_data` may disagree with the musl object that calls it. A
-`$y$`-capable libcrypt is 32768 bytes and a pre-2.27 ufc-crypt is 131232,
-against musl's 260. E111 and E112 are the pair that keeps the removal in
-place; a musl object importing one of the four now fails to load by name.
+nothing else. E111, E112 and E113 keep the split itself honest, and E114 loads
+a probe object with `crypt` undefined to prove the import actually resolves.
+
+⚠ **`crypt_r` from a musl object still crashes, and this change does not fix
+it.** The object passes musl's 260-byte `struct crypt_data`; libxcrypt writes
+32768 over it. It is an ABI disagreement, not a load-order one, so no choice of
+which copy to load repairs it. `docs/limits.md` carries it and T-08 records the
+measurements that block the shim.
 
 ### 3.2 Bundled libraries were losing to host libraries
 

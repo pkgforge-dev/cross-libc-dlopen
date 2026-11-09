@@ -733,9 +733,18 @@ else
     # ⚠ libcrypt.so.1 is a SYMLINK in this image, so `find -type f` matches
     # nothing and the first version of this case copied no library at all and
     # then failed for that reason. Resolve the target, do not guess the name.
+    #
+    # ⛔ The copy comes from the image's own file, so this case cannot tell
+    # "the bundle list loaded it" from "the soname was already mapped". That
+    # is a real limit and it is why E114 exists: only a probe object can say
+    # which copy answered. This case is here so a bundle-tier regression names
+    # itself instead of surfacing as E114's failure.
     mkdir -p /work/hascrypt/lib
     _lc=$(find / -name 'libcrypt.so.1*' 2>/dev/null | head -1)
-    if [ -n "$_lc" ]; then
+    if [ -z "$_lc" ]; then
+        echo "  E113   SKIPPED - no libcrypt.so.1 in this image, so there is"
+        echo "         nothing to place in the bundle. E114b needs one too."
+    else
         _real=$(readlink -f "$_lc" 2>/dev/null || echo "$_lc")
         cp "$_real" /work/hascrypt/lib/libcrypt.so.1
     fi
@@ -760,8 +769,13 @@ else
         env CROSS_LIBC_DLOPEN_ROOT=/work/nocrypt \
             LD_PRELOAD=/work/cross-libc-dlopen.so \
             ./loader /work/libcryptprobe.so crypt_probe
-    run E114b OK "crypt_probe()=15" \
+    # 31, not 15: bit 16 is the one that proves the BUNDLE's copy answered.
+    # ⛔ Without it the case passes on the host's own libcrypt, because the
+    # loader still searches /etc/ld.so.cache: measured, a list naming the
+    # wrong soname returned 15 from /lib/x86_64-linux-gnu/libcrypt.so.1.
+    run E114b OK "crypt_probe()=31" \
         env CROSS_LIBC_DLOPEN_ROOT=/work/hascrypt \
+            CLD_CRYPT_PROBE_ROOT=/work/hascrypt \
             LD_PRELOAD=/work/cross-libc-dlopen.so \
             ./loader /work/libcryptprobe.so crypt_probe
 

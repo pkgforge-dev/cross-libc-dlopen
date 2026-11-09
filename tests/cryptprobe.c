@@ -20,7 +20,7 @@
  *
  *   1  the object loaded at all, which it cannot do unresolved
  *   2  crypt() returned something
- *   4  crypt() answered from the bundle's libcrypt, not this object's own copy
+ *   4  the implementation that answered is outside this object
  *   8  the answer is the hash libxcrypt gives for this salt
  *
  * ⭐ Check 8 is the one that matters for correctness rather than presence.
@@ -34,6 +34,7 @@
  */
 #define _GNU_SOURCE
 #include <dlfcn.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* glibc's prototype, declared here rather than included: the floor image has
@@ -44,6 +45,26 @@ extern char *crypt(const char *, const char *);
 static const char want[] =
 	"$6$s$uS8ebqSHbt1SxeJHmjJJ8XiNODU1MHXmq8vuR"
 	".PTjWjqzI2O0O5Fqib4lhr5K8OJ/hMYgFNUo1BLK3I7X/8yn/";
+
+/* 16: the implementation that answered lives under $CLD_CRYPT_PROBE_ROOT.
+ *
+ * ⚠ This bit exists because the other four cannot tell "the bundle's copy
+ * won" from "the host's copy answered". The bundle loader still searches the
+ * host's /etc/ld.so.cache, so a build whose bundle tier did nothing at all
+ * resolves crypt from /lib/x86_64-linux-gnu/libcrypt.so.1 and returns 15.
+ * Measured: a list naming the wrong soname returned 15 that way. A caller
+ * that has set the variable is asking the bundle question and gets 31 only
+ * when the answer came from inside the root. */
+static int from_root(void)
+{
+	const char *root = getenv("CLD_CRYPT_PROBE_ROOT");
+	if (!root || !*root)
+		return 0;
+	Dl_info info;
+	if (!dladdr((void *)crypt, &info) || !info.dli_fname)
+		return 0;
+	return strncmp(info.dli_fname, root, strlen(root)) == 0;
+}
 
 int crypt_probe(void)
 {
@@ -73,6 +94,9 @@ int crypt_probe(void)
 	/* 8: and it is the right answer, not musl's DES fallback. */
 	if (strcmp(got, want) == 0)
 		score |= 8;
+
+	if (from_root())
+		score |= 16;
 
 	return score;
 }
