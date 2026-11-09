@@ -24,12 +24,13 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **72/72 predictions held on x86-64** and
-**68/68 on aarch64**. The x86-64 total was measured at the change that added
-E104, E105 and E106, the cases for the NixOS host directories, and E111, E112 and
-E113, the set that keeps `libcrypt.so.1` on the bundle-only list and off the
+`sh scripts/run-evidence.sh` reports **74/74 predictions held on x86-64** and
+**70/70 on aarch64**. The x86-64 total was measured at the change that added
+E104, E105 and E106, the cases for the NixOS host directories, and E111 through
+E114b, the set that keeps `libcrypt.so.1` on the bundle-only list and off the
 host one. The aarch64 runner runs the same table, so its total is the x86-64
-total minus the four skips below, and CI measured both on that change.
+total minus the four skips below; the aarch64 figure is UNVERIFIED at the two
+cases E114 and E114b until CI measures them.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
 
@@ -51,7 +52,7 @@ naming the capability it lacks rather than the difference being unexplained:
 
 ⭐ **E23's skip is the one worth reading.** It was reporting MATCH on the ARM
 runner while asserting nothing, and skipping it with E22 is what stopped that.
-69 minus 4 is 65, and no case is missing for a reason nobody wrote down.
+74 minus 4 is 70, and no case is missing for a reason nobody wrote down.
 
 E1 through E13 measure the problem. E14 through E21 are one per fix from the first pass: the
 ELF self-test, the generated-shim compile and behaviour, and five selector

@@ -131,15 +131,15 @@
   },
   "crypt": {
    "kind": "irrelevant",
-   "reason": "musl keeps these in libc.so and glibc in libcrypt.so.1; neither the load nor the shim is settled, see cld_global_scope_libs[]"
+   "reason": "musl keeps these in libc.so and glibc in libcrypt.so.1, which is loaded from the bundle only (cld_global_scope_bundled[]); the shim is not settled, see T-08 in docs/todo/measurement.md"
   },
   "crypt_r": {
    "kind": "irrelevant",
-   "reason": "musl keeps these in libc.so and glibc in libcrypt.so.1; neither the load nor the shim is settled, see cld_global_scope_libs[]"
+   "reason": "musl keeps these in libc.so and glibc in libcrypt.so.1, which is loaded from the bundle only (cld_global_scope_bundled[]); the shim is not settled, see T-08 in docs/todo/measurement.md"
   },
   "encrypt": {
    "kind": "irrelevant",
-   "reason": "musl keeps these in libc.so and glibc in libcrypt.so.1; neither the load nor the shim is settled, see cld_global_scope_libs[]"
+   "reason": "musl keeps these in libc.so and glibc in libcrypt.so.1, which is loaded from the bundle only (cld_global_scope_bundled[]); the shim is not settled, see T-08 in docs/todo/measurement.md"
   },
   "fgetln": {
    "kind": "stub-only",
@@ -179,7 +179,7 @@
   },
   "setkey": {
    "kind": "irrelevant",
-   "reason": "musl keeps these in libc.so and glibc in libcrypt.so.1; neither the load nor the shim is settled, see cld_global_scope_libs[]"
+   "reason": "musl keeps these in libc.so and glibc in libcrypt.so.1, which is loaded from the bundle only (cld_global_scope_bundled[]); the shim is not settled, see T-08 in docs/todo/measurement.md"
   },
   "sigsetjmp": {
    "kind": "stub-only",

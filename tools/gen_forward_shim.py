@@ -69,8 +69,9 @@ IRRELEVANT_RE = [
     # the application's libcrypt never happened. Recorded so the next attempt
     # starts from the measurement rather than repeating it.
     (r"^(crypt|crypt_r|encrypt|encrypt_r|setkey|setkey_r)$",
-     "musl keeps these in libc.so and glibc in libcrypt.so.1; neither the "
-     "load nor the shim is settled, see cld_global_scope_libs[]"),
+     "musl keeps these in libc.so and glibc in libcrypt.so.1, which is loaded "
+     "from the bundle only (cld_global_scope_bundled[]); the shim is not "
+     "settled, see T-08 in docs/todo/measurement.md"),
     # ELF machinery, not API. _init/_fini ARE the .init/.fini sections and are
     # supplied by crti.o; defining them is a multiple-definition link error.
     (r"^(_init|_fini)$",

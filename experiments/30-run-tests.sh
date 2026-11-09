@@ -702,8 +702,8 @@ else
                    LD_PRELOAD=/work/cross-libc-dlopen.so \
                    ./loader /work/verprobe.so probe_cond_init 2>&1)
          case "$out" in
-             *"libcrypt.so.1: loaded"*) echo "libcrypt-LOADED-FROM-HOST" ;;
-             *"libcrypt.so.1: not bundled"*) echo "libcrypt-not-loaded-from-host" ;;
+             *"global-scope lib libcrypt.so.1: loaded"*) echo "libcrypt-LOADED-FROM-HOST" ;;
+             *"global-scope bundled libcrypt.so.1: not bundled"*) echo "libcrypt-not-loaded-from-host" ;;
              *) echo "no-libcrypt-line-at-all" ;;
          esac'
 
@@ -722,10 +722,14 @@ else
          esac'
 
     # E113: the other direction. A bundle that DOES carry libcrypt.so.1 gets
-    #       it loaded, which is the whole point of the second list, and is
-    #       what makes a musl object importing crypt resolvable at all. A
-    #       build that had simply dropped the name would report "not bundled"
-    #       here too and pass E111 for the wrong reason.
+    #       it loaded, which is the whole point of the second list. A build
+    #       that had dropped the name outright would report "not bundled" here
+    #       too, and pass E111 for the wrong reason.
+    #
+    #       ⚠ E113 scores a debug line, so it says the file was opened and not
+    #       that anything resolved. E114 below is the case that asks the
+    #       second question; this one is here so a bundle-tier regression
+    #       names itself rather than surfacing as E114's failure.
     # ⚠ libcrypt.so.1 is a SYMLINK in this image, so `find -type f` matches
     # nothing and the first version of this case copied no library at all and
     # then failed for that reason. Resolve the target, do not guess the name.
@@ -735,12 +739,38 @@ else
         _real=$(readlink -f "$_lc" 2>/dev/null || echo "$_lc")
         cp "$_real" /work/hascrypt/lib/libcrypt.so.1
     fi
+    # E114: the assertion none of the three above can make, and the reason
+    #       tests/cryptprobe.c exists. E111, E112 and E113 all score the
+    #       preload's own debug lines, and a debug line says what the code
+    #       meant to do, not whether a symbol resolved. Measured: a build that
+    #       opened the bundle copy RTLD_LOCAL instead of RTLD_GLOBAL printed
+    #       the identical "loaded" line and passed all three, while the probe
+    #       object still failed with "undefined symbol: crypt".
+    #
+    #       The probe is a shared object with crypt UNDEFINED and no DT_NEEDED
+    #       on a provider, which is the shape of a musl-built host driver once
+    #       cross-libc-dlopen drops its libc edge. It returns a bitmask, and
+    #       every bit is a separate question: loaded at all, returned
+    #       something, answered from outside itself, and gave the hash
+    #       libxcrypt gives rather than musl's DES fallback for an unknown
+    #       salt. 15 is all four.
+    gcc -shared -fPIC -O2 /repo/tests/cryptprobe.c -o /work/libcryptprobe.so \
+        -Wl,--unresolved-symbols=ignore-all 2>"$BERR" || bfail cryptprobe
+    run E114 FAIL "undefined symbol: crypt" \
+        env CROSS_LIBC_DLOPEN_ROOT=/work/nocrypt \
+            LD_PRELOAD=/work/cross-libc-dlopen.so \
+            ./loader /work/libcryptprobe.so crypt_probe
+    run E114b OK "crypt_probe()=15" \
+        env CROSS_LIBC_DLOPEN_ROOT=/work/hascrypt \
+            LD_PRELOAD=/work/cross-libc-dlopen.so \
+            ./loader /work/libcryptprobe.so crypt_probe
+
     run E113 OK "libcrypt.so.1: loaded from the bundle" sh -c \
         'out=$(env CROSS_LIBC_DLOPEN_DEBUG=1 CROSS_LIBC_DLOPEN_ROOT=/work/hascrypt \
                    LD_PRELOAD=/work/cross-libc-dlopen.so \
                    ./loader /work/verprobe.so probe_cond_init 2>&1)
          case "$out" in
-             *"libcrypt.so.1: loaded from the bundle"*) echo "libcrypt.so.1: loaded from the bundle" ;;
+             *"global-scope bundled libcrypt.so.1: loaded"*) echo "libcrypt.so.1: loaded from the bundle" ;;
              *) echo "bundle-copy-ignored: $(printf %s "$out" | grep -c libcrypt)" ;;
          esac'
 
