@@ -678,6 +678,116 @@ else
             LD_PRELOAD=/work/cross-libc-dlopen.so \
             ./loader /work/verprobe.so probe_cond_init
 
+    # ---- libcrypt.so.1: the bundle's copy, never the host's --------------
+    #
+    # It moved off cld_global_scope_libs[] onto cld_global_scope_bundled[].
+    # The two lists differ in one way that matters: every entry on the first
+    # has a host copy worth loading, because a host driver built against the
+    # host's own libm wants the host's libm. libcrypt is not that. It is a
+    # separate package, a musl host has none at all (Alpine keeps crypt inside
+    # libc.so), and a glibc host's copy may be a 131232-byte ufc-crypt or a
+    # 32768-byte libxcrypt, either of which disagrees with the musl object
+    # that calls it about the size of struct crypt_data. Measured on glibc
+    # 2.24: SIGSEGV. The bundle's copy is chosen by whoever assembled the
+    # bundle and matches the runtime it carries, so that one is loaded.
+    #
+    # ⛔ E111, E112 and E113 are a set, in the shape E84/E85 already use.
+    #   E111  the host copy is NOT reached, with no bundle copy present
+    #   E112  the other libraries ARE still loaded, so a build whose
+    #         constructor stopped running cannot pass E111 by printing nothing
+    #   E113  a bundle copy IS loaded, so E111 cannot pass by the feature
+    #         having stopped working in the other direction
+    run E111 OK "libcrypt-not-loaded-from-host" sh -c \
+        'out=$(env CROSS_LIBC_DLOPEN_DEBUG=1 CROSS_LIBC_DLOPEN_ROOT=/work/nocrypt \
+                   LD_PRELOAD=/work/cross-libc-dlopen.so \
+                   ./loader /work/verprobe.so probe_cond_init 2>&1)
+         case "$out" in
+             *"global-scope lib libcrypt.so.1: loaded"*) echo "libcrypt-LOADED-FROM-HOST" ;;
+             *"global-scope bundled libcrypt.so.1: not bundled"*) echo "libcrypt-not-loaded-from-host" ;;
+             *) echo "no-libcrypt-line-at-all" ;;
+         esac'
+
+    # ⚠ The needle is narrowed to the line E111 would have matched, so this
+    # cannot pass on some other library's line. `run` greps for a substring of
+    # the whole output and the debug trace prints several "global-scope lib"
+    # lines; the first version needled only that prefix and was scored MATCH
+    # on the LIBVA line, which is to say it asserted nothing about libm.
+    run E112 OK "global-scope lib libm.so.6: loaded" sh -c \
+        'out=$(env CROSS_LIBC_DLOPEN_DEBUG=1 CROSS_LIBC_DLOPEN_ROOT=/work/nocrypt \
+                   LD_PRELOAD=/work/cross-libc-dlopen.so \
+                   ./loader /work/verprobe.so probe_cond_init 2>&1)
+         case "$out" in
+             *"global-scope lib libm.so.6: loaded"*) echo "global-scope lib libm.so.6: loaded" ;;
+             *) echo "controller-missing" ;;
+         esac'
+
+    # E113: the other direction. A bundle that DOES carry libcrypt.so.1 gets
+    #       it loaded, which is the whole point of the second list. A build
+    #       that had dropped the name outright would report "not bundled" here
+    #       too, and pass E111 for the wrong reason.
+    #
+    #       ⚠ E113 scores a debug line, so it says the file was opened and not
+    #       that anything resolved. E114 below is the case that asks the
+    #       second question; this one is here so a bundle-tier regression
+    #       names itself rather than surfacing as E114's failure.
+    # ⚠ libcrypt.so.1 is a SYMLINK in this image, so `find -type f` matches
+    # nothing and the first version of this case copied no library at all and
+    # then failed for that reason. Resolve the target, do not guess the name.
+    #
+    # ⛔ The copy comes from the image's own file, so this case cannot tell
+    # "the bundle list loaded it" from "the soname was already mapped". That
+    # is a real limit and it is why E114 exists: only a probe object can say
+    # which copy answered. This case is here so a bundle-tier regression names
+    # itself instead of surfacing as E114's failure.
+    mkdir -p /work/hascrypt/lib
+    _lc=$(find / -name 'libcrypt.so.1*' 2>/dev/null | head -1)
+    if [ -z "$_lc" ]; then
+        echo "  E113   SKIPPED - no libcrypt.so.1 in this image, so there is"
+        echo "         nothing to place in the bundle. E114b needs one too."
+    else
+        _real=$(readlink -f "$_lc" 2>/dev/null || echo "$_lc")
+        cp "$_real" /work/hascrypt/lib/libcrypt.so.1
+    fi
+    # E114: the assertion none of the three above can make, and the reason
+    #       tests/cryptprobe.c exists. E111, E112 and E113 all score the
+    #       preload's own debug lines, and a debug line says what the code
+    #       meant to do, not whether a symbol resolved. Measured: a build that
+    #       opened the bundle copy RTLD_LOCAL instead of RTLD_GLOBAL printed
+    #       the identical "loaded" line and passed all three, while the probe
+    #       object still failed with "undefined symbol: crypt".
+    #
+    #       The probe is a shared object with crypt UNDEFINED and no DT_NEEDED
+    #       on a provider, which is the shape of a musl-built host driver once
+    #       cross-libc-dlopen drops its libc edge. It returns a bitmask, and
+    #       every bit is a separate question: loaded at all, returned
+    #       something, answered from outside itself, and gave the hash
+    #       libxcrypt gives rather than musl's DES fallback for an unknown
+    #       salt. 15 is all four.
+    gcc -shared -fPIC -O2 /repo/tests/cryptprobe.c -o /work/libcryptprobe.so \
+        -Wl,--unresolved-symbols=ignore-all 2>"$BERR" || bfail cryptprobe
+    run E114 FAIL "undefined symbol: crypt" \
+        env CROSS_LIBC_DLOPEN_ROOT=/work/nocrypt \
+            LD_PRELOAD=/work/cross-libc-dlopen.so \
+            ./loader /work/libcryptprobe.so crypt_probe
+    # 31, not 15: bit 16 is the one that proves the BUNDLE's copy answered.
+    # ⛔ Without it the case passes on the host's own libcrypt, because the
+    # loader still searches /etc/ld.so.cache: measured, a list naming the
+    # wrong soname returned 15 from /lib/x86_64-linux-gnu/libcrypt.so.1.
+    run E114b OK "crypt_probe()=31" \
+        env CROSS_LIBC_DLOPEN_ROOT=/work/hascrypt \
+            CLD_CRYPT_PROBE_ROOT=/work/hascrypt \
+            LD_PRELOAD=/work/cross-libc-dlopen.so \
+            ./loader /work/libcryptprobe.so crypt_probe
+
+    run E113 OK "libcrypt.so.1: loaded from the bundle" sh -c \
+        'out=$(env CROSS_LIBC_DLOPEN_DEBUG=1 CROSS_LIBC_DLOPEN_ROOT=/work/hascrypt \
+                   LD_PRELOAD=/work/cross-libc-dlopen.so \
+                   ./loader /work/verprobe.so probe_cond_init 2>&1)
+         case "$out" in
+             *"global-scope bundled libcrypt.so.1: loaded"*) echo "libcrypt.so.1: loaded from the bundle" ;;
+             *) echo "bundle-copy-ignored: $(printf %s "$out" | grep -c libcrypt)" ;;
+         esac'
+
     # E24: the trap stated in terms of libc alone, the obsolete definition
     #      really does reject the attribute Mesa passes.
     # E25: the memcpy exclusion is justified, not assumed.
