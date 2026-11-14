@@ -42,6 +42,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
@@ -150,7 +151,7 @@ static int is_host_library_path(const char *path) {
 }
 
 struct cld_elf {
-	char *map;               // whole file contents, mutable private copy
+	char *map;               // whole file, private copy-on-write mapping
 	size_t size;
 	const ElfW(Ehdr) *ehdr;
 	const ElfW(Phdr) *phdr;
@@ -181,7 +182,8 @@ static size_t cld_vaddr_to_offset(const struct cld_elf *e, ElfW(Addr) vaddr) {
 }
 
 static void cld_free_elf(struct cld_elf *e) {
-	free(e->map);
+	if (e->map)
+		munmap(e->map, e->size);
 	memset(e, 0, sizeof(*e));
 }
 
@@ -294,25 +296,21 @@ static int cld_parse_elf(struct cld_elf *e, const char *path) {
 	}
 	e->size = (size_t)st.st_size;
 
-	e->map = malloc(e->size);
-	if (!e->map) {
-		close(fd);
+	// A mapping, not malloc plus read. The first call to a forwarded symbol
+	// parses libc from inside the interposer, and an allocator that is still
+	// initialising calls sched_getaffinity() there: FEX's jemalloc holds its
+	// init lock, asks for 2.6 MB, and blocks on that lock for good, with
+	// nothing printed. MAP_PRIVATE keeps every write, the version strip and
+	// the .dynstr renames included, out of the file. The price is that a file
+	// truncated in place while mapped raises SIGBUS where a copy would not;
+	// package managers replace by rename, which leaves the mapped inode alone.
+	void *map = mmap(NULL, e->size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+	close(fd);
+	if (map == MAP_FAILED) {
+		e->size = 0;
 		return 0;
 	}
-
-	size_t done = 0;
-	while (done < e->size) {
-		ssize_t n = read(fd, e->map + done, e->size - done);
-		if (n < 0 && errno == EINTR)
-			continue;
-		if (n <= 0) {
-			close(fd);
-			cld_free_elf(e);
-			return 0;
-		}
-		done += (size_t)n;
-	}
-	close(fd);
+	e->map = map;
 
 	e->ehdr = (const ElfW(Ehdr) *)e->map;
 	if (memcmp(e->ehdr->e_ident, ELFMAG, SELFMAG) != 0 ||

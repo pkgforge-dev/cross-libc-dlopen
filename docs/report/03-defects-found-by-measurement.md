@@ -1,4 +1,4 @@
-## 3. Seven defects found by measurement
+## 3. Eight defects found by measurement
 
 None of these were in the problem statement. Each was found by running
 something, and each is fixed.
@@ -230,6 +230,55 @@ all six build rows green, E102 matching on both evidence rows, so the ARM
 row above is measured rather than assumed. That is the run carrying the
 name-collision check in its current shape, where a target libc it cannot
 find refuses the build instead of reporting the property unverified.
+
+### 3.8 The forwarders allocated on their first call
+
+Found outside this repository's own suite, as 3.7 was: the FEX-Emu AppImage
+started and then hung with nothing printed, FEXBash included, and only with the
+preload present (pkgforge-dev/FEX-Emu-AppImage issue 11). It was worked around
+by turning the preload off in Nemo-010/FEX-Emu-AppImage pull 1, which is where
+the cause was named. The FEX binary was not run for this section: the cause is
+reproduced with a stand-in allocator, below.
+
+FEX's jemalloc calls `sched_getaffinity()` while it is still initialising. The
+preload defines that name in `src/version-compat.c` and forwards it to the
+default definition, and the first call to any forwarded symbol finds that
+definition by reading the defining libc out of its file. `cld_parse_elf()` did
+that with `malloc` and `read`, a buffer the size of `libc.so.6`. So the
+allocator was asked for memory from inside its own init lock, and the thread
+blocked on that lock for good. Nothing is printed and nothing times out.
+
+`tests/initalloc.c` is an allocator that does what jemalloc does and reports
+the re-entry as exit 3 instead of hanging. It hooks `malloc`, `calloc` and
+`realloc`, because glibc's `calloc` does not reach `malloc` and hooking one
+passes an interposer that uses the other.
+
+| preload | allocator | glibc 2.31, the suite's floor | glibc 2.44, this host |
+|---|---|---|---|
+| none | either | exit 0 | exit 0 |
+| before the fix | `dlsym` allocation taken first | exit 3 via `malloc` | exit 3 via `malloc` |
+| after the fix | `dlsym` allocation taken first | exit 0 | exit 0 |
+| after the fix | nothing taken first | exit 3 via `calloc` | exit 0 |
+
+**Fix:** `cld_parse_elf()` maps the file `MAP_PRIVATE` instead of copying it
+into the heap. Every write the loader path makes, the version strip and the
+`.dynstr` renames included, lands in private pages and never in the file. The
+price is that a file truncated in place while mapped raises `SIGBUS` where a
+copy would not. Package managers replace by rename, which leaves the mapped
+inode alone. **E115** is the case, with **E115a** as its control.
+
+⚠ **The last row is a limit, not a fix.** glibc 2.33 and older `calloc` a
+thread's error buffer on its first `dl*` call, so `dlsym()` allocates there
+whatever this project does, and an allocator that has made no `dl*` call yet
+still re-enters through it. Measured on the floor image as **E115b**. glibc
+2.34 and newer allocate only on error, which `dlfcn/dlerror.c` shows in the
+2.33 sources (an unconditional `calloc` before the call) and the 2.34 sources
+(a `malloc` inside the error branch). The nothing-taken-first allocator exits 0
+on glibc 2.35, 2.36 and 2.44, measured outside the suite. Removing the allocation means looking symbols up without `dlsym`.
+`src/cld-symver.h` hands the version name to `dlvsym` so that the loader keeps
+resolving IFUNCs, and a second lookup would give that up. That is a design
+decision, so it is recorded in [`../limits.md`](../limits.md) rather than made
+here.
 
 ---
 

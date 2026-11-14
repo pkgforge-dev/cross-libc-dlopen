@@ -137,13 +137,20 @@ static void vc_fatal(const char *sym) {
  * exactly today's behaviour rather than to a NULL call, so the forwarder is
  * never worse than not being there. */
 static void *vc_resolve(const char *sym) {
-	/* cld_default_version_of() opens and parses a file, so it allocates. If
-	 * anything on that path ever calls a symbol forwarded from this file, the
-	 * second call would resolve through here again and recurse until the stack
-	 * is gone. Nothing does today, because glibc's allocator uses mutexes, not
-	 * condition variables, and does not reach these through the PLT. But a
-	 * guard costs one thread-local byte and turns an unbounded recursion into
-	 * a slightly worse answer. */
+	/* cld_default_version_of() opens and maps a file, and it must never
+	 * allocate: the first call to any symbol below can come from an allocator
+	 * that is still initialising (FEX's jemalloc calls sched_getaffinity()
+	 * there), and a request made from inside its init lock deadlocks on that
+	 * lock with nothing printed. Mapping the file is how cld_parse_elf() keeps
+	 * that true.
+	 *
+	 * The guard below is the second property. If anything on that path ever
+	 * calls a symbol forwarded from this file, the second call would resolve
+	 * through here again and recurse until the stack is gone. Nothing does
+	 * today, because glibc's allocator uses mutexes, not condition variables,
+	 * and does not reach these through the PLT. But a guard costs one
+	 * thread-local byte and turns an unbounded recursion into a slightly worse
+	 * answer. */
 	static __thread int busy;
 	char ver[64];
 	void *p = NULL;

@@ -146,6 +146,12 @@ everything else in them.
 `src/`, and a change that breaks one is a change that needs a case before it
 needs a review.
 
+- **The forwarders in `src/version-compat.c` allocate nothing on their first
+  call.** Whatever resolves a forwarded symbol runs from inside whoever
+  called it first, and an allocator that is still initialising calls
+  `sched_getaffinity()` under its own init lock. `cld_parse_elf()` maps the
+  file for that reason, because a heap copy there deadlocked FEX's jemalloc as
+  reported, and E115 with `tests/initalloc.c` reproduces it with a stand-in.
 - **Never modify a host file.** Every write goes under `$XDG_RUNTIME_DIR` or
   `$TMPDIR`. [`../../tests/invariants.c`](../../tests/invariants.c) and the
   checksum comparison in [`../report/README.md`](../report/README.md) guard this.
