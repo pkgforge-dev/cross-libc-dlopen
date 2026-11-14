@@ -146,6 +146,10 @@ everything else in them.
 `src/`, and a change that breaks one is a change that needs a case before it
 needs a review.
 
+- **The preload's own code allocates nothing on a forwarder's first call.**
+  The reason is at `cld_parse_elf()` in `src/cross-libc-dlopen.c`, the case is
+  E115, and what the loader allocates itself is in
+  [`../limits.md`](../limits.md).
 - **Never modify a host file.** Every write goes under `$XDG_RUNTIME_DIR` or
   `$TMPDIR`. [`../../tests/invariants.c`](../../tests/invariants.c) and the
   checksum comparison in [`../report/README.md`](../report/README.md) guard this.

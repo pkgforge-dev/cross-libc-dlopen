@@ -181,6 +181,7 @@ Test programs, all built on a glibc host and run under the bundled loader:
 | [`tests/soak.c`](../tests/soak.c) | N load/unload cycles with RSS, fd and rewritten-copy counts |
 | [`tests/verprobe.c`](../tests/verprobe.c) | the version-binding trap as a loadable probe: returns 0 or 22 |
 | [`tests/vertrap.c`](../tests/vertrap.c) | the three libc properties `version-compat.c` rests on |
+| [`tests/initalloc.c`](../tests/initalloc.c) | an allocator that calls forwarded symbols during its own init, and exits 3 where a real one deadlocks |
 | [`tests/allocprobe.c`](../tests/allocprobe.c) | interpose the allocator family; every counter carries its total |
 | [`tests/glprobe.c`](../tests/glprobe.c) | GL past the 33 symbols `glxgears` links, then clears to a known colour and reads the pixel back |
 | [`tests/eglprobe.c`](../tests/eglprobe.c) | the same question asked of EGL, surfaceless, with no X server at all |

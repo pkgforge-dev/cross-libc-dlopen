@@ -137,13 +137,19 @@ static void vc_fatal(const char *sym) {
  * exactly today's behaviour rather than to a NULL call, so the forwarder is
  * never worse than not being there. */
 static void *vc_resolve(const char *sym) {
-	/* cld_default_version_of() opens and parses a file, so it allocates. If
-	 * anything on that path ever calls a symbol forwarded from this file, the
-	 * second call would resolve through here again and recurse until the stack
-	 * is gone. Nothing does today, because glibc's allocator uses mutexes, not
-	 * condition variables, and does not reach these through the PLT. But a
-	 * guard costs one thread-local byte and turns an unbounded recursion into
-	 * a slightly worse answer. */
+	/* The preload's own code on this path must not allocate, because the
+	 * first call to any symbol below can come from an allocator that is still
+	 * initialising. cld_parse_elf() says how it keeps that true. The loader's
+	 * dlsym() is not ours to change, and docs/limits.md says what it does on
+	 * glibc 2.33 and older.
+	 *
+	 * The guard below is the second property. If anything on that path ever
+	 * calls a symbol forwarded from this file, the second call would resolve
+	 * through here again and recurse until the stack is gone. Nothing does
+	 * today, because glibc's allocator uses mutexes, not condition variables,
+	 * and does not reach these through the PLT. But a guard costs one
+	 * thread-local byte and turns an unbounded recursion into a slightly worse
+	 * answer. */
 	static __thread int busy;
 	char ver[64];
 	void *p = NULL;
