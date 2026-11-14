@@ -137,12 +137,11 @@ static void vc_fatal(const char *sym) {
  * exactly today's behaviour rather than to a NULL call, so the forwarder is
  * never worse than not being there. */
 static void *vc_resolve(const char *sym) {
-	/* cld_default_version_of() opens and maps a file, and it must never
-	 * allocate: the first call to any symbol below can come from an allocator
-	 * that is still initialising (FEX's jemalloc calls sched_getaffinity()
-	 * there), and a request made from inside its init lock deadlocks on that
-	 * lock with nothing printed. Mapping the file is how cld_parse_elf() keeps
-	 * that true.
+	/* The preload's own code on this path must not allocate, because the
+	 * first call to any symbol below can come from an allocator that is still
+	 * initialising. cld_parse_elf() says how it keeps that true. The loader's
+	 * dlsym() is not ours to change, and docs/limits.md says what it does on
+	 * glibc 2.33 and older.
 	 *
 	 * The guard below is the second property. If anything on that path ever
 	 * calls a symbol forwarded from this file, the second call would resolve

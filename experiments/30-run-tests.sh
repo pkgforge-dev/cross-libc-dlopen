@@ -797,7 +797,7 @@ else
     #       preload each exits 0, so a 3 below comes from the object under test
     #       and not from the allocator or the harness. It runs sh, not true,
     #       because a bare true never allocates without the preload and the
-    #       allocator's init would not run at all; armed=11 says it did.
+    #       allocator's init would not run at all; armed=1,1 says it did.
     # E115b is the part this project cannot remove. glibc 2.33 and older calloc
     #       a thread's error buffer on its first dl* call, so an allocator that
     #       has not made one yet still re-enters through dlsym() on this
@@ -809,12 +809,12 @@ else
         -pthread -ldl 2>"$BERR" || bfail initalloc
     gcc -shared -fPIC -O2 -Wall -Wextra -DINITALLOC_COLD /repo/tests/initalloc.c \
         -o /work/initalloc-cold.so -pthread -ldl 2>"$BERR" || bfail initalloc-cold
-    run E115a OK "initalloc-exit=0 cold-exit=0 armed=11" sh -c \
+    run E115a OK "initalloc-exit=0 cold-exit=0 armed=1,1" sh -c \
         'out=$(LD_PRELOAD=/work/initalloc.so /bin/sh -c : 2>&1); a=$?
          n=$(printf %s "$out" | grep -c "initalloc: init ran")
          out=$(LD_PRELOAD=/work/initalloc-cold.so /bin/sh -c : 2>&1); b=$?
          m=$(printf %s "$out" | grep -c "initalloc: init ran")
-         echo "initalloc-exit=$a cold-exit=$b armed=$n$m"'
+         echo "initalloc-exit=$a cold-exit=$b armed=$n,$m"'
     # ⚠ An exit 0 alone is also what a preload or an allocator that ld.so
     # ignored produces. E115 therefore counts two lines: the allocator saying
     # its init ran, and the forwarder's own resolution line. 1 and 1 means both

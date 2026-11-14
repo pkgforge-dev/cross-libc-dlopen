@@ -274,11 +274,11 @@ still re-enters through it. Measured on the floor image as **E115b**. glibc
 2.34 and newer allocate only on error, which `dlfcn/dlerror.c` shows in the
 2.33 sources (an unconditional `calloc` before the call) and the 2.34 sources
 (a `malloc` inside the error branch). The nothing-taken-first allocator exits 0
-on glibc 2.35, 2.36 and 2.44, measured outside the suite. Removing the allocation means looking symbols up without `dlsym`.
-`src/cld-symver.h` hands the version name to `dlvsym` so that the loader keeps
-resolving IFUNCs, and a second lookup would give that up. That is a design
-decision, so it is recorded in [`../limits.md`](../limits.md) rather than made
-here.
+on glibc 2.35, 2.36 and 2.44, measured outside the suite. Removing the allocation means looking symbols up
+without `dlsym`. `src/cld-symver.h` hands the version name to `dlvsym` so that
+the loader keeps resolving IFUNCs, and a second lookup would give that up. That
+is a design decision, so it is recorded in [`../limits.md`](../limits.md) rather
+than made here.
 
 ---
 
