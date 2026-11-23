@@ -8,19 +8,15 @@
 
 ## Where the work is right now
 
-[v0.2.6](https://github.com/pkgforge-dev/cross-libc-dlopen/releases/tag/v0.2.6) is
-published.
+[v0.2.9](https://github.com/pkgforge-dev/cross-libc-dlopen/releases/tag/v0.2.9) is
+published, and `main` carries one change since it: `libcrypt.so.1` moved to a
+bundle-only list (#64). No released artefact carries that.
 
 | workflow | latest on `main` |
 |---|---|
 | `gates` | ✅ |
 | `secret-sweep` | ✅ |
-| `release` | ✅ on `v0.2.6` |
-
-**This branch fixes the host lookup that stopped on a library the loader would
-refuse, on branch `fix/gl-fwd-wrong-class`, and needs a release once merged.
-`v0.2.6` was released from `main` before it, so no released artefact carries
-the fix.**
+| `release` | ✅ on `v0.2.9` |
 
 ---
 
