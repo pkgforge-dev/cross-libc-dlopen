@@ -24,22 +24,17 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **79/79 predictions held on x86-64** and
-**75/75 on aarch64**. The x86-64 total was measured at the change that added
+`sh scripts/run-evidence.sh` reports **83/83 predictions held on x86-64** and
+**79/79 on aarch64**. The x86-64 total was measured at the change that added
 E104, E105 and E106, the cases for the NixOS host directories, E111 through
 E114b, the set that keeps `libcrypt.so.1` on the bundle-only list and off the
 host one, E115, E115a and E115b, the set that keeps the forwarders from
-allocating on their first call, and E116 and E116a, the bare-SONAME case and
-its control. The aarch64 runner runs the same table, so its total is the
-x86-64 total minus the four skips below.
+allocating on their first call, and E116 through E116e, the bare-SONAME case,
+its control, the three branches its lookup walks and the two boundaries it must
+not cross. The aarch64 runner runs the same table, so its total is the x86-64
+total minus the four skips below.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
-
-⚠ **E116b through E116e are not in those totals.** They were added after the run
-that produced 79/79 for the other branches the repair walks, the boundary at a
-name the loader never resolved, and the bundle copy it must not replace. E116d
-skips only where `/usr/local/lib64` cannot be created; the rest skip nowhere, so
-the next run should report 83/83 and 79/79.
 
 ⚠ **The three NixOS cases SKIP by name where `/run` is not writable.** E104,
 E105 and E106 each create `/run/opengl-driver/lib`, which needs root, and each
