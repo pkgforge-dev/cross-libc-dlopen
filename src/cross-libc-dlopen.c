@@ -49,6 +49,7 @@
 #include <unistd.h>
 
 #include "cld-env.h"
+#include "ld-conf.h"
 
 typedef void *(*dlopen_func_t)(const char *filename, int flags);
 
@@ -1571,13 +1572,15 @@ VISIBLE void cross_libc_dlopen_init_now(void) {
 #  define CLD_TRIPLET "unknown"
 #endif
 
-// The conventional libdirs of the hosts this runs on, each probed as
-// <dir>/dri. Debian and Ubuntu keep their VA drivers under the triplet
+// The conventional libdirs of the hosts this runs on. Two callers want them
+// and neither may become a library search: the VA section below probes each as
+// <dir>/dri, and cld_host_soname() probes each for the one file a refused bare
+// SONAME named. Debian and Ubuntu keep their VA drivers under the triplet
 // directory, Alpine in /usr/lib/dri, Fedora in /usr/lib64/dri. NixOS is
-// neither FHS nor ld.so.conf: hardware.graphics publishes the host's VA
-// drivers under /run/opengl-driver/lib/dri, the directory sharun appends for
-// the bundled runtime. A missed access() costs nothing.
-static const char *const cld_va_libdirs[] = {
+// neither FHS nor ld.so.conf: hardware.graphics publishes the host's
+// userspace under /run/opengl-driver/lib, the directory sharun appends for the
+// bundled runtime. A missed access() costs nothing.
+static const char *const cld_host_libdirs[] = {
 	"/run/opengl-driver/lib",
 	"/usr/lib/" CLD_TRIPLET, "/lib/" CLD_TRIPLET,
 	"/usr/lib64", "/lib64",
@@ -1643,6 +1646,36 @@ static void cld_va_add(struct cld_va_list *l, const char *dir) {
 	l->used += (size_t)w;
 }
 
+// The process's own search list, in the order the loader walks it. Both users
+// below want the first directory that answers and nothing more, so the walk
+// stops on the first non-zero return. A relative entry is skipped, the loader
+// ignores it too.
+static int cld_each_library_path_dir(int (*fn)(const char *, void *), void *ctx) {
+	const char *lp = getenv("LD_LIBRARY_PATH");
+	if (!lp || !*lp)
+		return 0;
+	char *copy = strdup(lp);
+	if (!copy)
+		return 0;
+	int answered = 0;
+	char *save = NULL;
+	for (char *p = strtok_r(copy, ":", &save); p;
+	     p = strtok_r(NULL, ":", &save)) {
+		if (*p == '/' && fn(p, ctx)) {
+			answered = 1;
+			break;
+		}
+	}
+	free(copy);
+	return answered;
+}
+
+static int cld_va_add_dir(const char *dir, void *ctx) {
+	if (is_host_library_path(dir))
+		cld_va_add(ctx, dir);
+	return 0;
+}
+
 // One guarded run. ⛔ The guard means "settled", not "ran": a constructor
 // that latched on "libva absent" would disarm the post-dlopen scan for the
 // process's whole life, and the late-load case would never fire. Measured
@@ -1685,19 +1718,10 @@ static void cld_va_setup(void) {
 	// The process's own search list first: a launcher that already
 	// assembled the host library path (sharun) has written the host's
 	// answers there, and <libdir>/dri is where those answers keep VA.
-	const char *lp = getenv("LD_LIBRARY_PATH");
-	if (lp && *lp) {
-		char *copy = strdup(lp);
-		if (copy) {
-			for (char *p = strtok(copy, ":"); p; p = strtok(NULL, ":"))
-				if (is_host_library_path(p))
-					cld_va_add(&l, p);
-			free(copy);
-		}
-	}
+	cld_each_library_path_dir(cld_va_add_dir, &l);
 
-	for (size_t i = 0; cld_va_libdirs[i]; i++)
-		cld_va_add(&l, cld_va_libdirs[i]);
+	for (size_t i = 0; cld_host_libdirs[i]; i++)
+		cld_va_add(&l, cld_host_libdirs[i]);
 
 	if (!l.used) {
 		DEBUG_PRINT("LIBVA_DRIVERS_PATH: libva loaded, no host dri "
@@ -2035,6 +2059,80 @@ static void *cld_load(dlopen_func_t dlopen_orig, const char *canon, int flags, i
 	return handle;
 }
 
+// A bare SONAME never reaches cld_attempt(): it carries no path, so the loader
+// is the only thing that can resolve it. When the loader resolves one and then
+// refuses it, the repair is to rewrite a host file of that name, and dlopen()
+// never handed us one. This names it.
+//
+// ⛔ THIS IS NOT A SECOND LIBRARY SEARCH, and it must not grow into one. It is
+// consulted only after ld.so has searched for this name and failed, and its
+// answer is used only when ld.so found the file and refused it, so a load ld.so
+// can satisfy by itself never reaches it. It opens nothing ld.so did not just
+// try to open, and a name ld.so never found is left alone: assembling that
+// search path belongs to whatever launches the process. The `required by` half
+// of the same problem is solved the same way in cld_load().
+//
+// The order is the loader's own: the process's search list, then what
+// /etc/ld.so.conf names, then cld_host_libdirs. The last list is load-bearing
+// rather than a fallback: Arch and CachyOS name no directory in ld.so.conf at
+// all, so on the host that reported the Vulkan ICD gap /usr/lib is reachable
+// only through the loader's built-in defaults.
+struct cld_soname {
+	const char *name;
+	char path[PATH_MAX];
+};
+
+// A candidate of the other ELF class cannot load, and the walk must reach the
+// directory after it: a host with i386 support names the 32bit directory first.
+// Same rule as the GL shim's candidate walk.
+static int cld_soname_wrong_class(const char *path) {
+	unsigned char id[EI_NIDENT];
+	int fd = open(path, O_RDONLY | O_CLOEXEC);
+	if (fd < 0)
+		return 0;
+	ssize_t n = read(fd, id, sizeof id);
+	close(fd);
+	return n == (ssize_t)sizeof id && memcmp(id, ELFMAG, SELFMAG) == 0 &&
+	       id[EI_CLASS] != (sizeof(void *) == 8 ? ELFCLASS64 : ELFCLASS32);
+}
+
+static int cld_soname_try(const char *dir, void *ctx) {
+	struct cld_soname *c = ctx;
+	char candidate[PATH_MAX];
+	if (snprintf(candidate, sizeof candidate, "%s/%s", dir, c->name) >=
+	    (int)sizeof candidate)
+		return 0;
+	if (access(candidate, R_OK) != 0 || cld_soname_wrong_class(candidate))
+		return 0;
+	char *canon = canonicalize_file_name(candidate);
+	if (!canon)
+		return 0;
+	if (!is_host_library_path(canon)) {
+		// a copy inside the bundle, which the pass-through already refused
+		free(canon);
+		return 0;
+	}
+	snprintf(c->path, sizeof c->path, "%s", canon);
+	free(canon);
+	return 1;
+}
+
+static char *cld_host_soname(const char *name) {
+	if (!name || !*name || strchr(name, '/'))
+		return NULL;
+
+	struct cld_soname c = { name, "" };
+
+	if (cld_each_library_path_dir(cld_soname_try, &c))
+		return strdup(c.path);
+	if (ldconf_each_dir("/etc/ld.so.conf", cld_soname_try, NULL, &c))
+		return strdup(c.path);
+	for (size_t i = 0; cld_host_libdirs[i]; i++)
+		if (cld_soname_try(cld_host_libdirs[i], &c))
+			return strdup(c.path);
+	return NULL;
+}
+
 // Attempt a cross-libc load of a host library, *handled tells the caller
 // whether an attempt was made
 static void *cld_attempt(dlopen_func_t dlopen_orig, const char *filename, int flags, int *handled) {
@@ -2050,6 +2148,12 @@ static void *cld_attempt(dlopen_func_t dlopen_orig, const char *filename, int fl
 		return NULL;
 	}
 
+	// Not a path yet. canonicalize_file_name() would resolve a bare SONAME
+	// against the caller's working directory, and the provenance question this
+	// function asks, is_host_library_path(), needs an absolute path to answer
+	// it. dlopen() resolves a bare name first and comes back here with that
+	// path, so the check below is still what decides whether anything is
+	// rewritten.
 	if (*filename != '/')
 		return NULL;
 
@@ -2106,6 +2210,56 @@ VISIBLE void *dlopen(const char *filename, int flags) {
 
 	DEBUG_PRINT("dlopen pass-through: %s\n", filename);
 	void *pass = dlopen_orig(filename, flags);
+	if (pass) {
+		cld_va_setup();
+		return pass;
+	}
+
+	// The loader searched for a bare SONAME and refused what it found. Name a
+	// host file of that name and repair it the way an absolute path is
+	// repaired.
+	//
+	// The pass-through comes first on purpose: a bundle copy the loader can
+	// satisfy wins, and a host that already works is never given a different
+	// answer. The cost is that a refused object is mapped twice, once by the
+	// search that failed and once from the rewritten copy, which is the
+	// price of asking the loader rather than guessing its answer.
+	//
+	// NOLOAD never becomes a load, and the feature's off switch is an off
+	// switch: cld_attempt() bails for both, so this does too.
+	if (*filename == '/' || (flags & RTLD_NOLOAD) || !cross_libc_dlopen_mode())
+		return NULL;
+
+	char *resolved = cld_host_soname(filename);
+	if (!resolved)
+		// the pending dlerror() is still the loader's own, untouched
+		return NULL;
+
+	// Only a name the loader RESOLVED and then refused is ours to repair. One
+	// it never found is the launcher's library path to assemble, which is a
+	// different job (docs/conventions/code.md says whose). The two are told
+	// apart by the loader's own message; "cannot open shared object file" is
+	// the phrase its dlerror() has carried for every glibc this project
+	// supports, and E13b already matches it. Reading dlerror() consumes it,
+	// so both arms below re-run the plain load to leave the caller the reason.
+	const char *err = dlerror();
+	int found_but_refused = err && !strstr(err, "cannot open shared object file");
+	if (found_but_refused) {
+		DEBUG_PRINT("cross-libc-dlopen: bare %s -> %s\n", filename, resolved);
+		handled = 0;
+		host = cld_attempt(dlopen_orig, resolved, flags, &handled);
+		if (host) {
+			free(resolved);
+			cld_va_setup();
+			DEBUG_PRINT("cross-libc dlopen success: %s\n", filename);
+			return host;
+		}
+	}
+	free(resolved);
+
+	// The repair failed, or there was nothing ours to do, so the caller must
+	// read ld.so's reason rather than one of ours.
+	pass = dlopen_orig(filename, flags);
 	if (pass)
 		cld_va_setup();
 	return pass;

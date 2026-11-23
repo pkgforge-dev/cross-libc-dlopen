@@ -545,6 +545,45 @@ else
         echo "         exists; without it the unstripped answer is already 0."
     fi
 
+    # E116/E116a: a BARE SONAME. ld.so is the only thing that can resolve one,
+    #      so it is asked first, and it finds /usr/lib/libcldbare.so through
+    #      its own built-in default directory. What it cannot do is hand it
+    #      back: the object needs GLIBC_2.38 and this process is glibc 2.31.
+    #      Before the repair a bare name was never rewritten, so the caller's
+    #      dlopen failed exactly as it does with no preload at all.
+    #
+    #      Where this host names the file is half the case. /etc/ld.so.conf
+    #      here names the triplet directories and /usr/local/lib, NOT /usr/lib,
+    #      which is the shape of the host that reported the Vulkan ICD gap:
+    #      Arch and CachyOS write no directory into ld.so.conf at all, so the
+    #      conventional list is what has to name the file ld.so just refused.
+    cat > barename.c <<'CEOF'
+#include <stdio.h>
+#include <dlfcn.h>
+int main(void) {
+    void *h = dlopen("libcldbare.so", RTLD_NOW);
+    if (!h) { printf("FAILED: %s\n", dlerror()); return 1; }
+    int (*f)(void) = (int (*)(void))dlsym(h, "newlib_answer");
+    if (!f) { printf("FAILED: no newlib_answer: %s\n", dlerror()); return 1; }
+    printf("OK: bare=%d\n", f());
+    return 0;
+}
+CEOF
+    gcc -O2 barename.c -o barename -ldl 2>"$BERR" || bfail barename
+    cp /work/libnew.so /usr/lib/libcldbare.so
+
+    # E116a: the control. The preload is present and interposing; the only
+    #        difference is the feature switch, and the prediction is the
+    #        version refusal the loader gives on its own. That needle also
+    #        proves the loader FOUND the file: were /usr/lib not on its search
+    #        path the message would be "cannot open shared object file", which
+    #        is the one failure this repair deliberately leaves alone.
+    run E116a FAIL "GLIBC_2.38' not found" \
+        env CROSS_LIBC_DLOPEN=0 LD_PRELOAD=/work/cross-libc-dlopen.so ./barename
+    run E116 OK "OK: bare=99" \
+        env LD_PRELOAD=/work/cross-libc-dlopen.so ./barename
+    rm -f /usr/lib/libcldbare.so
+
     # E102: the preload exports no name this host's own libc family also
     #      exports, beyond the audited interpositions. This is the case the
     #      aarch64 artefact shipped without: the generated shim defined

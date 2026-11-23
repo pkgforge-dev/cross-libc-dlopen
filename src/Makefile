@@ -89,7 +89,7 @@ portable:
 
 # The preload carries the shim: it is already in the global lookup scope, so
 # its exports satisfy undefined symbols in anything dlopen'd later (E2, E5).
-cross-libc-dlopen.so: cross-libc-dlopen.c forward-shim.c version-compat.c cld-env.h
+cross-libc-dlopen.so: cross-libc-dlopen.c forward-shim.c version-compat.c cld-env.h ld-conf.h
 	@# $(filter %.c,$^), not $^: cld-env.h is a prerequisite so a change to it
 	@# rebuilds this, but handing a .h to gcc makes it precompile the header
 	@# and drop a .gch beside the source instead of compiling anything.

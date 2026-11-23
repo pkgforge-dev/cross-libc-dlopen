@@ -34,6 +34,12 @@ total is the x86-64 total minus the four skips below.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
 
+⚠ **E116 and E116a are not in those totals.** They are the bare-SONAME case and
+its control, added after the run that produced 77/77, and the machine that
+wrote them had no usable container engine. They skip nowhere, so the next run
+should report 79/79 and 75/75; the measured totals stay 77/77 and 73/73 until
+one has.
+
 ⚠ **The three NixOS cases SKIP by name where `/run` is not writable.** E104,
 E105 and E106 each create `/run/opengl-driver/lib`, which needs root, and each
 reports the missing capability rather than being silently omitted. That is why
@@ -74,6 +80,8 @@ objects small enough that the mechanism is the only thing being measured:
 | E29 | and the caller still gets ld.so's message, not one of the report's own `dlsym` misses |
 | E102 | the built preload exports no name this host's own libc family also exports, beyond the audited interpositions: the case that caught `__stack_chk_guard` being defined where the loader owns it (3.7), and on the aarch64 runner the case that failed before that fix |
 | E115 / E115a / E115b | an allocator that calls `sched_getaffinity()` during its own init gets through the preload without re-entering itself (FEX's jemalloc deadlocked here, 3.8); the control without the preload; and the part the project cannot remove, where glibc 2.33 and older allocate in `dlsym()` itself |
+| E116 | a bare SONAME that `ld.so` resolved and then refused over symbol versions is rewritten and loads, where before the repair the caller's `dlopen` failed exactly as it does with no preload at all. The file sits in `/usr/lib`, which this host's `/etc/ld.so.conf` does not name, so the conventional list is what has to name it |
+| E116a | its control: the same bare name with the feature off. The needle is the `GLIBC_2.38` refusal, which also proves `ld.so` found the file rather than missing it, because the two failures carry different messages and only the found one is repaired |
 | E54 | a plugin's undeclared import cannot see its loader's closure when that closure was loaded `RTLD_LOCAL` |
 | E55 | its control: `RTLD_GLOBAL`, same two files, and it resolves |
 | E56 | preload constructors run in REVERSE of the `.preload` order |
