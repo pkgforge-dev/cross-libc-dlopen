@@ -16,21 +16,27 @@ is end to end. Tier 4 checks invariants. Tier 5 needs hardware.
 | T0.6 | `atexit` interposition safety | **PASS.** `nm -D` shows exactly one exported definition, checked by the Makefile |
 | T0.7 | tail-merge guard | **PASS.** Refuses a range containing another live reference, allows a clear one |
 | T0.8 | malformed-input fuzz | **PASS.** Every truncation and bit flip refused or bounded |
+| T0.9 | which candidates `ld.so` itself skips | **PASS.** Another ELF class, byte order or machine is skipped; a directory, a short file and a non-ELF file are not, because the loader stops on those |
 
-T0.4, T0.5, T0.7 and T0.8 run against the **real implementation**:
+T0.4, T0.5, T0.7, T0.8 and T0.9 run against the **real implementation**:
 `tests/elf-selftest.c` includes `cross-libc-dlopen.c` rather than modelling it,
 because a Tier-0 test that models the C can pass while the shipped code is
 wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **77/77 predictions held on x86-64** and
-**73/73 on aarch64**. The x86-64 total was measured at the change that added
+`sh scripts/run-evidence.sh` reports **89/89 predictions held on x86-64** and
+**85/85 on aarch64**. The x86-64 total was measured at the change that added
 E104, E105 and E106, the cases for the NixOS host directories, E111 through
 E114b, the set that keeps `libcrypt.so.1` on the bundle-only list and off the
-host one, and E115, E115a and E115b, the set that keeps the forwarders from
-allocating on their first call. The aarch64 runner runs the same table, so its
-total is the x86-64 total minus the four skips below.
+host one, E115, E115a and E115b, the set that keeps the forwarders from
+allocating on their first call, and E116 through E116k, the bare-SONAME case,
+its control, the three branches its lookup walks, the five shapes in which a
+bundle copy must win, the musl object whose missing file is its own libc edge,
+the transitive shape #67 reported, the missing dependency only the musl edge
+may unlock, and the relative path that is not a bare name. The aarch64 runner
+runs the same table, so its total is the x86-64 total minus the four skips
+below.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
 
@@ -74,6 +80,18 @@ objects small enough that the mechanism is the only thing being measured:
 | E29 | and the caller still gets ld.so's message, not one of the report's own `dlsym` misses |
 | E102 | the built preload exports no name this host's own libc family also exports, beyond the audited interpositions: the case that caught `__stack_chk_guard` being defined where the loader owns it (3.7), and on the aarch64 runner the case that failed before that fix |
 | E115 / E115a / E115b | an allocator that calls `sched_getaffinity()` during its own init gets through the preload without re-entering itself (FEX's jemalloc deadlocked here, 3.8); the control without the preload; and the part the project cannot remove, where glibc 2.33 and older allocate in `dlsym()` itself |
+| E116 | a bare SONAME that `ld.so` resolved and then refused over symbol versions is rewritten and loads, where before the repair the caller's `dlopen` failed exactly as it does with no preload at all. The file sits in `/usr/lib`, which this host's `/etc/ld.so.conf` does not name, so the conventional list is what has to name it. Every E116 arm also preloads the hand-written forward shim, because the rewrite turns the version requirements into plain name lookups and this stage's checked-in shim was generated for the 2.44 floor |
+| E116a | its control: the same bare name with the feature off. The needle is the `GLIBC_2.38` refusal, which also proves `ld.so` found the file rather than missing it, because the two failures carry different messages and only the found one is repaired |
+| E116b | the process's own search list answers, with the file in a directory no conventional list and no conf file names |
+| E116c | `/etc/ld.so.conf` answers. The loader finds the file through an explicit `--library-path`, which the repair cannot see, so the conf file is the only thing left that can name it |
+| E116d | a name the loader never resolved, in a directory only the conventional list names: the message is read before any walk, so the miss is classified and the walk never runs. The file sitting on the conventional list does not change the answer, nor turn it into a load the repair assembled itself |
+| E116e | the probe of `<root>/<libdir>` on its own: the launcher did not put the bundle on the loader's path, so the loader refused the HOST copy and its message names the host. Only the probe can tell that the bundle owns the name, and it stops the repair. The host copy is one the repair would otherwise load, so a missing probe fails at runtime and not only in the trace |
+| E116f | the shape sharun builds: the bundle dir is on `--library-path` with a host copy of the same name behind it, and the loader's own message names the bundle object it refused. That alone stops the repair |
+| E116g | the same from a bundle SUBDIRECTORY that no probe of `<root>/<libdir>` can name: only the loader's own message identifies it, and it is the requirer rather than the provider that is read, because in #67 the provider is the bundle's libm and the refused object is the host driver |
+| E116h | a musl-built object opened by bare SONAME whose missing file is its own `libc.musl-*.so.1` edge: the repair runs, because a missing musl libc edge is the one dependency failure the repair can do something about. Every other missing dependency is left alone |
+| E116i | the shape #67 reported: the bare name resolves to a host object that needs no rewrite and the object below it needs a version the provider does not have. Only the child is rewritten, and the top-level object still finds it because the rewritten copy keeps its SONAME |
+| E116j | a bundle object whose own DEPENDENCY is the missing file, with a loadable host copy of the same name behind it. The loader's message names the dependency and never the bundle path, so no path comparison can identify it; the parent is left alone and the bundle's refusal stands |
+| E116k | a relative path carrying a slash is a path, not a bare name: the loader opens it as given, and the repair does not classify it, walk, or reload it |
 | E54 | a plugin's undeclared import cannot see its loader's closure when that closure was loaded `RTLD_LOCAL` |
 | E55 | its control: `RTLD_GLOBAL`, same two files, and it resolves |
 | E56 | preload constructors run in REVERSE of the `.preload` order |

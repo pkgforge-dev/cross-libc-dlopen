@@ -1,8 +1,9 @@
 /* ld-conf.h: every directory the DISTRO itself calls a library directory.
  *
- * WHY THIS IS A HEADER AND NOT TWO FUNCTIONS. Two things in this repository
- * need the host's own list of library directories, for two different reasons,
- * and until this file existed they would have grown two parsers:
+ * WHY THIS IS A HEADER AND NOT THREE FUNCTIONS. Three things in this
+ * repository need the host's own list of library directories, for three
+ * different reasons, and until this file existed they would have grown three
+ * parsers:
  *
  *   src/runtime-select.c  assembles --library-path for a SWITCHED runtime.
  *                         E44 is what a missing directory costs there: WSL puts
@@ -11,6 +12,11 @@
  *                         ld.wsl.conf, so under a loader with the cache
  *                         inhibited (E13b) libcuda.so.1 cannot dlopen its own
  *                         libdxcore.so and CUDA reports no device at all.
+ *   src/cross-libc-dlopen.c  names the file behind a bare SONAME that the
+ *                         loader resolved and then refused, which is the one
+ *                         answer dlopen() never returns. E116 is the case; a
+ *                         host that names no directory here is Arch and
+ *                         CachyOS, where only the conventional list answers.
  *   src/gl-fwd.c          resolves ONE soname, the one it is impersonating,
  *                         which ld.so cannot answer because the shim owns that
  *                         name. It had a hardcoded list of conventional

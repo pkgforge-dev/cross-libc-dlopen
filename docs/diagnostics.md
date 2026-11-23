@@ -54,15 +54,24 @@ When something fails, report **which rung caught it**.
    are not this project's bug.
 3. **Feature on?** `CROSS_LIBC_DLOPEN_DEBUG=1`. No ` [cross-libc-dlopen.so] >> ` lines
    means the marker, the env switch, or the `.preload` order is wrong. No
-   `cross-libc-dlopen: rewriting` line and no `needs no rewrite` line means the path was
-   not absolute and nothing was ever intercepted.
+   `cross-libc-dlopen: rewriting` line and no `needs no rewrite` line means
+   nothing was ever intercepted. A bare SONAME is passed to `ld.so` first and
+   is only repaired after `ld.so` refuses what it found, which prints
+   `cross-libc-dlopen: bare <name> -> <path>`. A bundle copy the loader's order
+   names first is left alone (`bare <name> lives in the bundle`), and so is a
+   refusal whose own message blames a file inside the bundle
+   (`the loader's refusal names the bundle`). A name `ld.so` never resolved is
+   not repaired either (`left alone: the loader did not resolve it`), because
+   assembling that search path is the launcher's job.
 4. **Which object, which symbol?** `CROSS_LIBC_DLOPEN_DRYRUN=1`, or
    `LD_DEBUG=libs,bindings`. An `undefined symbol: X` names the next candidate.
 5. **Is the library findable at all?** The failure most likely to send you the
    wrong way. A driver that `dlopen`s the rest of its own stack by BARE SONAME
-   (`libdxcore.so` from CUDA, `libd3d12.so` from Mesa's d3d12) is not
-   intercepted, so `ld.so` searches `--library-path` and nothing else, because
-   the cache is inhibited. What you see when it misses is
+   (`libdxcore.so` from CUDA, `libd3d12.so` from Mesa's d3d12) is repaired only
+   when `ld.so` resolved it and refused it, so the version mismatch case is
+   covered. A name `ld.so` never found is not: the loader searches
+   `--library-path` and nothing else, because the cache is inhibited. What you
+   see when it misses is
    `CUDA_ERROR_NO_DEVICE` or `glXCreateContext failed`, neither of which
    mentions a library. `LD_DEBUG=libs LD_DEBUG_OUTPUT=/tmp/ld` then
    `grep 'find library=' /tmp/ld.*` is what settles it in one command.

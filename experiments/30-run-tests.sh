@@ -303,7 +303,7 @@ if [ ! -f /repo/src/runtime-select.c ]; then
 else
     # ---- Tier 0: the ELF rewriting, tested against the REAL implementation --
     # tests/elf-selftest.c #includes cross-libc-dlopen.c, so T0.4/T0.5/T0.7/T0.8
-    # exercise the shipped predicates rather than a model of them.
+    # and T0.9 exercise the shipped predicates rather than a model of them.
     gcc -O2 -Wno-format-truncation /repo/tests/elf-selftest.c \
         -o elf-selftest -ldl 2>"$BERR" || bfail elf-selftest
     run E14 OK "ELF SELFTEST PASSED" ./elf-selftest /lib/$TRIPLET/libz.so.1
@@ -544,6 +544,268 @@ else
         echo "  E23    SKIPPED - it can only measure the fix where E22's trap"
         echo "         exists; without it the unstripped answer is already 0."
     fi
+
+    # E116..E116j: a BARE SONAME. ld.so is the only thing that can resolve one,
+    #      so it is asked first and the repair only runs after it resolved the
+    #      name and refused it. The arms below are the answers this path has to
+    #      give: the conventional directory, its feature-off control, the
+    #      process's own search list, /etc/ld.so.conf, a name the loader never
+    #      resolved, three shapes of a refused bundle copy, a musl object whose
+    #      libc edge is the missing file, the transitive #67 shape, and a
+    #      bundle object whose own dependency is missing.
+    #
+    #      The file needs GLIBC_2.38 and this process is glibc 2.31. Before the
+    #      repair a bare name was never rewritten, so the caller's dlopen failed
+    #      exactly as it does with no preload at all.
+    #
+    #      Where this host names the file is half the case. /etc/ld.so.conf
+    #      here names the triplet directories and /usr/local/lib, NOT /usr/lib,
+    #      which is the shape of the host that reported the Vulkan ICD gap:
+    #      Arch and CachyOS write no directory into ld.so.conf at all, so the
+    #      conventional list is what has to name the file ld.so just refused.
+    #
+    #      Every arm preloads shim_forward.so beside the preload. The rewrite
+    #      removes the version tags, and the object then needs strlcpy and
+    #      arc4random by name, which glibc 2.31 does not have. The checked-in
+    #      forward-shim.c was generated for the 2.44 floor, so in this stage it
+    #      covers none of them; shim_forward.so is the same stand-in E5 uses.
+    #      A real AppImage regenerates the shim for its own floor at build time
+    #      and the preload carries it, which is the configuration this stands in
+    #      for.
+    PRELOAD=/work/shim_forward.so:/work/cross-libc-dlopen.so
+    cat > barename.c <<'CEOF'
+#include <stdio.h>
+#include <dlfcn.h>
+static const char *argc_sym;
+static void *load(const char *n) {
+    void *h = dlopen(n, RTLD_NOW);
+    if (!h) { printf("FAILED: %s\n", dlerror()); return NULL; }
+    const char *sym = argc_sym ? argc_sym : "newlib_answer";
+    int (*f)(void) = (int (*)(void))dlsym(h, sym);
+    if (!f) { printf("FAILED: no %s: %s\n", sym, dlerror()); return NULL; }
+    printf("OK: %s=%d\n", sym, f());
+    return h;
+}
+int main(int argc, char **argv) {
+    argc_sym = argc > 2 ? argv[2] : NULL;
+    return load(argc > 1 ? argv[1] : "libcldbare.so") ? 0 : 1;
+}
+CEOF
+    gcc -O2 barename.c -o barename -ldl 2>"$BERR" || bfail barename
+    cp /work/libnew.so /usr/lib/libcldbare.so
+
+    # E116a: the control. The preloads are present and the interposer is
+    #        running; the only difference is the feature switch, and the
+    #        prediction is the version refusal the loader gives on its own.
+    #        That needle also proves the loader FOUND the file: were /usr/lib
+    #        not on its search path the message would be "cannot open shared
+    #        object file", which is the one failure this repair deliberately
+    #        leaves alone.
+    run E116a FAIL "GLIBC_2.38' not found" \
+        env CROSS_LIBC_DLOPEN=0 LD_PRELOAD="$PRELOAD" ./barename libcldbare.so
+    run E116 OK "OK: newlib_answer=99" \
+        env LD_PRELOAD="$PRELOAD" ./barename libcldbare.so
+    rm -f /usr/lib/libcldbare.so
+
+    # E116b: the process's own search list. The file is in no conventional
+    #        directory and no conf file names /work, so only the first entry of
+    #        the repair's walk can answer. The loader finds it there too, which
+    #        is what makes the pass-through fail at the version check.
+    mkdir -p /work/bare-ldpath
+    cp /work/libnew.so /work/bare-ldpath/libcldbare-ld.so
+    run E116b OK "OK: newlib_answer=99" \
+        env LD_LIBRARY_PATH=/work/bare-ldpath LD_PRELOAD="$PRELOAD" \
+            ./barename libcldbare-ld.so
+
+    # E116c: /etc/ld.so.conf. The loader finds the file through the explicit
+    #        --library-path, which is not visible to the repair, and the repair
+    #        can name it only through the conf file. That is the Debian/Ubuntu
+    #        answer, and it is the branch a host that names its libdirs in the
+    #        conf depends on.
+    mkdir -p /work/bare-conf /etc/ld.so.conf.d
+    cp /work/libnew.so /work/bare-conf/libcldbare-conf.so
+    printf '/work/bare-conf\n' > /etc/ld.so.conf.d/zz-cld-bare.conf
+    run E116c OK "OK: newlib_answer=99" \
+        env -u LD_LIBRARY_PATH LD_PRELOAD="$PRELOAD" \
+            $LD --library-path /work/bare-conf ./barename libcldbare-conf.so
+    rm -f /etc/ld.so.conf.d/zz-cld-bare.conf
+
+    # E116d: a name the loader NEVER resolved, but one the repair COULD name,
+    #        because /usr/local/lib64 is on the conventional list and on no
+    #        loader search path here. The answer must still be the loader's,
+    #        and the classification is what makes that the answer: the message
+    #        is read before the walk, so the walk never runs and there is no
+    #        opportunity to turn a miss into a load it assembled itself.
+    had_lib64=0
+    [ -d /usr/local/lib64 ] && had_lib64=1
+    if mkdir -p /usr/local/lib64 2>/dev/null; then
+        cp /work/libnew.so /usr/local/lib64/libcldbare-nf.so
+        run E116d OK "absent-name-not-repaired" sh -c '
+            out=$(env -u LD_LIBRARY_PATH CROSS_LIBC_DLOPEN_DEBUG=1 \
+                       LD_PRELOAD='$PRELOAD' ./barename libcldbare-nf.so 2>&1)
+            case "$out" in
+                *"bare libcldbare-nf.so, left alone: the loader did not resolve it"*"cannot open shared object file"*)
+                    echo absent-name-not-repaired ;;
+                *) echo "unexpected: $out" ;;
+            esac'
+        rm -f /usr/local/lib64/libcldbare-nf.so
+        [ "$had_lib64" = 1 ] || rmdir /usr/local/lib64 2>/dev/null || true
+    else
+        echo "  E116d  SKIPPED - cannot create /usr/local/lib64: not root, and"
+        echo "         a directory the loader does not search is what this needs."
+    fi
+
+    # E116e: the walk's bundle probe, on its own. The bundle has a copy of the
+    #        name and the launcher did NOT put the bundle on the loader's path,
+    #        so the loader refused the HOST copy and its message names the host.
+    #        No message comparison can tell that the bundle owns the name, and
+    #        the probe of <root>/<libdir> is the only thing that stops the
+    #        repair. The host copy is one the repair WOULD load (E116's), so a
+    #        missing probe fails at runtime here and not only in the trace: it
+    #        rewrites and loads the host copy and prints OK: newlib_answer=99.
+    #        The bundle copy only has to exist; it is never loaded.
+    # E116f: the shape sharun builds, bundle on --library-path with the host
+    #        copy behind it. Here the loader's message names the bundle object
+    #        it refused, and that alone stops the repair.
+    # E116g: the same from a bundle SUBDIRECTORY, which no probe of
+    #        <root>/<libdir> can name, so the message is again the only
+    #        evidence. Reading the REQUIRER rather than the provider is what
+    #        keeps #67 working: in that report the PROVIDER is the bundle's
+    #        libm and the refused object is the host driver.
+    gcc -shared -fPIC -o /work/bare-broken.so -x c - 2>"$BERR" <<'CEOF' || bfail bare-broken.so
+extern int cld_no_such_symbol(void);
+int newlib_answer(void) { return cld_no_such_symbol(); }
+CEOF
+
+    BUNDLE=/work/bare-bundle
+    mkdir -p "$BUNDLE/lib"
+    cp /work/bare-broken.so "$BUNDLE/lib/libcldbare-b.so"
+    cp /work/libnew.so /usr/lib/libcldbare-b.so
+    run E116e OK "bundle-copy-not-replaced" sh -c '
+        out=$(env -u LD_LIBRARY_PATH CROSS_LIBC_DLOPEN_ROOT='$BUNDLE' \
+                   CROSS_LIBC_DLOPEN_DEBUG=1 LD_PRELOAD='$PRELOAD' \
+                   '$LD' --library-path /usr/lib \
+                   ./barename libcldbare-b.so 2>&1)
+        case "$out" in
+            *"bare libcldbare-b.so lives in the bundle, left alone"*"GLIBC_2.38"*)
+                echo bundle-copy-not-replaced ;;
+            *) echo "unexpected: $out" ;;
+        esac'
+
+    BUNDLE=/work/bare-bundle-lp
+    mkdir -p "$BUNDLE/lib"
+    cp /work/bare-broken.so "$BUNDLE/lib/libcldbare-bp.so"
+    cp /work/libnew.so /usr/lib/libcldbare-bp.so
+    run E116f OK "bundle-copy-not-replaced-under-library-path" sh -c '
+        out=$(env -u LD_LIBRARY_PATH CROSS_LIBC_DLOPEN_ROOT='$BUNDLE' \
+                   CROSS_LIBC_DLOPEN_DEBUG=1 LD_PRELOAD='$PRELOAD' \
+                   '$LD' --library-path '$BUNDLE'/lib:/usr/lib \
+                   ./barename libcldbare-bp.so 2>&1)
+        case "$out" in
+            *"bare libcldbare-bp.so: the loader'"'"'s refusal names the bundle, left alone"*"undefined symbol: cld_no_such_symbol"*)
+                echo bundle-copy-not-replaced-under-library-path ;;
+            *) echo "unexpected: $out" ;;
+        esac'
+
+    BUNDLE=/work/bare-bundle-sub
+    mkdir -p "$BUNDLE/usr/lib"
+    cp /work/bare-broken.so "$BUNDLE/usr/lib/libcldbare-bs.so"
+    cp /work/libnew.so /usr/lib/libcldbare-bs.so
+    run E116g OK "bundle-subdir-not-replaced" sh -c '
+        out=$(env -u LD_LIBRARY_PATH CROSS_LIBC_DLOPEN_ROOT='$BUNDLE' \
+                   CROSS_LIBC_DLOPEN_DEBUG=1 LD_PRELOAD='$PRELOAD' \
+                   '$LD' --library-path '$BUNDLE'/usr/lib:/usr/lib \
+                   ./barename libcldbare-bs.so 2>&1)
+        case "$out" in
+            *"the loader'"'"'s refusal names the bundle, left alone"*"undefined symbol: cld_no_such_symbol"*)
+                echo bundle-subdir-not-replaced ;;
+            *) echo "unexpected: $out" ;;
+        esac'
+
+    # E116h: a MUSL-built object opened by bare SONAME. The loader finds it and
+    #        then fails on its libc.musl-*.so.1 edge, which is the edge the
+    #        repair drops. Reading that message as "the name was never resolved"
+    #        would refuse the only repair that works, so the test is on the name
+    #        dlopen() was given rather than on the phrase alone. atexit resolves
+    #        from this preload's musl bridge, the same definition E2 stands in
+    #        for with its own shim.
+    cp /work/libprobe.so /usr/lib/libcldbare-musl.so
+    run E116h OK "OK: probe_answer=42" \
+        env LD_PRELOAD="$PRELOAD" ./barename libcldbare-musl.so probe_answer
+    rm -f /usr/lib/libcldbare-musl.so
+
+    # E116i: the shape #67 actually reported. The bare name resolves to a host
+    #        object that needs nothing rewritten; the object BELOW it needs a
+    #        version the provider on the search path does not have. Only the
+    #        child is rewritten, and the top-level object still finds it because
+    #        the rewritten copy keeps its SONAME.
+    TRANS=/work/bare-trans
+    mkdir -p "$TRANS"
+    printf 'V1 { global: trans_foo; local: *; };\n' > "$TRANS/v1.map"
+    printf 'V2 { global: trans_foo; local: *; };\n' > "$TRANS/v2.map"
+    printf 'int trans_foo(void) { return 42; }\n' > "$TRANS/prov.c"
+    printf 'extern int trans_foo(void);\nint trans_drv_answer(void) { return trans_foo(); }\n' > "$TRANS/drv.c"
+    printf 'extern int trans_drv_answer(void);\nint trans_answer(void) { return trans_drv_answer(); }\n' > "$TRANS/top.c"
+    gcc -shared -fPIC -Wl,--version-script="$TRANS/v1.map" -Wl,-soname,libtrans-prov.so \
+        -o "$TRANS/libtrans-prov.so" "$TRANS/prov.c" 2>"$BERR" || bfail libtrans-prov.so
+    gcc -shared -fPIC -Wl,-soname,libtrans-drv.so -o "$TRANS/libtrans-drv.so" \
+        "$TRANS/drv.c" -L"$TRANS" -l:libtrans-prov.so 2>"$BERR" || bfail libtrans-drv.so
+    gcc -shared -fPIC -Wl,--version-script="$TRANS/v2.map" -Wl,-soname,libtrans-prov.so \
+        -o "$TRANS/libtrans-prov.so" "$TRANS/prov.c" 2>"$BERR" || bfail libtrans-prov-v2
+    gcc -shared -fPIC -o /usr/lib/libcldbare-trans.so "$TRANS/top.c" \
+        -L"$TRANS" -l:libtrans-drv.so 2>"$BERR" || bfail libcldbare-trans.so
+    run E116i OK "OK: trans_answer=42" \
+        env LD_LIBRARY_PATH="$TRANS" LD_PRELOAD="$PRELOAD" \
+            ./barename libcldbare-trans.so trans_answer
+    rm -f /usr/lib/libcldbare-trans.so
+
+    # E116j: a bundle object whose own DEPENDENCY is the missing file, with a
+    #        loadable host copy behind it. The loader's message names the
+    #        dependency and never the bundle path, so no path comparison can
+    #        tell that the object was the bundle's; the parent is left alone
+    #        instead, and the bundle's refusal stands. The exception is a musl
+    #        libc edge, which E116h pins.
+    BUNDLE=/work/bare-bundle-md
+    mkdir -p "$BUNDLE/usr/lib"
+    printf 'int cld_md_stub(void) { return 0; }\n' > /work/cld-md-stub.c
+    printf 'extern int cld_md_stub(void);\nint newlib_answer(void) { return cld_md_stub() + 42; }\n' > /work/cld-md.c
+    gcc -shared -fPIC -Wl,-soname,libcldbare-missing999.so \
+        -o /work/libcldbare-missing999.so /work/cld-md-stub.c 2>"$BERR" || bfail libcldbare-missing999.so
+    gcc -shared -fPIC -Wl,-soname,libcldbare-md.so -o "$BUNDLE/usr/lib/libcldbare-md.so" \
+        /work/cld-md.c -L/work -l:libcldbare-missing999.so 2>"$BERR" || bfail libcldbare-md.so
+    rm -f /work/libcldbare-missing999.so
+    cp /work/libnew.so /usr/lib/libcldbare-md.so
+    run E116j OK "missing-dependency-not-replaced" sh -c '
+        out=$(env -u LD_LIBRARY_PATH CROSS_LIBC_DLOPEN_ROOT='$BUNDLE' \
+                   CROSS_LIBC_DLOPEN_DEBUG=1 LD_PRELOAD='$PRELOAD' \
+                   '$LD' --library-path '$BUNDLE'/usr/lib:/usr/lib \
+                   ./barename libcldbare-md.so 2>&1)
+        case "$out" in
+            *"left alone: the loader did not resolve it"*"libcldbare-missing999.so: cannot open shared object file"*)
+                echo missing-dependency-not-replaced ;;
+            *) echo "unexpected: $out" ;;
+        esac'
+
+    # E116k: a RELATIVE path is a path too. `./name` carries a slash, so ld.so
+    #        opens it as given rather than searching, and the repair has nothing
+    #        to name. Before the gate tested for any slash this was classified as
+    #        a bare name it never resolved: a trace line that read as the repair
+    #        speaking about a name, and a second failed load to put the message
+    #        back. The absence of that line is the assertion, the way E85 does it.
+    run E116k OK "relative-path-not-a-bare-name" sh -c '
+        out=$(env CROSS_LIBC_DLOPEN_DEBUG=1 LD_PRELOAD='$PRELOAD' \
+                   ./barename ./cld-relative-absent.so 2>&1)
+        case "$out" in
+            *"bare ./cld-relative-absent.so"*) echo "treated-as-a-bare-name: $out" ;;
+            *"cannot open shared object file"*) echo relative-path-not-a-bare-name ;;
+            *) echo "unexpected: $out" ;;
+        esac'
+
+    rm -rf /work/bare-bundle /work/bare-bundle-lp /work/bare-bundle-sub "$BUNDLE" "$TRANS" \
+           /work/bare-broken.so /work/bare-ldpath /work/bare-conf \
+           /work/cld-md.c /work/cld-md-stub.c \
+           /usr/lib/libcldbare-b.so /usr/lib/libcldbare-bp.so /usr/lib/libcldbare-bs.so \
+           /usr/lib/libcldbare-md.so
 
     # E102: the preload exports no name this host's own libc family also
     #      exports, beyond the audited interpositions. This is the case the

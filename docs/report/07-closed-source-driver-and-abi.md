@@ -171,8 +171,12 @@ whatever assembles it decides what exists.
 
 **Sighting one, compute (E44).** `libcuda.so.1` opens by absolute path and loads
 fine. Inside `cuInit` it `dlopen`s `libdxcore.so` by **bare soname**, which
-`cross-libc-dlopen` deliberately never intercepts, so it reaches `ld.so` and is not
-found. The error the user sees is not "cannot open shared object file":
+`cross-libc-dlopen` leaves to `ld.so`, and this host's loader cannot see the
+directory, so it is not found. A bare name the loader DID find and then refused
+over symbol versions is repaired after the refusal (E116); a name it never
+resolved is the launcher's library path to assemble, which is the boundary this
+section is about. The error the user sees is not "cannot open shared object
+file":
 
 ```
 FAILED: cuInit -> 100          # CUDA_ERROR_NO_DEVICE

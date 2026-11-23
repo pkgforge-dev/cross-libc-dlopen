@@ -1,7 +1,8 @@
 /* Tier-0 tests for the ELF rewriting in src/cross-libc-dlopen.c.
  *
  * Covers T0.4 (round-trip), T0.5 (idempotence), T0.7 (tail-merge
- * guard) and T0.8 (malformed-input fuzz).
+ * guard), T0.8 (malformed-input fuzz) and T0.9 (which candidates the loader
+ * itself skips, which is the arch rule the bare-name walk follows).
  *
  * It #includes the implementation rather than reimplementing the predicates,
  * because a Tier-0 test that models the C instead of running it can pass while
@@ -148,6 +149,96 @@ static void test_tail_merge_guard(const char *path) {
 	cld_free_elf(&e);
 }
 
+/* ------------------------------------------------- T0.9 the candidate walk */
+/*
+ * cld_soname_loader_skips() must answer with the loader's own rule: another
+ * class, byte order or machine is skipped, and everything else stops the walk.
+ * Measured first with a valid copy behind each decoy on LD_LIBRARY_PATH: the
+ * loader loads the copy behind the first three, and stops on a directory or a
+ * file too short for a header. This pins the predicate. An e_machine-less check
+ * is what handed a multiarch host's foreign copy to the repair, which is the
+ * arch bug this covers.
+ */
+static char *temp_with(const void *buf, size_t len) {
+	char tmpl[] = "/tmp/cld-selftest-XXXXXX";
+	int fd = mkstemp(tmpl);
+	if (fd < 0)
+		return NULL;
+	ssize_t w = write(fd, buf, len);
+	close(fd);
+	if (w != (ssize_t)len) {
+		unlink(tmpl);
+		return NULL;
+	}
+	return strdup(tmpl);
+}
+
+static void test_candidate_walk(const char *path) {
+	ElfW(Ehdr) eh;
+	FILE *f = fopen(path, "rb");
+	if (!f) { printf("  SKIP T0.9 - cannot read %s\n", path); return; }
+	size_t n = fread(&eh, 1, sizeof eh, f);
+	fclose(f);
+	if (n != sizeof eh || memcmp(eh.e_ident, ELFMAG, SELFMAG) != 0) {
+		printf("  SKIP T0.9 - %s carries no usable ELF header\n", path);
+		return;
+	}
+
+	ElfW(Ehdr) v = eh;
+	char *p = temp_with(&v, sizeof v);
+	CK("T0.9 the host's own header is not skipped",
+	   p && cld_soname_loader_skips(p) == 0);
+	free(p);
+
+	v = eh;
+	v.e_ident[EI_CLASS] = (sizeof(void *) == 8) ? ELFCLASS32 : ELFCLASS64;
+	p = temp_with(&v, sizeof v);
+	CK("T0.9 another ELF class is skipped",
+	   p && cld_soname_loader_skips(p) == 1);
+	free(p);
+
+	v = eh;
+	v.e_ident[EI_DATA] = (CLD_HOST_ELFDATA == ELFDATA2LSB) ? ELFDATA2MSB : ELFDATA2LSB;
+	p = temp_with(&v, sizeof v);
+	CK("T0.9 another byte order is skipped",
+	   p && cld_soname_loader_skips(p) == 1);
+	free(p);
+
+	v = eh;
+	v.e_machine = (CLD_HOST_MACHINE == EM_X86_64) ? EM_AARCH64 : EM_X86_64;
+	p = temp_with(&v, sizeof v);
+	CK("T0.9 another machine is skipped, which multiarch needs",
+	   p && cld_soname_loader_skips(p) == 1);
+	free(p);
+
+	p = temp_with(&v, 8);
+	CK("T0.9 a file too short for a header is NOT skipped",
+	   p && cld_soname_loader_skips(p) == 0);
+	free(p);
+
+	p = temp_with("not an elf\n", 11);
+	CK("T0.9 a non-ELF file is NOT skipped",
+	   p && cld_soname_loader_skips(p) == 0);
+	free(p);
+
+	char dir[] = "/tmp/cld-selftest-XXXXXX";
+	if (mkdtemp(dir)) {
+		CK("T0.9 a directory is NOT skipped", cld_soname_loader_skips(dir) == 0);
+		rmdir(dir);
+	} else {
+		printf("  SKIP T0.9 the directory arm - cannot make a temp dir\n");
+	}
+
+	CK("T0.9 every libc runtime prefix is core",
+	   cld_is_core_library("/x/libresolv.so.2") &&
+	   cld_is_core_library("/x/libutil.so.1") &&
+	   cld_is_core_library("/x/libanl.so.1") &&
+	   cld_is_core_library("/x/libnss_dns.so.2") &&
+	   cld_is_core_library("/x/libmvec.so.1"));
+	CK("T0.9 an ordinary host library is not core",
+	   !cld_is_core_library("/x/libvulkan_radeon.so"));
+}
+
 /* ------------------------------------------------------------------- T0.8 */
 /*
  * Truncated and bit-flipped ELFs must be refused cleanly: no crash, no read
@@ -241,6 +332,7 @@ int main(int argc, char **argv) {
 	test_strip(path);
 	test_tail_merge_guard(path);
 	test_fuzz(path);
+	test_candidate_walk(path);
 
 	printf("\n%s (%d failures)\n",
 	       fails ? "ELF SELFTEST FAILED" : "ELF SELFTEST PASSED", fails);
