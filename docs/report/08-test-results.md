@@ -24,23 +24,20 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **87/87 predictions held on x86-64** and
-**83/83 on aarch64**. The x86-64 total was measured at the change that added
+`sh scripts/run-evidence.sh` reports **88/88 predictions held on x86-64** and
+**84/84 on aarch64**. The x86-64 total was measured at the change that added
 E104, E105 and E106, the cases for the NixOS host directories, E111 through
 E114b, the set that keeps `libcrypt.so.1` on the bundle-only list and off the
 host one, E115, E115a and E115b, the set that keeps the forwarders from
-allocating on their first call, and E116 through E116i, the bare-SONAME case,
-its control, the three branches its lookup walks, the four shapes in which a
+allocating on their first call, and E116 through E116j, the bare-SONAME case,
+its control, the three branches its lookup walks, the five shapes in which a
 bundle copy must win, the musl object whose missing file is its own libc edge,
-and the transitive shape #67 reported. The aarch64 runner runs the same table,
-so its total is the x86-64 total minus the four skips below.
+the transitive shape #67 reported, and the missing dependency only the musl
+edge may unlock. The aarch64 runner runs the same table, so its total is the
+x86-64 total minus the four skips below.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
 
-⚠ **E116j is not in those totals.** It pins the one dependency failure the
-repair must leave alone even when a host copy of the same name would load: the
-object was found and its own dependency was not. It skips nowhere, so the next
-run should report 88/88 and 84/84.
 ⚠ **The three NixOS cases SKIP by name where `/run` is not writable.** E104,
 E105 and E106 each create `/run/opengl-driver/lib`, which needs root, and each
 reports the missing capability rather than being silently omitted. That is why
