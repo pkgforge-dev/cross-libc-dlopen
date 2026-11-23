@@ -25,23 +25,21 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **88/88 predictions held on x86-64** and
-**84/84 on aarch64**. The x86-64 total was measured at the change that added
+`sh scripts/run-evidence.sh` reports **89/89 predictions held on x86-64** and
+**85/85 on aarch64**. The x86-64 total was measured at the change that added
 E104, E105 and E106, the cases for the NixOS host directories, E111 through
 E114b, the set that keeps `libcrypt.so.1` on the bundle-only list and off the
 host one, E115, E115a and E115b, the set that keeps the forwarders from
-allocating on their first call, and E116 through E116j, the bare-SONAME case,
+allocating on their first call, and E116 through E116k, the bare-SONAME case,
 its control, the three branches its lookup walks, the five shapes in which a
 bundle copy must win, the musl object whose missing file is its own libc edge,
-the transitive shape #67 reported, and the missing dependency only the musl
-edge may unlock. The aarch64 runner runs the same table, so its total is the
-x86-64 total minus the four skips below.
+the transitive shape #67 reported, the missing dependency only the musl edge
+may unlock, and the relative path that is not a bare name. The aarch64 runner
+runs the same table, so its total is the x86-64 total minus the four skips
+below.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
 
-⚠ **E116k is not in those totals.** It pins the gate that keeps a relative path
-out of the bare-name repair; it skips nowhere, so the next run should report
-89/89 and 85/85.
 ⚠ **The three NixOS cases SKIP by name where `/run` is not writable.** E104,
 E105 and E106 each create `/run/opengl-driver/lib`, which needs root, and each
 reports the missing capability rather than being silently omitted. That is why
