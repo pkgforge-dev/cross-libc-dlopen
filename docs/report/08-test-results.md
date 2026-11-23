@@ -24,21 +24,16 @@ wrong.
 
 ### Tier 1, the evidence table
 
-`sh scripts/run-evidence.sh` reports **77/77 predictions held on x86-64** and
-**73/73 on aarch64**. The x86-64 total was measured at the change that added
+`sh scripts/run-evidence.sh` reports **79/79 predictions held on x86-64** and
+**75/75 on aarch64**. The x86-64 total was measured at the change that added
 E104, E105 and E106, the cases for the NixOS host directories, E111 through
 E114b, the set that keeps `libcrypt.so.1` on the bundle-only list and off the
-host one, and E115, E115a and E115b, the set that keeps the forwarders from
-allocating on their first call. The aarch64 runner runs the same table, so its
-total is the x86-64 total minus the four skips below.
+host one, E115, E115a and E115b, the set that keeps the forwarders from
+allocating on their first call, and E116 and E116a, the bare-SONAME case and
+its control. The aarch64 runner runs the same table, so its total is the
+x86-64 total minus the four skips below.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
-
-⚠ **E116 and E116a are not in those totals.** They are the bare-SONAME case and
-its control, added after the run that produced 77/77, and the machine that
-wrote them had no usable container engine. They skip nowhere, so the next run
-should report 79/79 and 75/75; the measured totals stay 77/77 and 73/73 until
-one has.
 
 ⚠ **The three NixOS cases SKIP by name where `/run` is not writable.** E104,
 E105 and E106 each create `/run/opengl-driver/lib`, which needs root, and each
