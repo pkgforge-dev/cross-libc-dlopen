@@ -2066,20 +2066,25 @@ static void *cld_load(dlopen_func_t dlopen_orig, const char *canon, int flags, i
 //
 // ⛔ THIS IS NOT A SECOND LIBRARY SEARCH, and it must not grow into one. It is
 // consulted only after ld.so has searched for this name and failed, and its
-// answer is used only when ld.so found the file and refused it, so a load ld.so
-// can satisfy by itself never reaches it. It opens nothing ld.so did not just
-// try to open, and a name ld.so never found is left alone: assembling that
+// answer is used only when ld.so resolved the name and refused it, so a load
+// ld.so can satisfy by itself never reaches it. It opens nothing ld.so did not
+// just try to open, and a name ld.so never found is left alone: assembling that
 // search path belongs to whatever launches the process. The `required by` half
 // of the same problem is solved the same way in cld_load().
 //
-// The order is the loader's own: the process's search list, then what
-// /etc/ld.so.conf names, then cld_host_libdirs. The last list is load-bearing
-// rather than a fallback: Arch and CachyOS name no directory in ld.so.conf at
-// all, so on the host that reported the Vulkan ICD gap /usr/lib is reachable
-// only through the loader's built-in defaults.
+// It is a RECONSTRUCTION of the loader's answer, not the answer itself: nothing
+// here can read which file ld.so actually opened. The order is the loader's
+// (the process's search list, then what /etc/ld.so.conf names, then
+// cld_host_libdirs) and the first directory that holds the name decides, which
+// is what keeps the bundle rule: a bundle copy found first stops the walk, so a
+// refused bundle library is never replaced by a host one of the same name. The
+// last list is load-bearing rather than a fallback: Arch and CachyOS name no
+// directory in ld.so.conf at all, so on the host that reported the Vulkan ICD
+// gap /usr/lib is reachable only through the loader's built-in defaults.
 struct cld_soname {
 	const char *name;
 	char path[PATH_MAX];
+	int in_bundle;
 };
 
 // A candidate of the other ELF class cannot load, and the walk must reach the
@@ -2108,29 +2113,42 @@ static int cld_soname_try(const char *dir, void *ctx) {
 	if (!canon)
 		return 0;
 	if (!is_host_library_path(canon)) {
-		// a copy inside the bundle, which the pass-through already refused
+		// The first directory in the loader's order holds a bundle copy. The
+		// loader wins over the host by rule, so a refusal of that copy is
+		// the answer: stop here, and do not walk on to a host file with the
+		// same name. Returning 0 would hand the caller a different library
+		// than the one it asked for.
+		c->in_bundle = 1;
 		free(canon);
-		return 0;
+		return 1;
 	}
 	snprintf(c->path, sizeof c->path, "%s", canon);
 	free(canon);
 	return 1;
 }
 
-static char *cld_host_soname(const char *name) {
+// NULL with *in_bundle set means the loader's own order names a bundle copy
+// first, and the answer is whatever the loader said about it.
+static char *cld_host_soname(const char *name, int *in_bundle) {
+	*in_bundle = 0;
 	if (!name || !*name || strchr(name, '/'))
 		return NULL;
 
-	struct cld_soname c = { name, "" };
+	struct cld_soname c = { name, "", 0 };
 
-	if (cld_each_library_path_dir(cld_soname_try, &c))
-		return strdup(c.path);
-	if (ldconf_each_dir("/etc/ld.so.conf", cld_soname_try, NULL, &c))
-		return strdup(c.path);
-	for (size_t i = 0; cld_host_libdirs[i]; i++)
-		if (cld_soname_try(cld_host_libdirs[i], &c))
-			return strdup(c.path);
-	return NULL;
+	if (!cld_each_library_path_dir(cld_soname_try, &c) &&
+	    !ldconf_each_dir("/etc/ld.so.conf", cld_soname_try, NULL, &c)) {
+		for (size_t i = 0; cld_host_libdirs[i]; i++)
+			if (cld_soname_try(cld_host_libdirs[i], &c))
+				break;
+	}
+	if (c.in_bundle) {
+		*in_bundle = 1;
+		return NULL;
+	}
+	if (!c.path[0])
+		return NULL;
+	return strdup(c.path);
 }
 
 // Attempt a cross-libc load of a host library, *handled tells the caller
@@ -2230,7 +2248,19 @@ VISIBLE void *dlopen(const char *filename, int flags) {
 	if (*filename == '/' || (flags & RTLD_NOLOAD) || !cross_libc_dlopen_mode())
 		return NULL;
 
-	char *resolved = cld_host_soname(filename);
+	// The walk comes before the message is read. Reading dlerror() consumes
+	// it, and a name the walk does not find anywhere must return with the
+	// loader's message untouched and without a second failed load, which is
+	// the shape of the common miss: an application probing a library that is
+	// not installed.
+	int in_bundle = 0;
+	char *resolved = cld_host_soname(filename, &in_bundle);
+	if (in_bundle) {
+		// the loader's own order names a bundle copy first; its refusal is
+		// the answer, and the message is still pending for the caller
+		DEBUG_PRINT("cross-libc-dlopen: bare %s lives in the bundle, left alone\n", filename);
+		return NULL;
+	}
 	if (!resolved)
 		// the pending dlerror() is still the loader's own, untouched
 		return NULL;
@@ -2239,11 +2269,19 @@ VISIBLE void *dlopen(const char *filename, int flags) {
 	// it never found is the launcher's library path to assemble, which is a
 	// different job (docs/conventions/code.md says whose). The two are told
 	// apart by the loader's own message; "cannot open shared object file" is
-	// the phrase its dlerror() has carried for every glibc this project
-	// supports, and E13b already matches it. Reading dlerror() consumes it,
-	// so both arms below re-run the plain load to leave the caller the reason.
+	// the phrase a glibc loader's dlerror() carries, and E13b already matches
+	// it. A found object whose DEPENDENCY is missing carries the same phrase
+	// and is left alone as well: the dependency is on the launcher's path, and
+	// rewriting the parent cannot supply it. This object is glibc-built, so
+	// dlopen_orig() is glibc's even when the HOST is musl, which is why the
+	// phrase is the one E13b already matches on every host class. Reading
+	// dlerror() consumes it, so every arm below re-runs the plain load to
+	// leave the caller the reason.
 	const char *err = dlerror();
 	int found_but_refused = err && !strstr(err, "cannot open shared object file");
+	if (!found_but_refused)
+		DEBUG_PRINT("cross-libc-dlopen: bare %s -> %s, left alone: the loader did not resolve it\n",
+		            filename, resolved);
 	if (found_but_refused) {
 		DEBUG_PRINT("cross-libc-dlopen: bare %s -> %s\n", filename, resolved);
 		handled = 0;

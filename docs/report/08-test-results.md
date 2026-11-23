@@ -35,6 +35,12 @@ x86-64 total minus the four skips below.
 `experiments/run.ps1` drives the same three stage scripts for a machine with
 PowerShell and no POSIX shell.
 
+⚠ **E116b through E116e are not in those totals.** They were added after the run
+that produced 79/79 for the other branches the repair walks, the boundary at a
+name the loader never resolved, and the bundle copy it must not replace. E116d
+skips only where `/usr/local/lib64` cannot be created; the rest skip nowhere, so
+the next run should report 83/83 and 79/79.
+
 ⚠ **The three NixOS cases SKIP by name where `/run` is not writable.** E104,
 E105 and E106 each create `/run/opengl-driver/lib`, which needs root, and each
 reports the missing capability rather than being silently omitted. That is why
@@ -75,8 +81,12 @@ objects small enough that the mechanism is the only thing being measured:
 | E29 | and the caller still gets ld.so's message, not one of the report's own `dlsym` misses |
 | E102 | the built preload exports no name this host's own libc family also exports, beyond the audited interpositions: the case that caught `__stack_chk_guard` being defined where the loader owns it (3.7), and on the aarch64 runner the case that failed before that fix |
 | E115 / E115a / E115b | an allocator that calls `sched_getaffinity()` during its own init gets through the preload without re-entering itself (FEX's jemalloc deadlocked here, 3.8); the control without the preload; and the part the project cannot remove, where glibc 2.33 and older allocate in `dlsym()` itself |
-| E116 | a bare SONAME that `ld.so` resolved and then refused over symbol versions is rewritten and loads, where before the repair the caller's `dlopen` failed exactly as it does with no preload at all. The file sits in `/usr/lib`, which this host's `/etc/ld.so.conf` does not name, so the conventional list is what has to name it. Both arms also preload the hand-written forward shim, because the rewrite turns the version requirements into plain name lookups and this stage's checked-in shim was generated for the 2.44 floor |
+| E116 | a bare SONAME that `ld.so` resolved and then refused over symbol versions is rewritten and loads, where before the repair the caller's `dlopen` failed exactly as it does with no preload at all. The file sits in `/usr/lib`, which this host's `/etc/ld.so.conf` does not name, so the conventional list is what has to name it. Every E116 arm also preloads the hand-written forward shim, because the rewrite turns the version requirements into plain name lookups and this stage's checked-in shim was generated for the 2.44 floor |
 | E116a | its control: the same bare name with the feature off. The needle is the `GLIBC_2.38` refusal, which also proves `ld.so` found the file rather than missing it, because the two failures carry different messages and only the found one is repaired |
+| E116b | the process's own search list answers, with the file in a directory no conventional list and no conf file names |
+| E116c | `/etc/ld.so.conf` answers. The loader finds the file through an explicit `--library-path`, which the repair cannot see, so the conf file is the only thing left that can name it |
+| E116d | a name the loader never resolved, in a directory only the conventional list names: the loader's `cannot open shared object file` comes back unchanged, and the debug line proves the repair found the file and refused to turn itself into a search path |
+| E116e | a bundle copy the loader found first and refused, with a loadable host copy of the same name behind it: the walk stops at the bundle, so the caller gets the loader's refusal instead of a different library. Skipping the bundle hit is the defect this case plants |
 | E54 | a plugin's undeclared import cannot see its loader's closure when that closure was loaded `RTLD_LOCAL` |
 | E55 | its control: `RTLD_GLOBAL`, same two files, and it resolves |
 | E56 | preload constructors run in REVERSE of the `.preload` order |

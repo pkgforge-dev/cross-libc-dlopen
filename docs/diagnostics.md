@@ -57,9 +57,10 @@ When something fails, report **which rung caught it**.
    `cross-libc-dlopen: rewriting` line and no `needs no rewrite` line means
    nothing was ever intercepted. A bare SONAME is passed to `ld.so` first and
    is only repaired after `ld.so` refuses what it found, which prints
-   `cross-libc-dlopen: bare <name> -> <path>`; a name `ld.so` never found is
-   not repaired at all, because assembling that search path is the launcher's
-   job.
+   `cross-libc-dlopen: bare <name> -> <path>`. A bundle copy the loader's order
+   names first is left alone (`bare <name> lives in the bundle`), and a name
+   `ld.so` never resolved is not repaired either (`left alone: the loader did
+   not resolve it`), because assembling that search path is the launcher's job.
 4. **Which object, which symbol?** `CROSS_LIBC_DLOPEN_DRYRUN=1`, or
    `LD_DEBUG=libs,bindings`. An `undefined symbol: X` names the next candidate.
 5. **Is the library findable at all?** The failure most likely to send you the
