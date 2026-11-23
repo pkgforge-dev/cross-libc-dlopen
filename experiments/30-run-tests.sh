@@ -630,11 +630,12 @@ CEOF
             $LD --library-path /work/bare-conf ./barename libcldbare-conf.so
     rm -f /etc/ld.so.conf.d/zz-cld-bare.conf
 
-    # E116d: a name the loader NEVER resolved, and the repair can still name.
-    #        /usr/local/lib64 is on the conventional list and on no loader
-    #        search path here, so the loader says "cannot open" and the repair
-    #        must leave that answer alone. Loading it would be the repair
-    #        assembling a search path, which is the launcher's job.
+    # E116d: a name the loader NEVER resolved, but one the repair COULD name,
+    #        because /usr/local/lib64 is on the conventional list and on no
+    #        loader search path here. The answer must still be the loader's,
+    #        and the classification is what makes that the answer: the message
+    #        is read before the walk, so the walk never runs and there is no
+    #        opportunity to turn a miss into a load it assembled itself.
     had_lib64=0
     [ -d /usr/local/lib64 ] && had_lib64=1
     if mkdir -p /usr/local/lib64 2>/dev/null; then
@@ -643,7 +644,7 @@ CEOF
             out=$(env -u LD_LIBRARY_PATH CROSS_LIBC_DLOPEN_DEBUG=1 \
                        LD_PRELOAD='$PRELOAD' ./barename libcldbare-nf.so 2>&1)
             case "$out" in
-                *"bare libcldbare-nf.so -> /usr/local/lib64/libcldbare-nf.so, left alone"*"cannot open shared object file"*)
+                *"bare libcldbare-nf.so, left alone: the loader did not resolve it"*"cannot open shared object file"*)
                     echo absent-name-not-repaired ;;
                 *) echo "unexpected: $out" ;;
             esac'
@@ -654,20 +655,20 @@ CEOF
         echo "         a directory the loader does not search is what this needs."
     fi
 
-    # E116e: a bundle copy the loader found FIRST and refused, with the bundle
-    #        dir on LD_LIBRARY_PATH. The host has a copy of the same name that
-    #        WOULD load, and the bundle rule says the caller gets the bundle's
-    #        refusal rather than the host library. The walk must stop where it
-    #        meets the bundle copy.
-    # E116f: the same, in the shape sharun builds: the bundle dir is on
-    #        --library-path and LD_LIBRARY_PATH is unset, so the walk cannot see
-    #        it and only the probe of <root>/<libdir> can stop the repair.
-    # E116g: the same again from a bundle SUBDIRECTORY, which no probe of
-    #        <root>/<libdir> can name. Here the loader's own message is the only
-    #        evidence that the refused object was the bundle's, and reading the
-    #        requirer rather than the provider is what keeps #67 working: in
-    #        that report the PROVIDER is the bundle's libm and the refused
-    #        object is the host driver.
+    # E116e: the walk's bundle probe, on its own. The bundle has a copy of the
+    #        name and the launcher did NOT put the bundle on the loader's path,
+    #        so the loader refused the HOST copy and its message names the host.
+    #        No message comparison can tell that the bundle owns the name, and
+    #        the probe of <root>/<libdir> is the only thing that stops the
+    #        repair. The answer is the loader's refusal: bundled wins.
+    # E116f: the shape sharun builds, bundle on --library-path with the host
+    #        copy behind it. Here the loader's message names the bundle object
+    #        it refused, and that alone stops the repair.
+    # E116g: the same from a bundle SUBDIRECTORY, which no probe of
+    #        <root>/<libdir> can name, so the message is again the only
+    #        evidence. Reading the REQUIRER rather than the provider is what
+    #        keeps #67 working: in that report the PROVIDER is the bundle's
+    #        libm and the refused object is the host driver.
     gcc -shared -fPIC -o /work/bare-broken.so -x c - 2>"$BERR" <<'CEOF' || bfail bare-broken.so
 extern int cld_no_such_symbol(void);
 int newlib_answer(void) { return cld_no_such_symbol(); }
@@ -675,12 +676,12 @@ CEOF
 
     BUNDLE=/work/bare-bundle
     mkdir -p "$BUNDLE/lib"
-    cp /work/bare-broken.so "$BUNDLE/lib/libcldbare-b.so"
-    cp /work/libnew.so /usr/lib/libcldbare-b.so
+    cp /work/libnew.so "$BUNDLE/lib/libcldbare-b.so"
+    cp /work/bare-broken.so /usr/lib/libcldbare-b.so
     run E116e OK "bundle-copy-not-replaced" sh -c '
-        out=$(env CROSS_LIBC_DLOPEN_ROOT='$BUNDLE' \
-                   LD_LIBRARY_PATH='$BUNDLE'/lib:/usr/lib \
+        out=$(env -u LD_LIBRARY_PATH CROSS_LIBC_DLOPEN_ROOT='$BUNDLE' \
                    CROSS_LIBC_DLOPEN_DEBUG=1 LD_PRELOAD='$PRELOAD' \
+                   '$LD' --library-path /usr/lib \
                    ./barename libcldbare-b.so 2>&1)
         case "$out" in
             *"bare libcldbare-b.so lives in the bundle, left alone"*"undefined symbol: cld_no_such_symbol"*)
@@ -698,7 +699,7 @@ CEOF
                    '$LD' --library-path '$BUNDLE'/lib:/usr/lib \
                    ./barename libcldbare-bp.so 2>&1)
         case "$out" in
-            *"bare libcldbare-bp.so lives in the bundle, left alone"*"undefined symbol: cld_no_such_symbol"*)
+            *"bare libcldbare-bp.so: the loader'"'"'s refusal names the bundle, left alone"*"undefined symbol: cld_no_such_symbol"*)
                 echo bundle-copy-not-replaced-under-library-path ;;
             *) echo "unexpected: $out" ;;
         esac'
