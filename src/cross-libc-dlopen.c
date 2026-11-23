@@ -2353,9 +2353,12 @@ VISIBLE void *dlopen(const char *filename, int flags) {
 	// search that failed and once from the rewritten copy, which is the
 	// price of asking the loader rather than guessing its answer.
 	//
-	// NOLOAD never becomes a load, and the feature's off switch is an off
-	// switch: cld_attempt() bails for both, so this does too.
-	if (*filename == '/' || (flags & RTLD_NOLOAD) || !cross_libc_dlopen_mode())
+	// NOLOAD never becomes a load, the feature's off switch is an off switch,
+	// and a libc runtime component is never ours to rewrite. cld_attempt()
+	// bails for all three, so this does too, and a core name skips the walk
+	// instead of being named only for cld_load() to refuse it.
+	if (*filename == '/' || (flags & RTLD_NOLOAD) || !cross_libc_dlopen_mode() ||
+	    cld_is_core_library(filename))
 		return NULL;
 
 	// The walk comes before the message is read. Reading dlerror() consumes
@@ -2384,18 +2387,25 @@ VISIBLE void *dlopen(const char *filename, int flags) {
 	//   the refusal blames the bundle a bundle object the loader refused, and
 	//                                 the bundle wins over a host copy by rule
 	//
-	// The first is told apart by the loader's own message naming the file it
-	// could not open, and the test is on THIS name: a musl object that
-	// resolved and then missed its libc.musl-*.so.1 edge must still be
-	// repaired, because dropping that edge is what the repair is for. A found
-	// object whose DEPENDENCY is missing names the dependency and is left
-	// alone: rewriting the parent cannot supply it. This object is
-	// glibc-built, so dlopen_orig() is glibc's even when the HOST is musl,
-	// which is why the phrase is the one E13b already matches on every host
-	// class. Reading dlerror() consumes it, so every arm below re-runs the
-	// plain load to leave the caller the reason.
+	// The first is told apart by the loader's own message. When the message
+	// names THIS name, the name was never resolved. When it names a
+	// dependency, the parent was found and the dependency was not, and that is
+	// left alone too: rewriting the parent cannot supply a file that is on the
+	// launcher's path, and repairing it could hand the caller a host copy in
+	// place of a bundle object whose own dependency is the missing one.
+	//
+	// ⛔ THE ONE EXCEPTION IS THE MUSL LIBC EDGE, and it is why this is not a
+	// phrase match any more. `libc.musl-*.so.1: cannot open ...` is the shape
+	// of an object that DID resolve, and dropping that edge is exactly what
+	// the repair does. E116h is the case. This object is glibc-built, so
+	// dlopen_orig() is glibc's even when the HOST is musl, which is why the
+	// phrase is the one E13b already matches on every host class. Reading
+	// dlerror() consumes it, so every arm below re-runs the plain load to
+	// leave the caller the reason.
 	const char *err = dlerror();
-	int missing = !err || cld_dlerror_is_missing(err, filename);
+	int target_missing = !err || cld_dlerror_is_missing(err, filename);
+	int dep_missing = err && strstr(err, ": cannot open shared object file") != NULL;
+	int missing = target_missing || (dep_missing && !cld_is_musl_libc(err));
 	int blamed = err && cld_error_blames_root(err);
 	if (blamed)
 		DEBUG_PRINT("cross-libc-dlopen: bare %s: the loader's refusal names the bundle, left alone\n",

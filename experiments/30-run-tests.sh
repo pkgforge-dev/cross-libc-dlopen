@@ -545,13 +545,14 @@ else
         echo "         exists; without it the unstripped answer is already 0."
     fi
 
-    # E116..E116i: a BARE SONAME. ld.so is the only thing that can resolve one,
+    # E116..E116j: a BARE SONAME. ld.so is the only thing that can resolve one,
     #      so it is asked first and the repair only runs after it resolved the
     #      name and refused it. The arms below are the answers this path has to
     #      give: the conventional directory, its feature-off control, the
     #      process's own search list, /etc/ld.so.conf, a name the loader never
     #      resolved, three shapes of a refused bundle copy, a musl object whose
-    #      libc edge is the missing file, and the transitive #67 shape.
+    #      libc edge is the missing file, the transitive #67 shape, and a
+    #      bundle object whose own dependency is missing.
     #
     #      The file needs GLIBC_2.38 and this process is glibc 2.31. Before the
     #      repair a bare name was never rewritten, so the caller's dlopen failed
@@ -754,9 +755,38 @@ CEOF
             ./barename libcldbare-trans.so trans_answer
     rm -f /usr/lib/libcldbare-trans.so
 
-    rm -rf /work/bare-bundle /work/bare-bundle-lp /work/bare-bundle-sub "$TRANS" \
+    # E116j: a bundle object whose own DEPENDENCY is the missing file, with a
+    #        loadable host copy behind it. The loader's message names the
+    #        dependency and never the bundle path, so no path comparison can
+    #        tell that the object was the bundle's; the parent is left alone
+    #        instead, and the bundle's refusal stands. The exception is a musl
+    #        libc edge, which E116h pins.
+    BUNDLE=/work/bare-bundle-md
+    mkdir -p "$BUNDLE/usr/lib"
+    printf 'int cld_md_stub(void) { return 0; }\n' > /work/cld-md-stub.c
+    printf 'extern int cld_md_stub(void);\nint newlib_answer(void) { return cld_md_stub() + 42; }\n' > /work/cld-md.c
+    gcc -shared -fPIC -Wl,-soname,libcldbare-missing999.so \
+        -o /work/libcldbare-missing999.so /work/cld-md-stub.c 2>"$BERR" || bfail libcldbare-missing999.so
+    gcc -shared -fPIC -Wl,-soname,libcldbare-md.so -o "$BUNDLE/usr/lib/libcldbare-md.so" \
+        /work/cld-md.c -L/work -l:libcldbare-missing999.so 2>"$BERR" || bfail libcldbare-md.so
+    rm -f /work/libcldbare-missing999.so
+    cp /work/libnew.so /usr/lib/libcldbare-md.so
+    run E116j OK "missing-dependency-not-replaced" sh -c '
+        out=$(env -u LD_LIBRARY_PATH CROSS_LIBC_DLOPEN_ROOT='$BUNDLE' \
+                   CROSS_LIBC_DLOPEN_DEBUG=1 LD_PRELOAD='$PRELOAD' \
+                   '$LD' --library-path '$BUNDLE'/usr/lib:/usr/lib \
+                   ./barename libcldbare-md.so 2>&1)
+        case "$out" in
+            *"left alone: the loader did not resolve it"*"libcldbare-missing999.so: cannot open shared object file"*)
+                echo missing-dependency-not-replaced ;;
+            *) echo "unexpected: $out" ;;
+        esac'
+
+    rm -rf /work/bare-bundle /work/bare-bundle-lp /work/bare-bundle-sub "$BUNDLE" "$TRANS" \
            /work/bare-broken.so /work/bare-ldpath /work/bare-conf \
-           /usr/lib/libcldbare-b.so /usr/lib/libcldbare-bp.so /usr/lib/libcldbare-bs.so
+           /work/cld-md.c /work/cld-md-stub.c \
+           /usr/lib/libcldbare-b.so /usr/lib/libcldbare-bp.so /usr/lib/libcldbare-bs.so \
+           /usr/lib/libcldbare-md.so
 
     # E102: the preload exports no name this host's own libc family also
     #      exports, beyond the audited interpositions. This is the case the
