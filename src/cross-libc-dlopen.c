@@ -1460,6 +1460,17 @@ static void cld_load_global_scope_libs(void) {
 	if (!cross_libc_dlopen_mode())
 		return;
 
+	// These are glibc runtime components, so the loader must answer for them
+	// unchanged. The interposed dlopen() would now REWRITE a host copy of a
+	// bare name that needs a version the bundle lacks, which is the mixed
+	// runtime set E11 measures. Ask the loader directly, as every other
+	// internal load in this file does.
+	dlopen_func_t dlopen_orig = dlsym(RTLD_NEXT, "dlopen");
+	if (!dlopen_orig) {
+		DEBUG_PRINT("global-scope libs: no dlopen: %s\n", dlerror());
+		return;
+	}
+
 	const char *appdir = cld_root();
 	char path[PATH_MAX];
 
@@ -1473,10 +1484,10 @@ static void cld_load_global_scope_libs(void) {
 		if (appdir && *appdir) {
 			snprintf(path, sizeof(path), "%s/%s/%s", appdir, cld_libdir(), name);
 			if (access(path, R_OK) == 0)
-				h = dlopen(path, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+				h = dlopen_orig(path, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
 		}
 		if (!h)
-			h = dlopen(name, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+			h = dlopen_orig(name, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
 
 		DEBUG_PRINT("global-scope lib %s: %s\n", name, h ? "loaded" : "absent");
 	}
@@ -1490,7 +1501,7 @@ static void cld_load_global_scope_libs(void) {
 		if (appdir && *appdir) {
 			snprintf(path, sizeof(path), "%s/%s/%s", appdir, cld_libdir(), name);
 			if (access(path, R_OK) == 0)
-				h = dlopen(path, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+				h = dlopen_orig(path, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
 		}
 
 		// ⛔ A different prefix from the loop above, and it is load-bearing.
@@ -1581,7 +1592,7 @@ VISIBLE void cross_libc_dlopen_init_now(void) {
 // userspace under /run/opengl-driver/lib, the directory sharun appends for the
 // bundled runtime. A missed access() costs nothing.
 static const char *const cld_host_libdirs[] = {
-	"/run/opengl-driver/lib",
+	"/run/opengl-driver/lib", "/run/current-system/sw/lib",
 	"/usr/lib/" CLD_TRIPLET, "/lib/" CLD_TRIPLET,
 	"/usr/lib64", "/lib64",
 	"/usr/lib", "/lib",
@@ -1646,10 +1657,13 @@ static void cld_va_add(struct cld_va_list *l, const char *dir) {
 	l->used += (size_t)w;
 }
 
-// The process's own search list, in the order the loader walks it. Both users
-// below want the first directory that answers and nothing more, so the walk
-// stops on the first non-zero return. A relative entry is skipped, the loader
-// ignores it too.
+// The process's own search list, in the order the loader walks it. A relative
+// entry is skipped: this object cannot place one without resolving it against
+// the caller's working directory, and is_host_library_path() has always
+// rejected anything that is not absolute. The loader DOES search relative
+// entries, so this is a documented gap rather than a rule. The callback decides
+// where the walk stops: the VA scan returns 0 and visits every entry, the
+// soname lookup stops on the first directory that answers.
 static int cld_each_library_path_dir(int (*fn)(const char *, void *), void *ctx) {
 	const char *lp = getenv("LD_LIBRARY_PATH");
 	if (!lp || !*lp)
@@ -1764,6 +1778,18 @@ static const char *cld_never_touch[] = {
 	"libpthread.musl",
 	"libdl.so.",
 	"librt.so.",
+	// The rest of the runtime set, and each is here for the same reason: these
+	// are components OF a libc release, not libraries a host driver needs.
+	// Stripping one turns its GLIBC_PRIVATE, GLIBC_ABI_DT_RELR and glibc 2.36
+	// requirements into plain name lookups against the bundled release, which
+	// loads a mismatched runtime component into RTLD_GLOBAL. Measured on glibc
+	// 2.41: libresolv.so.2, libutil.so.1 and libanl.so.1 all carry DT_RELR and
+	// that ABI edge, and libresolv.so.2 also imports GLIBC_PRIVATE. libnss_ is
+	// the same class: an NSS module pairs with the libc that loads it.
+	"libresolv.so.",
+	"libutil.so.",
+	"libanl.so.",
+	"libnss_",
 	NULL
 };
 
@@ -2087,14 +2113,28 @@ struct cld_soname {
 	int in_bundle;
 };
 
-// A candidate of the other ELF class cannot load, and the walk must reach the
-// directory after it: a host with i386 support names the 32bit directory first.
-// Same rule as the GL shim's candidate walk.
-static int cld_soname_wrong_class(const char *path) {
+// Can the loader map this candidate at all? Two answers are no, and both must
+// let the walk continue rather than stop on them:
+//
+//   the other ELF class   a host with i386 support names the 32bit directory
+//                         first, and the loader skips such a candidate too.
+//   not a regular file    a directory matches the name, access() and open()
+//                         both succeed on it, and read() then fails, so a
+//                         class check alone would accept it and stop the walk
+//                         on a path the loader can never use.
+//
+// A candidate that is not recognisable as an ELF is still handed on: the loader
+// gives the real reason, which is better than this function guessing one.
+static int cld_soname_not_loadable(const char *path) {
 	unsigned char id[EI_NIDENT];
 	int fd = open(path, O_RDONLY | O_CLOEXEC);
 	if (fd < 0)
 		return 0;
+	struct stat st;
+	if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) {
+		close(fd);
+		return 1;
+	}
 	ssize_t n = read(fd, id, sizeof id);
 	close(fd);
 	return n == (ssize_t)sizeof id && memcmp(id, ELFMAG, SELFMAG) == 0 &&
@@ -2107,7 +2147,7 @@ static int cld_soname_try(const char *dir, void *ctx) {
 	if (snprintf(candidate, sizeof candidate, "%s/%s", dir, c->name) >=
 	    (int)sizeof candidate)
 		return 0;
-	if (access(candidate, R_OK) != 0 || cld_soname_wrong_class(candidate))
+	if (access(candidate, R_OK) != 0 || cld_soname_not_loadable(candidate))
 		return 0;
 	char *canon = canonicalize_file_name(candidate);
 	if (!canon)
@@ -2127,6 +2167,15 @@ static int cld_soname_try(const char *dir, void *ctx) {
 	return 1;
 }
 
+// ld-conf.h reports a truncated walk through a callback rather than a return
+// value, and a silently shortened list is exactly the failure this project
+// documents. In a trace it belongs on stderr with the rest.
+static void cld_soname_conf_warn(void *ctx, const char *what, const char *detail) {
+	(void)ctx;
+	DEBUG_PRINT("cross-libc-dlopen: /etc/ld.so.conf: %s%s%s\n", what,
+	            detail ? ": " : "", detail ? detail : "");
+}
+
 // NULL with *in_bundle set means the loader's own order names a bundle copy
 // first, and the answer is whatever the loader said about it.
 static char *cld_host_soname(const char *name, int *in_bundle) {
@@ -2135,20 +2184,81 @@ static char *cld_host_soname(const char *name, int *in_bundle) {
 		return NULL;
 
 	struct cld_soname c = { name, "", 0 };
+	int found = 0;
 
-	if (!cld_each_library_path_dir(cld_soname_try, &c) &&
-	    !ldconf_each_dir("/etc/ld.so.conf", cld_soname_try, NULL, &c)) {
-		for (size_t i = 0; cld_host_libdirs[i]; i++)
-			if (cld_soname_try(cld_host_libdirs[i], &c))
-				break;
+	// The bundle's own libdir first, which is the order sharun builds: it
+	// prepends $APPDIR/lib to --library-path and often leaves LD_LIBRARY_PATH
+	// unset, so the walk below cannot see the directory the loader searched
+	// first. Without this probe a bundle copy refused from its own directory
+	// would be invisible here, and the walk would answer with a host file of
+	// the same name.
+	const char *appdir = cld_root();
+	if (appdir && *appdir) {
+		char bundled[PATH_MAX];
+		if (snprintf(bundled, sizeof bundled, "%s/%s", appdir, cld_libdir()) <
+		    (int)sizeof bundled)
+			found = cld_soname_try(bundled, &c);
 	}
+	if (!found)
+		found = cld_each_library_path_dir(cld_soname_try, &c);
+	if (!found)
+		found = ldconf_each_dir("/etc/ld.so.conf", cld_soname_try,
+		                        cld_soname_conf_warn, &c);
+	if (!found)
+		for (size_t i = 0; cld_host_libdirs[i]; i++)
+			if (cld_soname_try(cld_host_libdirs[i], &c)) {
+				found = 1;
+				break;
+			}
+
 	if (c.in_bundle) {
 		*in_bundle = 1;
 		return NULL;
 	}
-	if (!c.path[0])
-		return NULL;
-	return strdup(c.path);
+	return c.path[0] ? strdup(c.path) : NULL;
+}
+
+// Is the file the loader's message blames inside the bundle? Two shapes, and
+// the difference is load-bearing:
+//
+//   "<path>: undefined symbol: x"                       the object it refused
+//   "<provider>: version `V' not found (required by <path>)"   the REQUIRER
+//
+// In the second shape the PROVIDER is the bundle's older libm and the requirer
+// is the host driver, which is the case this repair exists for, so a bundle
+// path on the provider side must NOT read as "a bundle object was refused".
+// The requirer is taken when the message has one, the leading subject
+// otherwise, and a message naming neither says nothing about the bundle.
+static int cld_error_blames_root(const char *err) {
+	const char *appdir = cld_root();
+	if (!appdir || !*appdir || strcmp(appdir, "/") == 0)
+		return 0;
+
+	const char *p = strstr(err, "(required by ");
+	if (p)
+		p += strlen("(required by ");
+	else if (err[0] == '/')
+		p = err;
+	else
+		return 0;
+
+	size_t len = strlen(appdir);
+	while (len > 1 && appdir[len - 1] == '/')
+		len--;
+	return strncmp(p, appdir, len) == 0 && (p[len] == '/' || p[len] == '\0');
+}
+
+// True when the loader never resolved THIS name. glibc prefixes the message
+// with the file it could not open, so the test is against the name dlopen() was
+// given, not against the phrase alone. The difference decides a real case: a
+// musl-built driver whose bare libc.musl-*.so.1 edge is missing DID resolve,
+// and that edge is the one the repair drops, so reading it as "not resolved"
+// would refuse the only repair that works.
+static int cld_dlerror_is_missing(const char *err, const char *name) {
+	static const char missing[] = ": cannot open shared object file";
+	size_t n = strlen(name);
+	return strncmp(err, name, n) == 0 &&
+	       strncmp(err + n, missing, sizeof missing - 1) == 0;
 }
 
 // Attempt a cross-libc load of a host library, *handled tells the caller
@@ -2265,24 +2375,35 @@ VISIBLE void *dlopen(const char *filename, int flags) {
 		// the pending dlerror() is still the loader's own, untouched
 		return NULL;
 
-	// Only a name the loader RESOLVED and then refused is ours to repair. One
-	// it never found is the launcher's library path to assemble, which is a
-	// different job (docs/conventions/code.md says whose). The two are told
-	// apart by the loader's own message; "cannot open shared object file" is
-	// the phrase a glibc loader's dlerror() carries, and E13b already matches
-	// it. A found object whose DEPENDENCY is missing carries the same phrase
-	// and is left alone as well: the dependency is on the launcher's path, and
-	// rewriting the parent cannot supply it. This object is glibc-built, so
-	// dlopen_orig() is glibc's even when the HOST is musl, which is why the
-	// phrase is the one E13b already matches on every host class. Reading
-	// dlerror() consumes it, so every arm below re-runs the plain load to
-	// leave the caller the reason.
+	// Only a name the loader RESOLVED and then refused is ours to repair. Two
+	// answers are not ours, and they are different failures with the same
+	// consequence: leave the loader's message alone.
+	//
+	//   the name was never resolved   the launcher's library path to assemble,
+	//                                 which is a different job
+	//   the refusal blames the bundle a bundle object the loader refused, and
+	//                                 the bundle wins over a host copy by rule
+	//
+	// The first is told apart by the loader's own message naming the file it
+	// could not open, and the test is on THIS name: a musl object that
+	// resolved and then missed its libc.musl-*.so.1 edge must still be
+	// repaired, because dropping that edge is what the repair is for. A found
+	// object whose DEPENDENCY is missing names the dependency and is left
+	// alone: rewriting the parent cannot supply it. This object is
+	// glibc-built, so dlopen_orig() is glibc's even when the HOST is musl,
+	// which is why the phrase is the one E13b already matches on every host
+	// class. Reading dlerror() consumes it, so every arm below re-runs the
+	// plain load to leave the caller the reason.
 	const char *err = dlerror();
-	int found_but_refused = err && !strstr(err, "cannot open shared object file");
-	if (!found_but_refused)
+	int missing = !err || cld_dlerror_is_missing(err, filename);
+	int blamed = err && cld_error_blames_root(err);
+	if (blamed)
+		DEBUG_PRINT("cross-libc-dlopen: bare %s: the loader's refusal names the bundle, left alone\n",
+		            filename);
+	else if (missing)
 		DEBUG_PRINT("cross-libc-dlopen: bare %s -> %s, left alone: the loader did not resolve it\n",
 		            filename, resolved);
-	if (found_but_refused) {
+	if (!missing && !blamed) {
 		DEBUG_PRINT("cross-libc-dlopen: bare %s -> %s\n", filename, resolved);
 		handled = 0;
 		host = cld_attempt(dlopen_orig, resolved, flags, &handled);

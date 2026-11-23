@@ -71,6 +71,18 @@ about it.
 
 ---
 
+### A bare SONAME is offered to the loader before it is repaired
+
+The repair for a bare SONAME runs after `ld.so` has already searched for it, so
+that first attempt is the loader's own and can succeed on a file the repair
+would have rewritten. On a musl host whose search path reaches
+`libc.musl-*.so.1`, that is the two-libc hazard: the loader maps musl libc
+before any edge is dropped. An absolute path does not have this window, because
+the rewrite is prepared before the object is handed to the loader. Prefer an
+absolute path when the driver's location is known.
+
+---
+
 ### A `dlopen` by soname can stop finding a library your own RUNPATH names
 
 The `dlopen` this project interposes runs with the interposer as its caller,
