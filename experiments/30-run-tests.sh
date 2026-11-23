@@ -303,7 +303,7 @@ if [ ! -f /repo/src/runtime-select.c ]; then
 else
     # ---- Tier 0: the ELF rewriting, tested against the REAL implementation --
     # tests/elf-selftest.c #includes cross-libc-dlopen.c, so T0.4/T0.5/T0.7/T0.8
-    # exercise the shipped predicates rather than a model of them.
+    # and T0.9 exercise the shipped predicates rather than a model of them.
     gcc -O2 -Wno-format-truncation /repo/tests/elf-selftest.c \
         -o elf-selftest -ldl 2>"$BERR" || bfail elf-selftest
     run E14 OK "ELF SELFTEST PASSED" ./elf-selftest /lib/$TRIPLET/libz.so.1
@@ -660,7 +660,10 @@ CEOF
     #        so the loader refused the HOST copy and its message names the host.
     #        No message comparison can tell that the bundle owns the name, and
     #        the probe of <root>/<libdir> is the only thing that stops the
-    #        repair. The answer is the loader's refusal: bundled wins.
+    #        repair. The host copy is one the repair WOULD load (E116's), so a
+    #        missing probe fails at runtime here and not only in the trace: it
+    #        rewrites and loads the host copy and prints OK: newlib_answer=99.
+    #        The bundle copy only has to exist; it is never loaded.
     # E116f: the shape sharun builds, bundle on --library-path with the host
     #        copy behind it. Here the loader's message names the bundle object
     #        it refused, and that alone stops the repair.
@@ -676,15 +679,15 @@ CEOF
 
     BUNDLE=/work/bare-bundle
     mkdir -p "$BUNDLE/lib"
-    cp /work/libnew.so "$BUNDLE/lib/libcldbare-b.so"
-    cp /work/bare-broken.so /usr/lib/libcldbare-b.so
+    cp /work/bare-broken.so "$BUNDLE/lib/libcldbare-b.so"
+    cp /work/libnew.so /usr/lib/libcldbare-b.so
     run E116e OK "bundle-copy-not-replaced" sh -c '
         out=$(env -u LD_LIBRARY_PATH CROSS_LIBC_DLOPEN_ROOT='$BUNDLE' \
                    CROSS_LIBC_DLOPEN_DEBUG=1 LD_PRELOAD='$PRELOAD' \
                    '$LD' --library-path /usr/lib \
                    ./barename libcldbare-b.so 2>&1)
         case "$out" in
-            *"bare libcldbare-b.so lives in the bundle, left alone"*"undefined symbol: cld_no_such_symbol"*)
+            *"bare libcldbare-b.so lives in the bundle, left alone"*"GLIBC_2.38"*)
                 echo bundle-copy-not-replaced ;;
             *) echo "unexpected: $out" ;;
         esac'
@@ -780,6 +783,21 @@ CEOF
         case "$out" in
             *"left alone: the loader did not resolve it"*"libcldbare-missing999.so: cannot open shared object file"*)
                 echo missing-dependency-not-replaced ;;
+            *) echo "unexpected: $out" ;;
+        esac'
+
+    # E116k: a RELATIVE path is a path too. `./name` carries a slash, so ld.so
+    #        opens it as given rather than searching, and the repair has nothing
+    #        to name. Before the gate tested for any slash this was classified as
+    #        a bare name it never resolved: a trace line that read as the repair
+    #        speaking about a name, and a second failed load to put the message
+    #        back. The absence of that line is the assertion, the way E85 does it.
+    run E116k OK "relative-path-not-a-bare-name" sh -c '
+        out=$(env CROSS_LIBC_DLOPEN_DEBUG=1 LD_PRELOAD='$PRELOAD' \
+                   ./barename ./cld-relative-absent.so 2>&1)
+        case "$out" in
+            *"bare ./cld-relative-absent.so"*) echo "treated-as-a-bare-name: $out" ;;
+            *"cannot open shared object file"*) echo relative-path-not-a-bare-name ;;
             *) echo "unexpected: $out" ;;
         esac'
 

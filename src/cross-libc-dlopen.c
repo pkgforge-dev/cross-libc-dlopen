@@ -1583,6 +1583,36 @@ VISIBLE void cross_libc_dlopen_init_now(void) {
 #  define CLD_TRIPLET "unknown"
 #endif
 
+// What the loader itself will accept, for the candidate walk below. It skips a
+// candidate of another ELF class, machine or byte order and keeps searching, so
+// the walk must skip the same three; anything else the loader stops on, and
+// stopping is what keeps the repair from loading a file the loader's answer was
+// not about.
+#if defined(__x86_64__)
+#  define CLD_HOST_MACHINE EM_X86_64
+#elif defined(__aarch64__)
+#  define CLD_HOST_MACHINE EM_AARCH64
+#elif defined(__i386__)
+#  define CLD_HOST_MACHINE EM_386
+#elif defined(__riscv) && __riscv_xlen == 64
+#  define CLD_HOST_MACHINE EM_RISCV
+#elif defined(__loongarch64)
+#  ifndef EM_LOONGARCH
+#    define EM_LOONGARCH 258        /* the 2.31 floor's elf.h predates it */
+#  endif
+#  define CLD_HOST_MACHINE EM_LOONGARCH
+#elif defined(__powerpc64__)
+#  define CLD_HOST_MACHINE EM_PPC64
+#else
+#  define CLD_HOST_MACHINE EM_NONE
+#endif
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#  define CLD_HOST_ELFDATA ELFDATA2LSB
+#else
+#  define CLD_HOST_ELFDATA ELFDATA2MSB
+#endif
+
 // The conventional libdirs of the hosts this runs on. Two callers want them
 // and neither may become a library search: the VA section below probes each as
 // <dir>/dri, and cld_host_soname() probes each for the one file a refused bare
@@ -1790,6 +1820,10 @@ static const char *cld_never_touch[] = {
 	"libutil.so.",
 	"libanl.so.",
 	"libnss_",
+	// libmvec is the same class: shipped with the release, imports
+	// GLIBC_PRIVATE and GLIBC_ABI_DT_RELR, and pairs with the libc that
+	// loads it.
+	"libmvec.so.",
 	NULL
 };
 
@@ -2113,32 +2147,37 @@ struct cld_soname {
 	int in_bundle;
 };
 
-// Can the loader map this candidate at all? Two answers are no, and both must
-// let the walk continue rather than stop on them:
+// Will the loader keep searching past this candidate? That is exactly three
+// answers: another ELF class, another byte order or another machine. Measured
+// with a valid copy behind each decoy on LD_LIBRARY_PATH: the loader loads the
+// copy behind all three, and stops on a directory or a file too short to hold a
+// header. So those two must stop the walk too, or the repair would load a file
+// the loader's answer was never about.
 //
-//   the other ELF class   a host with i386 support names the 32bit directory
-//                         first, and the loader skips such a candidate too.
-//   not a regular file    a directory matches the name, access() and open()
-//                         both succeed on it, and read() then fails, so a
-//                         class check alone would accept it and stop the walk
-//                         on a path the loader can never use.
+// The machine check is what multiarch needs: /etc/ld.so.conf.d/*.conf is walked
+// in sorted order, so aarch64-linux-gnu.conf comes before the native
+// powerpc64le, riscv64, loongarch64 and x86_64 entries, and a host carrying
+// another architecture's packages would otherwise stop on that arch's copy.
 //
-// A candidate that is not recognisable as an ELF is still handed on: the loader
-// gives the real reason, which is better than this function guessing one.
-static int cld_soname_not_loadable(const char *path) {
-	unsigned char id[EI_NIDENT];
-	int fd = open(path, O_RDONLY | O_CLOEXEC);
+// A file that cannot be read as an ELF header is NOT skipped: the loader stops
+// there, so the walk stops, the repair fails on the same file, and the caller
+// reads the loader's reason.
+static int cld_soname_loader_skips(const char *path) {
+	ElfW(Ehdr) eh;
+	int fd = open(path, O_RDONLY | O_CLOEXEC | O_NONBLOCK);
 	if (fd < 0)
 		return 0;
-	struct stat st;
-	if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) {
-		close(fd);
-		return 1;
-	}
-	ssize_t n = read(fd, id, sizeof id);
+	ssize_t n = read(fd, &eh, sizeof eh);
 	close(fd);
-	return n == (ssize_t)sizeof id && memcmp(id, ELFMAG, SELFMAG) == 0 &&
-	       id[EI_CLASS] != (sizeof(void *) == 8 ? ELFCLASS64 : ELFCLASS32);
+	if (n != (ssize_t)sizeof eh || memcmp(eh.e_ident, ELFMAG, SELFMAG) != 0)
+		return 0;
+	if (eh.e_ident[EI_CLASS] != (sizeof(void *) == 8 ? ELFCLASS64 : ELFCLASS32))
+		return 1;
+	if (eh.e_ident[EI_DATA] != CLD_HOST_ELFDATA)
+		return 1;
+	if (CLD_HOST_MACHINE != EM_NONE && eh.e_machine != CLD_HOST_MACHINE)
+		return 1;
+	return 0;
 }
 
 static int cld_soname_try(const char *dir, void *ctx) {
@@ -2147,7 +2186,7 @@ static int cld_soname_try(const char *dir, void *ctx) {
 	if (snprintf(candidate, sizeof candidate, "%s/%s", dir, c->name) >=
 	    (int)sizeof candidate)
 		return 0;
-	if (access(candidate, R_OK) != 0 || cld_soname_not_loadable(candidate))
+	if (access(candidate, R_OK) != 0 || cld_soname_loader_skips(candidate))
 		return 0;
 	char *canon = canonicalize_file_name(candidate);
 	if (!canon)
@@ -2357,8 +2396,8 @@ VISIBLE void *dlopen(const char *filename, int flags) {
 	// and a libc runtime component is never ours to rewrite. cld_attempt()
 	// bails for all three, so this does too, and a core name skips the walk
 	// instead of being named only for cld_load() to refuse it.
-	if (*filename == '/' || (flags & RTLD_NOLOAD) || !cross_libc_dlopen_mode() ||
-	    cld_is_core_library(filename))
+	if (strchr(filename, '/') || (flags & RTLD_NOLOAD) ||
+	    !cross_libc_dlopen_mode() || cld_is_core_library(filename))
 		return NULL;
 
 	// ⛔ THE MESSAGE IS READ FIRST, and this order is measured rather than
