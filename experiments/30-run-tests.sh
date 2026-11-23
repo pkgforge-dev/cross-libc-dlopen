@@ -557,6 +557,15 @@ else
     #      which is the shape of the host that reported the Vulkan ICD gap:
     #      Arch and CachyOS write no directory into ld.so.conf at all, so the
     #      conventional list is what has to name the file ld.so just refused.
+    #
+    #      Both arms preload shim_forward.so beside the preload. The rewrite
+    #      removes the version tags, and the object then needs strlcpy and
+    #      arc4random by name, which glibc 2.31 does not have. The checked-in
+    #      forward-shim.c was generated for the 2.44 floor, so in this stage it
+    #      covers none of them; shim_forward.so is the same stand-in E5 uses.
+    #      A real AppImage regenerates the shim for its own floor at build time
+    #      and the preload carries it, which is the configuration this stands in
+    #      for.
     cat > barename.c <<'CEOF'
 #include <stdio.h>
 #include <dlfcn.h>
@@ -572,16 +581,20 @@ CEOF
     gcc -O2 barename.c -o barename -ldl 2>"$BERR" || bfail barename
     cp /work/libnew.so /usr/lib/libcldbare.so
 
-    # E116a: the control. The preload is present and interposing; the only
-    #        difference is the feature switch, and the prediction is the
-    #        version refusal the loader gives on its own. That needle also
-    #        proves the loader FOUND the file: were /usr/lib not on its search
-    #        path the message would be "cannot open shared object file", which
-    #        is the one failure this repair deliberately leaves alone.
+    # E116a: the control. The preloads are present and the interposer is
+    #        running; the only difference is the feature switch, and the
+    #        prediction is the version refusal the loader gives on its own.
+    #        That needle also proves the loader FOUND the file: were /usr/lib
+    #        not on its search path the message would be "cannot open shared
+    #        object file", which is the one failure this repair deliberately
+    #        leaves alone.
     run E116a FAIL "GLIBC_2.38' not found" \
-        env CROSS_LIBC_DLOPEN=0 LD_PRELOAD=/work/cross-libc-dlopen.so ./barename
+        env CROSS_LIBC_DLOPEN=0 \
+            LD_PRELOAD=/work/shim_forward.so:/work/cross-libc-dlopen.so \
+            ./barename
     run E116 OK "OK: bare=99" \
-        env LD_PRELOAD=/work/cross-libc-dlopen.so ./barename
+        env LD_PRELOAD=/work/shim_forward.so:/work/cross-libc-dlopen.so \
+            ./barename
     rm -f /usr/lib/libcldbare.so
 
     # E102: the preload exports no name this host's own libc family also
